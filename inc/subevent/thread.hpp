@@ -127,7 +127,7 @@ private:
 
     Thread* mParent;
     std::list<Thread*> mChilds;
-	ChildFinishedHandler mChildFinishedHandler;
+    ChildFinishedHandler mChildFinishedHandler;
 
     EventLoop mEventLoop;
     int32_t mExitCode;

@@ -1,11 +1,11 @@
 Subevent
 ========
 
-C++ Network Library
+C++ Network and Event Driven Application Library
 
 ### Features
-* async TCP/UDP api.
+* Async TCP/UDP api.
 * Event driven App/Thread.
 * Header only.
 * C++11, Linux/Windows.
-* Simple interface.
+* Easy to use.

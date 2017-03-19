@@ -33,9 +33,9 @@ public:
 
     // Event Handler
     SEV_DECL void setHandler(
-		const Event::Id& id, const EventHandler& handler);
+        const Event::Id& id, const EventHandler& handler);
     SEV_DECL void removeHandler(
-		const Event::Id& id);
+        const Event::Id& id);
 
     // Timer
     SEV_DECL void startTimer(Timer* timer);

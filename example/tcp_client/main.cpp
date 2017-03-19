@@ -18,7 +18,7 @@ public:
 protected:
     bool onInit() override
     {
-        Thread::onInit();
+        Application::onInit();
         Network::init(this);
 
         IpEndPoint server("127.0.0.1", 9000);
@@ -84,7 +84,7 @@ protected:
         // close
         mTcpClient.close();
 
-        Thread::onExit();
+        Application::onExit();
     }
 
 private:

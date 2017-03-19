@@ -56,10 +56,23 @@ int main(int argc, char** argv)
     return app.run();
 }
 ```
-* How to end MyApp
+* How to End MyApp
 ```C++
 // call "void Application::stop()"
 stop();
+```
+* Timer
+```C++
+Timer* timer = new Timer();
+
+uint32_t msec = 60000;
+bool repeat = false;
+
+// start
+timer->start(msec, repeat, [&](Timer*) {
+    // Called from the same thread when time out.
+    // Your code here.
+});
 ```
 * Network  
 Please see the files under [subevent/examples/](https://github.com/Ichishino/subevent/tree/master/examples) directory.

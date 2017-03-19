@@ -3,7 +3,7 @@
 
 #include "subevent.hpp"
 
-SEV_IMPL_GLOBALS
+SEV_IMPL_GLOBAL
 
 SEV_USING_NS
 

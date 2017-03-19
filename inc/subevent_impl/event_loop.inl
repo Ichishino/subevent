@@ -35,7 +35,7 @@ void EventLoop::onExit()
 }
 
 void EventLoop::setHandler(const Event::Id& id,
-	                       const EventHandler& handler)
+                           const EventHandler& handler)
 {
     mHandlerMap[id] = handler;
 }

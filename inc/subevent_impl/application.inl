@@ -33,11 +33,11 @@ Application::Application(int32_t argc, char* argv[], const std::string& name)
     gApp = this;
     gThread = this;
 
-	mId = std::this_thread::get_id();
+    mId = std::this_thread::get_id();
 #ifdef _WIN32
-	mHandle = GetCurrentThread();
+    mHandle = GetCurrentThread();
 #else
-	mHandle = pthread_self();
+    mHandle = pthread_self();
 #endif
 
     for (int index = 0; index < argc; ++index)

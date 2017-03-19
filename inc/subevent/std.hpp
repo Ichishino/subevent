@@ -29,14 +29,14 @@
 
 #ifdef SEV_HEADER_ONLY
 #define SEV_DECL inline
-#define SEV_IMPL_GLOBALS \
+#define SEV_IMPL_GLOBAL \
     SEV_NS_BEGIN \
     SEV_TLS Thread* Thread::gThread = nullptr; \
     Application* Application::gApp = nullptr; \
     SEV_NS_END
 #else
 #define SEV_DECL
-#define SEV_IMPL_GLOBALS
+#define SEV_IMPL_GLOBAL
 #endif
 
 //----------------------------------------------------------------------------//

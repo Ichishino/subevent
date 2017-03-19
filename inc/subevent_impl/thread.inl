@@ -102,19 +102,19 @@ int32_t SEV_THREAD Thread::main(Thread* thread)
     assert(gThread == nullptr);
 
     gThread = thread;
-	gThread->mId = std::this_thread::get_id();
+    gThread->mId = std::this_thread::get_id();
 #ifdef _WIN32
     gThread->mHandle = GetCurrentThread();
 #else
-	gThread->mHandle = pthread_self();
+    gThread->mHandle = pthread_self();
 #endif
 
-	return gThread->onRun();
+    return gThread->onRun();
 }
 
 void Thread::start()
 {
-	mThread = std::thread(Thread::main, this);
+    mThread = std::thread(Thread::main, this);
 }
 
 void Thread::stop()

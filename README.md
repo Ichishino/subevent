@@ -11,7 +11,7 @@ C++ Event Driven and Network Application Library
 * Easy to use.
 
 ### Example
-* Simple Application
+* A Simple Application
 ```C++
 #include "subevent.hpp"
 
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
     return app.run();
 }
 ```
-* How to end Application
+* How to end MyApp
 ```C++
 // call "void Application::stop()"
 stop();

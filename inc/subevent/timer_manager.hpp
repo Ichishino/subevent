@@ -1,6 +1,7 @@
 #ifndef SUBEVENT_TIMER_MANAGER_HPP
 #define SUBEVENT_TIMER_MANAGER_HPP
 
+#include <set>
 #include <list>
 #include <chrono>
 
@@ -27,8 +28,7 @@ public:
     SEV_DECL void cancelAll();
 
     SEV_DECL uint32_t nextTimeout();
-    SEV_DECL void checkExpired(std::list<Event*>& events);
-    SEV_DECL void onEvent(const Event* event);
+    SEV_DECL void expire();
 
 private:
 
@@ -36,11 +36,10 @@ private:
     {
         Timer* timer;
         std::chrono::system_clock::time_point end;
-        Event* event;
     };
 
     std::list<Item> mItems;
-    std::list<Item> mExpiredItems;
+    std::set<Timer*> mExpired;
 };
 
 SEV_NS_END

@@ -12,6 +12,7 @@ SEV_NS_BEGIN
 
 EventController::EventController()
 {
+    mStopPosted = false;
 }
 
 EventController::~EventController()
@@ -29,25 +30,28 @@ void EventController::clear()
         mQueue.pop();
         delete event;
     }
+
+    mStopPosted = false;
 }
 
-void EventController::push(Event* event)
+bool EventController::push(Event* event)
 {
     std::lock_guard<std::mutex> lock(mMutex);
+
+    if (mStopPosted)
+    {
+        delete event;
+        return false;
+    }
+    else if (event->getId() == CommEventId::Stop)
+    {
+        mStopPosted = true;
+    }
 
     mQueue.push(event);
     wakeup();
-}
 
-void EventController::push(const std::list<Event*>& events)
-{
-    std::lock_guard<std::mutex> lock(mMutex);
-
-    for (Event* event : events)
-    {
-        mQueue.push(event);
-        wakeup();
-    }
+    return true;
 }
 
 Event* EventController::pop()

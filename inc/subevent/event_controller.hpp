@@ -23,8 +23,7 @@ public:
     SEV_DECL virtual ~EventController();
 
 public:
-    SEV_DECL void push(Event* event);
-    SEV_DECL void push(const std::list<Event*>& events);
+    SEV_DECL bool push(Event* event);
     SEV_DECL void clear();
     SEV_DECL uint32_t getQueuedEventCount() const;
 
@@ -39,6 +38,7 @@ protected:
 private:
     mutable std::mutex mMutex;
     std::queue<Event*> mQueue;
+    bool mStopPosted;
     Semaphore mSem;
 };
 

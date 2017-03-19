@@ -12,12 +12,6 @@
 SEV_NS_BEGIN
 
 //----------------------------------------------------------------------------//
-//----------------------------------------------------------------------------//
-
-typedef UserEvent<CommEventId::Timer, Timer*> TimerEvent;
-typedef std::function<void(const TimerEvent*)> TimerEventHandler;
-
-//----------------------------------------------------------------------------//
 // TimerManager
 //----------------------------------------------------------------------------//
 
@@ -38,7 +32,6 @@ void TimerManager::start(Timer* timer)
     item.end = std::chrono::system_clock::now() +
         std::chrono::milliseconds(timer->getInterval());
     item.timer = timer;
-    item.event = nullptr;
 
     for (auto it = mItems.begin(); it != mItems.end(); ++it)
     {
@@ -55,43 +48,33 @@ void TimerManager::cancel(Timer* timer)
 {
     timer->mRunning = false;
 
-    auto pred = [&](const Item& item)
+    auto it = std::find_if(
+        mItems.begin(), mItems.end(),
+        [&](const Item& item) {
+            return (item.timer == timer);
+        });
+    if (it != mItems.end())
     {
-        return (item.timer == timer);
-    };
-
-    auto it1 = std::find_if(
-        mItems.begin(), mItems.end(), pred);
-    if (it1 != mItems.end())
-    {
-        mItems.erase(it1);
+        mItems.erase(it);
         return;
     }
 
-    auto it2 = std::find_if(
-        mExpiredItems.begin(), mExpiredItems.end(), pred);
-    if (it2 != mExpiredItems.end())
-    {
-        mExpiredItems.erase(it2);
-        return;
-    }
+    mExpired.erase(timer);
 }
 
 void TimerManager::cancelAll()
 {
-    while (!mItems.empty())
+    for (Item& item : mItems)
     {
-        Item& item = mItems.front();
         item.timer->mRunning = false;
-        mItems.pop_front();
     }
+    mItems.clear();
 
-    while (!mExpiredItems.empty())
+    for (Timer* timer : mExpired)
     {
-        Item& item = mExpiredItems.front();
-        item.timer->mRunning = false;
-        mExpiredItems.pop_front();
+        timer->mRunning = false;
     }
+    mExpired.clear();
 }
 
 uint32_t TimerManager::nextTimeout()
@@ -114,48 +97,40 @@ uint32_t TimerManager::nextTimeout()
     }
 }
 
-void TimerManager::checkExpired(std::list<Event*>& events)
+void TimerManager::expire()
 {
     auto now = std::chrono::system_clock::now();
 
-    for (auto it = mItems.begin(); it != mItems.end();)
+    while (!mItems.empty())
     {
-        Item& item = *it;
-        if (item.end <= now)
+        Item& item = mItems.front();
+
+        if (item.end > now)
         {
-            item.event = new TimerEvent(item.timer);
-            events.push_back(item.event);
-
-            mExpiredItems.push_back(std::move(item));
-
-            it = mItems.erase(it);
+            break;
         }
-        else
-        {
-            ++it;
-        }
-    }
-}
 
-void TimerManager::onEvent(const Event* event)
-{
-    const TimerEvent* timerEvent =
-        dynamic_cast<const TimerEvent*>(event);
+        Timer* timer = item.timer;
+        mItems.pop_front();
 
-    Timer* timer;
-    timerEvent->getParams(timer);
-
-    for (auto it = mExpiredItems.begin();
-        it != mExpiredItems.end(); ++it)
-    {
-        if (it->event != event)
+        if (!timer->isRunning())
         {
             continue;
         }
-        it = mExpiredItems.erase(it);
 
-        if (timer->isRunning())
-        {
+        mExpired.insert(timer);
+
+        Thread::getCurrent()->post([this, timer]() {
+
+            if (mExpired.erase(timer) == 0)
+            {
+                return;
+            }
+
+            if (!timer->isRunning())
+            {
+                return;
+            }
             timer->mRunning = false;
 
             if (timer->isRepeat())
@@ -163,14 +138,8 @@ void TimerManager::onEvent(const Event* event)
                 start(timer);
             }
 
-            TimerHandler handler = timer->mHandler;
-
-            Thread::getCurrent()->post([handler, timer]() {
-                handler(timer);
-            });
-        }
-
-        break;
+            timer->mHandler(timer);
+        });
     }
 }
 

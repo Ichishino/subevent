@@ -16,12 +16,8 @@ SEV_NS_BEGIN
 
 EventLoop::EventLoop()
 {
-    mStopPosted = false;
-
     mController = new EventController();
     mStatus.store(Status::Init);
-
-    setHandler(CommEventId::Timer, SEV_MFN(EventLoop::onTimerEvent));
 }
 
 EventLoop::~EventLoop()
@@ -47,15 +43,7 @@ void EventLoop::removeHandler(const Event::Id& id)
 
 bool EventLoop::push(Event* event)
 {
-    if (mStopPosted)
-    {
-        delete event;
-        return false;
-    }
-
-    mController->push(event);
-    
-    return true;
+    return mController->push(event);
 }
 
 bool EventLoop::dispatch(Event* event)
@@ -120,10 +108,7 @@ bool EventLoop::run()
         }
         else if (waitResult == WaitResult::Timeout)
         {
-            std::list<Event*> events;
-            mTimerManager.checkExpired(events);
-
-            mController->push(events);
+            mTimerManager.expire();
         }
         else if (waitResult == WaitResult::Cancel)
         {
@@ -162,11 +147,6 @@ void EventLoop::cancelAllTimer()
 {
     mTimerManager.cancelAll();
     mController->wakeup();
-}
-
-void EventLoop::onTimerEvent(const Event* event)
-{
-    mTimerManager.onEvent(event);
 }
 
 EventController* EventLoop::getController()

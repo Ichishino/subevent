@@ -62,15 +62,12 @@ private:
     EventLoop& operator=(const EventLoop&) = delete;
 
     SEV_DECL bool dispatch(Event* event);
-    SEV_DECL void onTimerEvent(const Event* event);
 
     EventController* mController;
 
     TimerManager mTimerManager;
     std::atomic<Status> mStatus;
     std::map<Event::Id, EventHandler> mHandlerMap;
-
-    bool mStopPosted;
 };
 
 SEV_NS_END

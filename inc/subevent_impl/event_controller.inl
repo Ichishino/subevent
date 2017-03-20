@@ -43,7 +43,7 @@ bool EventController::push(Event* event)
         delete event;
         return false;
     }
-    else if (event->getId() == StopEvent::Id)
+    else if (event->getId() == CommEventId::Stop)
     {
         mStopPosted = true;
     }

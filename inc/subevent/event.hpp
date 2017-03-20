@@ -50,8 +50,6 @@ template<Event::Id id, typename ... ParamTypes>
 class UserEvent : public Event
 {
 public:
-    static const Event::Id Id = id;
-
     explicit UserEvent(const ParamTypes& ... params)
         : Event(id)
     {

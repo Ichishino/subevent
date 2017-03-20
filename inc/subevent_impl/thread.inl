@@ -15,12 +15,6 @@
 SEV_NS_BEGIN
 
 //----------------------------------------------------------------------------//
-//----------------------------------------------------------------------------//
-
-typedef UserEvent<CommEventId::ChildFinished, Thread*> ChildFinishedEvent;
-typedef UserEvent<CommEventId::Task, std::function<void()>> TaskEvent;
-
-//----------------------------------------------------------------------------//
 // Thread
 //----------------------------------------------------------------------------//
 
@@ -47,9 +41,9 @@ Thread::Thread(const std::string& name, Thread* parent)
     }
 
     setEventHandler(
-        CommEventId::ChildFinished, SEV_MFN(Thread::onChildFinished));
+        ChildFinishedEvent::Id, SEV_MFN(Thread::onChildFinished));
     setEventHandler(
-        CommEventId::Task, SEV_MFN(Thread::onTaskEvent));
+        TaskEvent::Id, SEV_MFN(Thread::onTaskEvent));
 }
 
 Thread::~Thread()

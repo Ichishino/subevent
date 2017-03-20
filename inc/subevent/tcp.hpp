@@ -20,7 +20,7 @@ class TcpChannel;
 
 namespace TcpEventId
 {
-    static const Event::Id Accept = 80001;
+    static const Event::Id Accept = 0xFB000001;
 }
 
 typedef std::function<void(TcpServer*, TcpChannel*)> TcpAcceptHandler;

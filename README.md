@@ -75,4 +75,10 @@ timer->start(msec, repeat, [&](Timer*) {
 });
 ```
 * Network  
-Please see the files under [subevent/examples/](https://github.com/Ichishino/subevent/tree/master/examples) directory.
+Please see the files under [subevent/examples/](https://github.com/Ichishino/subevent/tree/master/examples) directory.  
+To build on Linux.  
+In each directory:  
+```
+$cmake .
+$make
+```

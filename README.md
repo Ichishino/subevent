@@ -79,6 +79,6 @@ Please see the files under [subevent/examples/](https://github.com/Ichishino/sub
 To build on Linux.  
 In each directory:  
 ```
-$cmake .
-$make
+$ cmake .
+$ make
 ```

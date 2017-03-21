@@ -7,14 +7,12 @@
 SEV_NS_BEGIN
 
 //---------------------------------------------------------------------------//
+// Internal Event
 //---------------------------------------------------------------------------//
 
-namespace CommEventId
-{
-    static const Event::Id Stop = 0xFA000001;
-    static const Event::Id Task = 0xFA000002;
-    static const Event::Id ChildFinished = 0xFA000003;
-}
+typedef UserEvent<0xFA000001> StopEvent;
+typedef UserEvent<0xFA000002, std::function<void()>> TaskEvent;
+typedef UserEvent<0xFA000003, Thread*> ChildFinishedEvent;
 
 SEV_NS_END
 

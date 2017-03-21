@@ -43,6 +43,16 @@ public:
     SEV_DECL void setEventHandler(
         const Event::Id& id, const EventHandler& handler);
 
+    template<typename UserEventType>
+    SEV_DECL void setUserEventHandler(
+        const typename UserEventType::Handler& handler)
+    {
+        setEventHandler(
+            UserEventType::Id(), [=](const Event* event) {
+                handler(dynamic_cast<const UserEventType*>(event));
+            });
+    }
+
     SEV_DECL bool post(Event* event);
     SEV_DECL bool post(const Event::Id& id);
     SEV_DECL bool post(const std::function<void()>& task);

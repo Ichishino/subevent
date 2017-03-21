@@ -62,7 +62,7 @@ bool EventLoop::dispatch(Event* event)
 
     delete event;
 
-    if (id == CommEventId::Stop)
+    if (id == StopEvent::Id())
     {
         // thread end
         return false;
@@ -128,7 +128,7 @@ bool EventLoop::run()
 
 void EventLoop::stop()
 {
-    push(new Event(CommEventId::Stop));
+    push(new StopEvent());
 }
 
 void EventLoop::startTimer(Timer* timer)

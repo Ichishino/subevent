@@ -50,6 +50,10 @@ template<Event::Id id, typename ... ParamTypes>
 class UserEvent : public Event
 {
 public:
+    static constexpr Event::Id Id() { return id; }
+    typedef std::function<
+        void(const UserEvent<id, ParamTypes ...>*)> Handler;
+
     explicit UserEvent(const ParamTypes& ... params)
         : Event(id)
     {

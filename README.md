@@ -10,6 +10,10 @@ C++ Event Driven and Network Application Library
 * C++11, Linux/Windows.
 * Easy to use.
 
+### Compile Option
+* `-std=c++11`
+* `-pthread` or `-lpthread`
+
 ### Example
 * A Simple Application
 ```C++

@@ -46,16 +46,16 @@ private:
 // UserEvent
 //----------------------------------------------------------------------------//
 
-template<Event::Id id, typename ... ParamTypes>
+template<Event::Id userEventId, typename ... ParamTypes>
 class UserEvent : public Event
 {
 public:
-    static constexpr Event::Id Id() { return id; }
+    static constexpr Event::Id getId() { return userEventId; }
     typedef std::function<
-        void(const UserEvent<id, ParamTypes ...>*)> Handler;
+        void(const UserEvent<userEventId, ParamTypes ...>*)> Handler;
 
     explicit UserEvent(const ParamTypes& ... params)
-        : Event(id)
+        : Event(userEventId)
     {
         setParams(params ...);
     }

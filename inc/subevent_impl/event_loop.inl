@@ -62,7 +62,7 @@ bool EventLoop::dispatch(Event* event)
 
     delete event;
 
-    if (id == StopEvent::Id())
+    if (id == StopEvent::getId())
     {
         // thread end
         return false;

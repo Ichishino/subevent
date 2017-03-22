@@ -61,6 +61,74 @@ int main(int argc, char** argv)
 // call "void Application::stop()"
 stop();
 ```
+* Thread
+```C++
+SEV_USING_NS
+
+//---------------------------------------------------------------------------//
+// MyThread
+//---------------------------------------------------------------------------//
+
+class MyThread : public Thread
+{
+public:
+    using Thread::Thread;
+
+protected:
+    bool onInit() override
+    {
+        Thread::onInit();
+
+        // Your initialization code here.
+
+        return true;
+    }
+
+    void onExit() override
+    {
+        // Your deinitialization code here.
+
+        Thread::onExit();
+    }
+};
+```
+```C++
+// Start
+MyThread* myThread = new MyThread();
+myThread->start();
+```
+```C++
+// End
+myThread->stop();
+myThread->wait();
+delete myThread;
+```
+* Event Send/Receive
+```C++
+// Declare MyEvent
+// <Unique Id, ParamType1, ParamType2, ...>
+typedef UserEvent<1, int, std::string> MyEvent;
+```
+```C++
+// Send (to other threads or self)
+int param1 = 20;
+std::string param2 = "data";
+myThread->post(new MyEvent(param1, param2));
+```
+```C++
+// Receive
+setUserEventHandler<MyEvent>([&](const MyEvent* myEvent) {
+    int param1;
+    std::string param2;
+    myEvent->getParams(param1, param2);
+});
+```
+* Async Task
+```C++
+myThread->post([&]() {
+    // Executed on myThread.
+});
+```
 * Timer
 ```C++
 Timer* timer = new Timer();
@@ -71,7 +139,6 @@ bool repeat = false;
 // start
 timer->start(msec, repeat, [&](Timer*) {
     // Called from the same thread when time out.
-    // Your code here.
 });
 ```
 * Network  

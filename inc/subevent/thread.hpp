@@ -48,7 +48,7 @@ public:
         const typename UserEventType::Handler& handler)
     {
         setEventHandler(
-            UserEventType::Id(), [=](const Event* event) {
+            UserEventType::getId(), [=](const Event* event) {
                 handler(dynamic_cast<const UserEventType*>(event));
             });
     }

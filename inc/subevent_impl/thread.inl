@@ -41,9 +41,9 @@ Thread::Thread(const std::string& name, Thread* parent)
     }
 
     setEventHandler(
-        ChildFinishedEvent::Id(), SEV_MFN(Thread::onChildFinished));
+        ChildFinishedEvent::getId(), SEV_MFN(Thread::onChildFinished));
     setEventHandler(
-        TaskEvent::Id(), SEV_MFN(Thread::onTaskEvent));
+        TaskEvent::getId(), SEV_MFN(Thread::onTaskEvent));
 }
 
 Thread::~Thread()

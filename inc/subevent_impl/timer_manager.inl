@@ -138,7 +138,8 @@ void TimerManager::expire()
                 start(timer);
             }
 
-            timer->mHandler(timer);
+            TimerHandler handler = timer->mHandler;
+            handler(timer);
         });
     }
 }

@@ -6,11 +6,12 @@ C++ Event Driven and Network Application Library
 ### Features
 * Event driven App/Thread.
 * Async TCP/UDP api.
+* Multiple TCP connections in single thread.
 * Header only.
 * C++11, Linux/Windows.
 * Easy to use.
 
-### Compile Option
+### Compile Options
 * `-std=c++11`
 * `-pthread` or `-lpthread`
 

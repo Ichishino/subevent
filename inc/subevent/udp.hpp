@@ -28,13 +28,14 @@ public:
 public:
     SEV_DECL bool open(
         const IpEndPoint& localEndPoint,
-        const UdpReceiveHandler& receiveHandler,
-        const SocketOption& option = SocketOption());
+        const UdpReceiveHandler& receiveHandler);
 
     SEV_DECL void close();
 
     SEV_DECL int32_t receive(void* buff, uint32_t size,
         IpEndPoint& senderEndPoint);
+
+    SEV_DECL SocketOption& getSocketOption();
 
     SEV_DECL bool isClosed() const
     {
@@ -46,11 +47,6 @@ public:
         return mLocalEndPoint;
     }
 
-    SEV_DECL const Socket* getSocket() const
-    {
-        return mSocket;
-    }
-
 private:
     UdpReceiver(const UdpReceiver&) = delete;
     UdpReceiver& operator=(const UdpReceiver&) = delete;
@@ -59,6 +55,7 @@ private:
     SEV_DECL void onClose();
 
     Socket* mSocket;
+    SocketOption mSockOption;
     IpEndPoint mLocalEndPoint;
 
     UdpReceiveHandler mReceiveHandler;
@@ -77,13 +74,13 @@ public:
     SEV_DECL ~UdpSender();
 
 public:
-    SEV_DECL bool create(
-        const IpEndPoint& receiverEndPoint,
-        const SocketOption& option = SocketOption());
+    SEV_DECL bool create(const IpEndPoint& receiverEndPoint);
 
     SEV_DECL void close();
 
     SEV_DECL int32_t send(const void* data, uint32_t size);
+
+    SEV_DECL SocketOption& getSocketOption();
 
     SEV_DECL bool isClosed() const
     {
@@ -95,16 +92,12 @@ public:
         return mReceiverEndPoint;
     }
 
-    SEV_DECL const Socket* getSocket() const
-    {
-        return mSocket;
-    }
-
 private:
     UdpSender(const UdpSender&) = delete;
     UdpSender& operator=(const UdpSender&) = delete;
 
     Socket* mSocket;
+    SocketOption mSockOption;
     IpEndPoint mReceiverEndPoint;
 };
 

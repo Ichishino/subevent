@@ -24,8 +24,8 @@ protected:
 
         IpEndPoint local(9000);
 
-        SocketOption option;
-        option.setReuseAddr(true);
+        // option
+        mTcpServer.getSocketOption().setReuseAddress(true);
 
         std::cout << "open: " <<
             local.toString() << std::endl;
@@ -86,7 +86,7 @@ protected:
                 delete channel;
             });
 
-        }, option);
+        });
 
         // end timer
         mEndTimer.start(60 * 1000, false, [&](Timer*) {

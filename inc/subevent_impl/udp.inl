@@ -27,8 +27,7 @@ UdpReceiver::~UdpReceiver()
 
 bool UdpReceiver::open(
     const IpEndPoint& localEndPoint,
-    const UdpReceiveHandler& receiveHandler,
-    const SocketOption& option)
+    const UdpReceiveHandler& receiveHandler)
 {
     assert(Thread::getCurrent() != nullptr);
     assert(Network::getController() != nullptr);
@@ -58,7 +57,7 @@ bool UdpReceiver::open(
     }
 
     // option
-    socket->setOption(option);
+    socket->setOption(mSockOption);
 
     // bind
     if (!socket->bind(localEndPoint))
@@ -91,8 +90,19 @@ void UdpReceiver::close()
     delete mSocket;
     mSocket = nullptr;
 
+    mSockOption.clear();
     mLocalEndPoint.clear();
     mReceiveHandler = nullptr;
+}
+
+SocketOption& UdpReceiver::getSocketOption()
+{
+    if (!isClosed())
+    {
+        mSockOption = mSocket->getOption();
+    }
+
+    return mSockOption;
 }
 
 void UdpReceiver::onReceive()
@@ -127,6 +137,7 @@ void UdpReceiver::onClose()
     delete mSocket;
     mSocket = nullptr;
 
+    mSockOption.clear();
     mReceiveHandler = nullptr;
 }
 
@@ -144,9 +155,7 @@ UdpSender::~UdpSender()
     delete mSocket;
 }
 
-bool UdpSender::create(
-    const IpEndPoint& receiverEndPoint,
-    const SocketOption& option)
+bool UdpSender::create(const IpEndPoint& receiverEndPoint)
 {
     if (receiverEndPoint.isUnspec())
     {
@@ -168,7 +177,7 @@ bool UdpSender::create(
     }
 
     // option
-    socket->setOption(option);
+    socket->setOption(mSockOption);
 
     mSocket = socket;
     mReceiverEndPoint = receiverEndPoint;
@@ -197,7 +206,18 @@ void UdpSender::close()
     delete mSocket;
     mSocket = nullptr;
 
+    mSockOption.clear();
     mReceiverEndPoint.clear();
+}
+
+SocketOption& UdpSender::getSocketOption()
+{
+    if (!isClosed())
+    {
+        mSockOption = mSocket->getOption();
+    }
+
+    return mSockOption;
 }
 
 SEV_NS_END

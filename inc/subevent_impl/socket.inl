@@ -13,34 +13,136 @@ SEV_NS_BEGIN
 
 SocketOption::SocketOption()
 {
+    mSocket = nullptr;
+    mStore = new Map();
+}
+
+SocketOption::SocketOption(Socket* socket)
+{
+    mSocket = socket;
+    mStore = nullptr;
+}
+
+SocketOption::SocketOption(const SocketOption& other)
+{
+    operator=(other);
+}
+
+SocketOption::SocketOption(SocketOption&& other)
+{
+    operator=(other);
 }
 
 SocketOption::~SocketOption()
 {
+    delete mStore;
+}
+
+SocketOption& SocketOption::operator=(const SocketOption& other)
+{
+    if (this != &other)
+    {
+        mSocket = other.mSocket;
+
+        if (other.mStore != nullptr)
+        {
+            if (mStore == nullptr)
+            {
+                mStore = new Map();
+            }
+
+            *mStore = *other.mStore;
+        }
+        else
+        {
+            delete mStore;
+            mStore = nullptr;
+        }
+    }
+
+    return *this;
+}
+
+SocketOption& SocketOption::operator=(SocketOption&& other)
+{
+    if (this != &other)
+    {
+        mSocket = other.mSocket;
+
+        delete mStore;
+        mStore = other.mStore;
+
+        other.mSocket = nullptr;
+        other.mStore = nullptr;
+    }
+
+    return *this;
+}
+
+void SocketOption::setOption(
+    int32_t level, int32_t name, const void* value, socklen_t size)
+{
+    if (mSocket != nullptr)
+    {
+        mSocket->setOption(level, name, value, size);
+    }
+    else
+    {
+        auto& storeValue = (*mStore)[Key(level, name)];
+        storeValue.resize(size);
+        memcpy(&storeValue[0], value, size);
+    }
+}
+
+bool SocketOption::getOption(
+    int32_t level, int32_t name, void* value, socklen_t* size) const
+{
+    if (mSocket != nullptr)
+    {
+        return mSocket->getOption(level, name, value, size);
+    }
+    else
+    {
+        auto it = mStore->find(Key(level, name));
+
+        if (it == mStore->end())
+        {
+            return false;
+        }
+        else
+        {
+            memcpy(value, &it->second[0], *size);
+            return true;
+        }
+    }
 }
 
 void SocketOption::clear()
 {
-    mOptions.clear();
+    mSocket = nullptr;
+    mStore->clear();
 }
 
-void SocketOption::setOption(
-    int32_t level, int32_t name, const void* value, uint32_t size)
-{
-    Option option;
-    option.level = level;
-    option.name = name;
-    option.value.resize(size);
-    memcpy(&option.value[0], value, size);
-
-    mOptions.push_back(std::move(option));
-}
-
-void SocketOption::setReuseAddr(bool on)
+void SocketOption::setReuseAddress(bool on)
 {
     int32_t value = (on ? 1 : 0);
 
     setOption(SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value));
+}
+
+bool SocketOption::getReuseAddress(bool& on) const
+{
+    int32_t value;
+    socklen_t size = sizeof(value);
+
+    if (!getOption(SOL_SOCKET, SO_REUSEADDR, &value, &size))
+    {
+        return false;
+    }
+
+    on = (value == 0 ? false : true);
+
+    return true;
 }
 
 void SocketOption::setKeepAlive(bool on)
@@ -48,6 +150,21 @@ void SocketOption::setKeepAlive(bool on)
     int32_t value = (on ? 1 : 0);
 
     setOption(SOL_SOCKET, SO_KEEPALIVE, &value, sizeof(value));
+}
+
+bool SocketOption::getKeepAlive(bool& on) const
+{
+    int32_t value;
+    socklen_t size = sizeof(value);
+
+    if (!getOption(SOL_SOCKET, SO_KEEPALIVE, &value, &size))
+    {
+        return false;
+    }
+
+    on = (value == 0 ? false : true);
+
+    return true;
 }
 
 void SocketOption::setLinger(bool on, uint16_t sec)
@@ -59,9 +176,37 @@ void SocketOption::setLinger(bool on, uint16_t sec)
     setOption(SOL_SOCKET, SO_LINGER, &value, sizeof(value));
 }
 
-void SocketOption::setReceiveBuffSize(uint32_t size)
+bool SocketOption::getLinger(bool& on, uint16_t& sec) const
 {
-    setOption(SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+    struct linger value;
+    socklen_t size = sizeof(value);
+
+    if (!getOption(SOL_SOCKET, SO_LINGER, &value, &size))
+    {
+        return false;
+    }
+
+    on = (value.l_onoff == 0 ? false : true);
+    sec = value.l_linger;
+
+    return true;
+}
+
+void SocketOption::setReceiveBuffSize(uint32_t buffSize)
+{
+    setOption(SOL_SOCKET, SO_RCVBUF, &buffSize, sizeof(buffSize));
+}
+
+bool SocketOption::getReceiveBuffSize(uint32_t& buffSize) const
+{
+    socklen_t size = sizeof(buffSize);
+
+    if (!getOption(SOL_SOCKET, SO_RCVBUF, &buffSize, &size))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 void SocketOption::setSendBuffSize(uint32_t size)
@@ -69,11 +214,82 @@ void SocketOption::setSendBuffSize(uint32_t size)
     setOption(SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
 }
 
+bool SocketOption::getSendBuffSize(uint32_t& buffSize) const
+{
+    socklen_t size = sizeof(buffSize);
+
+    if (!getOption(SOL_SOCKET, SO_SNDBUF, &buffSize, &size))
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void SocketOption::setIpv6Only(bool on)
 {
     int32_t value = (on ? 1 : 0);
 
     setOption(IPPROTO_IPV6, IPV6_V6ONLY, &value, sizeof(value));
+}
+
+bool SocketOption::getIpv6Only(bool& on) const
+{
+    int32_t value;
+    socklen_t size = sizeof(value);
+
+    if (!getOption(IPPROTO_IPV6, IPV6_V6ONLY, &value, &size))
+    {
+        return false;
+    }
+
+    on = (value == 0 ? false : true);
+
+    return true;
+}
+
+void SocketOption::setTcpNoDelay(bool on)
+{
+    int32_t value = (on ? 1 : 0);
+
+    setOption(IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value));
+}
+
+bool SocketOption::getTcpNoDelay(bool& on) const
+{
+    int32_t value;
+    socklen_t size = sizeof(value);
+
+    if (!getOption(IPPROTO_TCP, TCP_NODELAY, &value, &size))
+    {
+        return false;
+    }
+
+    on = (value == 0 ? false : true);
+
+    return true;
+}
+
+void SocketOption::setBroadcast(bool on)
+{
+    int32_t value = (on ? 1 : 0);
+
+    setOption(SOL_SOCKET, SO_BROADCAST, &value, sizeof(value));
+}
+
+bool SocketOption::getBroadcast(bool& on) const
+{
+    int32_t value;
+    socklen_t size = sizeof(value);
+
+    if (!getOption(SOL_SOCKET, SO_BROADCAST, &value, &size))
+    {
+        return false;
+    }
+
+    on = (value == 0 ? false : true);
+
+    return true;
 }
 
 //---------------------------------------------------------------------------//
@@ -475,14 +691,20 @@ bool Socket::getPeerEndPoint(IpEndPoint& peerEndPoint) const
 
 void Socket::setOption(const SocketOption& sockOption)
 {
-    for (const auto& option : sockOption.getOptions())
+    for (const auto& option : *sockOption.mStore)
     {
+        const SocketOption::Key& key = option.first;
+        const SocketOption::Value& value = option.second;
+
         setOption(
-            option.level,
-            option.name,
-            &option.value[0],
-            static_cast<socklen_t>(option.value.size()));
+            key.first, key.second,
+            &value[0], static_cast<socklen_t>(value.size()));
     }
+}
+
+SocketOption Socket::getOption()
+{
+    return SocketOption(this);
 }
 
 bool Socket::setOption(int32_t level, int32_t name,

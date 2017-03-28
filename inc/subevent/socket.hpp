@@ -1,6 +1,7 @@
 #ifndef SUBEVENT_SOCKET_HPP
 #define SUBEVENT_SOCKET_HPP
 
+#include <map>
 #include <list>
 #include <vector>
 #include <string>
@@ -17,6 +18,7 @@
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
@@ -25,10 +27,10 @@
 
 SEV_NS_BEGIN
 
+class Socket;
 class IpEndPoint;
 
 //---------------------------------------------------------------------------//
-// Types
 //---------------------------------------------------------------------------//
 
 enum class AddressFamily : uint16_t
@@ -46,36 +48,53 @@ class SocketOption
 {
 public:
     SEV_DECL SocketOption();
+    SEV_DECL SocketOption(const SocketOption& other);
+    SEV_DECL SocketOption(SocketOption&& other);
     SEV_DECL ~SocketOption();
 
 public:
-    SEV_DECL void setReuseAddr(bool on);
+    SEV_DECL void setReuseAddress(bool on);
     SEV_DECL void setKeepAlive(bool on);
     SEV_DECL void setLinger(bool on, uint16_t sec);
-    SEV_DECL void setReceiveBuffSize(uint32_t size);
-    SEV_DECL void setSendBuffSize(uint32_t size);
+    SEV_DECL void setReceiveBuffSize(uint32_t buffSize);
+    SEV_DECL void setSendBuffSize(uint32_t buffSize);
     SEV_DECL void setIpv6Only(bool on);
+    SEV_DECL void setTcpNoDelay(bool on);
+    SEV_DECL void setBroadcast(bool on);
 
+    SEV_DECL bool getReuseAddress(bool& on) const;
+    SEV_DECL bool getKeepAlive(bool& on) const;
+    SEV_DECL bool getLinger(bool& on, uint16_t& sec) const;
+    SEV_DECL bool getReceiveBuffSize(uint32_t& buffSize) const;
+    SEV_DECL bool getSendBuffSize(uint32_t& buffSize) const;
+    SEV_DECL bool getIpv6Only(bool& on) const;
+    SEV_DECL bool getTcpNoDelay(bool& on) const;
+    SEV_DECL bool getBroadcast(bool& on) const;
+
+public:
     SEV_DECL void setOption(
-        int32_t level, int32_t name, const void* value, uint32_t size);
+        int32_t level, int32_t name, const void* value, socklen_t size);
+    SEV_DECL bool getOption(
+        int32_t level, int32_t name, void* value, socklen_t* size) const;
 
     SEV_DECL void clear();
 
 public:
-    struct Option
-    {
-        int32_t level;
-        int32_t name;
-        std::vector<char> value;
-    };
-
-    const std::list<Option>& getOptions() const
-    {
-        return mOptions;
-    }
+    SEV_DECL SocketOption& operator=(const SocketOption& other);
+    SEV_DECL SocketOption& operator=(SocketOption&& other);
 
 private:
-    std::list<Option> mOptions;
+    SEV_DECL SocketOption(Socket* socket);
+
+    Socket* mSocket;
+
+    typedef std::pair<int32_t, int32_t> Key;
+    typedef std::vector<uint8_t> Value;
+    typedef std::map<Key, Value> Map;
+
+    Map* mStore;
+
+    friend class Socket;
 };
 
 //---------------------------------------------------------------------------//
@@ -142,6 +161,8 @@ public:
     SEV_DECL bool getPeerEndPoint(IpEndPoint& peerEndPoint) const;
 
     SEV_DECL void setOption(const SocketOption& sockOption);
+    SEV_DECL SocketOption getOption();
+
     SEV_DECL bool setOption(int32_t level, int32_t name,
         const void* value, socklen_t size);
     SEV_DECL bool getOption(int32_t level, int32_t name,

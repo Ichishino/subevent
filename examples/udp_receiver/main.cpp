@@ -23,8 +23,8 @@ protected:
 
         IpEndPoint local(9001);
 
-        SocketOption option;
-        option.setReuseAddr(true);
+        // option
+        mUdpReceiver.getSocketOption().setReuseAddress(true);
 
         std::cout << "open: " <<
             local.toString() << std::endl;
@@ -47,8 +47,7 @@ protected:
                 std::cout << "recv: " << buff <<
                     " from " << sender.toString() << std::endl;
             }
-
-        }, option);
+        });
 
         // end timer
         mEndTimer.start(60 * 1000, false, [&](Timer*) {

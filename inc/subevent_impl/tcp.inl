@@ -27,7 +27,6 @@ TcpServer::~TcpServer()
 bool TcpServer::open(
     const IpEndPoint& localEndPoint,
     const TcpAcceptHandler& acceptHandler,
-    const SocketOption& option,
     int32_t listenBacklog)
 {
     assert(Thread::getCurrent() != nullptr);
@@ -53,7 +52,7 @@ bool TcpServer::open(
     }
 
     // option
-    socket->setOption(option);
+    socket->setOption(mSockOption);
 
     // bind
     if (!socket->bind(localEndPoint))
@@ -94,6 +93,7 @@ void TcpServer::close()
     delete mSocket;
     mSocket = nullptr;
 
+    mSockOption.clear();
     mLocalEndPoint.clear();
     mAcceptHandler = nullptr;
 }
@@ -143,6 +143,16 @@ TcpChannel* TcpServer::accept(const Event* event)
     return channel;
 }
 
+SocketOption& TcpServer::getSocketOption()
+{
+    if (!isClosed())
+    {
+        mSockOption = mSocket->getOption();
+    }
+
+    return mSockOption;
+}
+
 void TcpServer::onAccept()
 {
     if (mAcceptHandler != nullptr)
@@ -175,6 +185,7 @@ void TcpServer::onClose()
     delete mSocket;
     mSocket = nullptr;
 
+    mSockOption.clear();
     mAcceptHandler = nullptr;
 }
 
@@ -200,9 +211,17 @@ TcpChannel::~TcpChannel()
 
 void TcpChannel::create(Socket* socket)
 {
+    delete mSocket;
+    mLocalEndPoint.clear();
+    mPeerEndPoint.clear();
+
     mSocket = socket;
-    mSocket->getLocalEndPoint(mLocalEndPoint);
-    mSocket->getPeerEndPoint(mPeerEndPoint);
+
+    if (mSocket != nullptr)
+    {
+        mSocket->getLocalEndPoint(mLocalEndPoint);
+        mSocket->getPeerEndPoint(mPeerEndPoint);
+    }
 }
 
 void TcpChannel::close()
@@ -215,11 +234,15 @@ void TcpChannel::close()
         return;
     }
 
+    mSockOption.clear();
     mReceiveHandler = nullptr;
     mCloseHandler = nullptr;
     mSendHandlers.clear();
 
     Network::getController()->requestTcpChannelClose(this);
+
+    delete mSocket;
+    mSocket = nullptr;
 }
 
 int32_t TcpChannel::send(const void* data, uint32_t size,
@@ -290,14 +313,14 @@ void TcpChannel::setCloseHandler(const TcpCloseHandler& closeHandler)
     mCloseHandler = closeHandler;
 }
 
-void TcpChannel::setSocketOption(const SocketOption& option)
+SocketOption& TcpChannel::getSocketOption()
 {
-    if (isClosed())
+    if (!isClosed())
     {
-        return;
+        mSockOption = mSocket->getOption();
     }
 
-    mSocket->setOption(option);
+    return mSockOption;
 }
 
 void TcpChannel::onReceive()
@@ -330,6 +353,7 @@ void TcpChannel::onClose()
     delete mSocket;
     mSocket = nullptr;
 
+    mSockOption.clear();
     mReceiveHandler = nullptr;
     mSendHandlers.clear();
 
@@ -442,7 +466,13 @@ void TcpClient::onConnect(Socket* socket, int32_t errorCode)
     if (socket != nullptr)
     {
         create(socket);
-        Network::getController()->registerTcpChannel(this);
+
+        if (!Network::getController()->registerTcpChannel(this))
+        {
+            // error
+            create(nullptr);
+            errorCode = -120;
+        }
     }
 
     if (mConnectHandler != nullptr)

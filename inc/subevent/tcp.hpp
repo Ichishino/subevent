@@ -43,7 +43,6 @@ public:
     SEV_DECL bool open(
         const IpEndPoint& localEndPoint,
         const TcpAcceptHandler& acceptHandler,
-        const SocketOption& option = SocketOption(),
         int32_t listenBacklog = 128);
 
     SEV_DECL void close();
@@ -53,6 +52,8 @@ public:
 
     SEV_DECL static TcpChannel* accept(
         const Event* delegateAcceptEvent);
+
+    SEV_DECL SocketOption& getSocketOption();
 
     SEV_DECL bool isClosed() const
     {
@@ -64,11 +65,6 @@ public:
         return mLocalEndPoint;
     }
 
-    SEV_DECL const Socket* getSocket() const
-    {
-        return mSocket;
-    }
-
 private:
     TcpServer(const TcpServer&) = delete;
     TcpServer& operator=(const TcpServer&) = delete;
@@ -77,6 +73,7 @@ private:
     SEV_DECL void onClose();
 
     Socket* mSocket;
+    SocketOption mSockOption;
     IpEndPoint mLocalEndPoint;
 
     TcpAcceptHandler mAcceptHandler;
@@ -110,6 +107,8 @@ public:
     SEV_DECL void setCloseHandler(
         const TcpCloseHandler& closeHandler);
 
+    SEV_DECL SocketOption& getSocketOption();
+
     SEV_DECL bool isClosed() const
     {
         return (mSocket == nullptr);
@@ -125,13 +124,6 @@ public:
         return mPeerEndPoint;
     }
 
-    SEV_DECL void setSocketOption(const SocketOption& option);
-
-    SEV_DECL const Socket* getSocket() const
-    {
-        return mSocket;
-    }
-
 protected:
     SEV_DECL void create(Socket* socket);
 
@@ -144,6 +136,7 @@ private:
     SEV_DECL void onClose();
 
     Socket* mSocket;
+    SocketOption mSockOption;
     IpEndPoint mLocalEndPoint;
     IpEndPoint mPeerEndPoint;
 

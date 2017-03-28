@@ -187,6 +187,9 @@ bool SocketController::tryTcpConnect(TcpClientItem& item)
             return true;
         }
 
+        // option
+        socket->setOption(item.tcpClient->getSocketOption());
+
         Socket::Handle sockHandle = socket->getHandle();
 
         if (!mSelector.registerSocket(

@@ -120,7 +120,15 @@ bool SocketOption::getOption(
 void SocketOption::clear()
 {
     mSocket = nullptr;
-    mStore->clear();
+
+    if (mStore == nullptr)
+    {
+        mStore = new Map();
+    }
+    else
+    {
+        mStore->clear();
+    }
 }
 
 void SocketOption::setReuseAddress(bool on)

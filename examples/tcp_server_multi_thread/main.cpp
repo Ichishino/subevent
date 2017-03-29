@@ -131,7 +131,6 @@ protected:
 
                 mTcpChannels.erase(channel);
 
-                channel->close();
                 delete channel;
             });
         });

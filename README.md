@@ -20,8 +20,6 @@ C++ Event Driven and Network Application Library
 ```C++
 #include "subevent.hpp"
 
-SEV_IMPL_GLOBAL
-
 SEV_USING_NS
 
 //---------------------------------------------------------------------------//
@@ -54,6 +52,8 @@ protected:
 //---------------------------------------------------------------------------//
 // Main
 //---------------------------------------------------------------------------//
+
+SEV_IMPL_GLOBAL
 
 int main(int argc, char** argv)
 {

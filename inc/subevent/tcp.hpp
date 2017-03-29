@@ -5,6 +5,7 @@
 #include <functional>
 
 #include <subevent/std.hpp>
+#include <subevent/common.hpp>
 #include <subevent/event.hpp>
 #include <subevent/socket.hpp>
 
@@ -141,6 +142,7 @@ private:
     IpEndPoint mPeerEndPoint;
 
     TcpCloseHandler mCloseHandler;
+    TaskCancellerPtr mCloseCanceller;
     TcpReceiveHandler mReceiveHandler;
     std::list<TcpSendHandler> mSendHandlers;
 

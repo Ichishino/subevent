@@ -207,6 +207,11 @@ TcpChannel::TcpChannel(Socket* socket)
 TcpChannel::~TcpChannel()
 {
     delete mSocket;
+
+    if (mCloseCanceller != nullptr)
+    {
+        mCloseCanceller->cancel();
+    }
 }
 
 void TcpChannel::create(Socket* socket)
@@ -231,12 +236,18 @@ void TcpChannel::close()
 
     if (isClosed())
     {
+        if (mCloseCanceller != nullptr)
+        {
+            mCloseCanceller->cancel();
+        }
+
         return;
     }
 
     mSockOption.clear();
     mReceiveHandler = nullptr;
     mCloseHandler = nullptr;
+    mCloseCanceller.reset();
     mSendHandlers.clear();
 
     Network::getController()->requestTcpChannelClose(this);
@@ -311,6 +322,7 @@ void TcpChannel::setReceiveHandler(const TcpReceiveHandler& receiveHandler)
 void TcpChannel::setCloseHandler(const TcpCloseHandler& closeHandler)
 {
     mCloseHandler = closeHandler;
+    mCloseCanceller.reset();
 }
 
 SocketOption& TcpChannel::getSocketOption()
@@ -362,7 +374,9 @@ void TcpChannel::onClose()
         TcpCloseHandler handler = mCloseHandler;
         mCloseHandler = nullptr;
 
-        Thread::getCurrent()->post([this, handler]() {
+        mCloseCanceller =
+            postCancelableTask(Thread::getCurrent(), [this, handler]() {
+
             handler(this);
         });
     }

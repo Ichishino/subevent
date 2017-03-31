@@ -101,6 +101,11 @@ void EventController::wakeup()
     mSem.post();
 }
 
+bool EventController::onInit()
+{
+    return true;
+}
+
 void EventController::onExit()
 {
     clear();

@@ -35,7 +35,7 @@ public:
     SEV_DECL virtual ~Thread();
 
 public:
-    SEV_DECL void start();
+    SEV_DECL bool start();
     SEV_DECL void wait();
 
     SEV_DECL virtual void stop();
@@ -117,11 +117,10 @@ public:
 protected:
     SEV_DECL virtual bool onInit();
     SEV_DECL virtual void onExit();
-    SEV_DECL virtual int32_t onRun();
 
 private:
     static SEV_TLS Thread* gThread;
-    SEV_DECL static int32_t SEV_THREAD main(Thread* thread);
+    SEV_DECL static int32_t SEV_THREAD main(void* param);
 
     SEV_DECL void childFinished(Thread* child);
     SEV_DECL void onChildFinished(const Event* event);
@@ -140,6 +139,8 @@ private:
     ChildFinishedHandler mChildFinishedHandler;
 
     EventLoop mEventLoop;
+
+    bool mInitResult;
     int32_t mExitCode;
 
     friend class Application;

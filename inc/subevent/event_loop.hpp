@@ -55,6 +55,7 @@ public:
     SEV_DECL EventController* getController();
     SEV_DECL void setController(EventController* controller);
 
+    SEV_DECL bool onInit();
     SEV_DECL void onExit();
 
 private:

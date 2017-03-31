@@ -30,6 +30,7 @@ public:
 public:
     SEV_DECL virtual WaitResult wait(uint32_t msec, Event*& event);
     SEV_DECL virtual void wakeup();
+    SEV_DECL virtual bool onInit();
     SEV_DECL virtual void onExit();
 
 protected:

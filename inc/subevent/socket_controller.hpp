@@ -32,6 +32,7 @@ public:
 public:
     SEV_DECL WaitResult wait(uint32_t msec, Event*& event) override;
     SEV_DECL void wakeup() override;
+    SEV_DECL bool onInit() override;
     SEV_DECL void onExit() override;
 
 public:

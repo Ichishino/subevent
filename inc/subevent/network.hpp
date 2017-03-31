@@ -15,7 +15,7 @@ class SocketController;
 class Network
 {
 public:
-    SEV_DECL static void init(Thread* thread);
+    SEV_DECL static bool init(Thread* thread);
 
     SEV_DECL static uint32_t getSocketCount(Thread* thread);
     SEV_DECL static bool isSocketFull(Thread* thread);

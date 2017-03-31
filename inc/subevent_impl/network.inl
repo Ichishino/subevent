@@ -11,18 +11,31 @@ SEV_NS_BEGIN
 // Network
 //---------------------------------------------------------------------------//
 
-void Network::init(Thread* thread)
+bool Network::init(Thread* thread)
 {
 #ifdef _WIN32
-    WinSock::init();
+    if (!WinSock::init())
+    {
+        return false;
+    }
 #endif
 
     // set async socket controller
     SocketController* sockController = getController(thread);
     if (sockController == nullptr)
     {
-        thread->setEventController(new SocketController());
+        sockController = new SocketController();
+
+        if (!sockController->onInit())
+        {
+            delete sockController;
+            return false;
+        }
+
+        thread->setEventController(sockController);
     }
+
+    return true;
 }
 
 SocketController* Network::getController(Thread* thread)

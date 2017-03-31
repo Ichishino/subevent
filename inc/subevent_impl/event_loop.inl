@@ -25,6 +25,11 @@ EventLoop::~EventLoop()
     delete mController;
 }
 
+bool EventLoop::onInit()
+{
+    return mController->onInit();
+}
+
 void EventLoop::onExit()
 {
     mController->onExit();

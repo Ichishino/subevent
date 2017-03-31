@@ -63,6 +63,18 @@ void SocketController::wakeup()
     mSelector.cancel();
 }
 
+bool SocketController::onInit()
+{
+    int32_t errorCode = mSelector.getErrorCode();
+
+    if (errorCode != 0)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void SocketController::onExit()
 {
     bool finished = false;

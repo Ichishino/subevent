@@ -35,6 +35,8 @@ Thread::Thread(const std::string& name, Thread* parent)
     mName = name;
     mParent = parent;
 
+    mInitResult = false;
+
     if (mParent != nullptr)
     {
         mParent->mChilds.push_back(this);
@@ -61,7 +63,7 @@ Thread* Thread::getCurrent()
 
 bool Thread::onInit()
 {
-    return true;
+    return mEventLoop.onInit();
 }
 
 void Thread::onExit()
@@ -82,20 +84,39 @@ void Thread::onExit()
         childFinished(child);
     }
 
+    mEventLoop.onExit();
+
     if (mParent != nullptr)
     {
-        if (mParent->getStatus() != EventLoop::Status::Exit)
+        if (mInitResult)
         {
-            mParent->post(new ChildFinishedEvent(this));
+            if (mParent->getStatus() != EventLoop::Status::Exit)
+            {
+                mParent->post(new ChildFinishedEvent(this));
+            }
+        }
+        else
+        {
+            mParent->mChilds.remove(this);
+            mParent = nullptr;
         }
     }
 }
 
-int32_t SEV_THREAD Thread::main(Thread* thread)
+struct ThreadParam
+{
+    Thread* thread;
+    Semaphore sem;
+};
+
+int32_t SEV_THREAD Thread::main(void* param)
 {
     assert(gThread == nullptr);
 
-    gThread = thread;
+    ThreadParam* threadParam =
+        reinterpret_cast<ThreadParam*>(param);
+
+    gThread = threadParam->thread;
     gThread->mId = std::this_thread::get_id();
 #ifdef _WIN32
     gThread->mHandle = GetCurrentThread();
@@ -103,12 +124,54 @@ int32_t SEV_THREAD Thread::main(Thread* thread)
     gThread->mHandle = pthread_self();
 #endif
 
-    return gThread->onRun();
+    // init
+    gThread->mInitResult = gThread->onInit();
+
+    if (!gThread->mInitResult)
+    {
+        // error
+        gThread->mExitCode = -11;
+
+        gThread->onExit();
+        threadParam->sem.post();
+
+        // thread end
+    }
+    else
+    {
+        threadParam->sem.post();
+
+        // run
+        if (!gThread->mEventLoop.run())
+        {
+            gThread->mExitCode = -12;
+        }
+
+        // exit
+        gThread->onExit();
+    }
+
+    return gThread->mExitCode;
 }
 
-void Thread::start()
+bool Thread::start()
 {
-    mThread = std::thread(Thread::main, this);
+    ThreadParam threadParam;
+    threadParam.thread = this;
+
+    // thread start
+    mThread = std::thread(Thread::main, &threadParam);
+
+    threadParam.sem.wait();
+
+    if (!mInitResult)
+    {
+        // init error
+
+        wait();
+    }
+
+    return mInitResult;
 }
 
 void Thread::stop()
@@ -122,28 +185,6 @@ void Thread::wait()
     {
         mThread.join();
     }
-}
-
-int32_t Thread::onRun()
-{
-    if (onInit())
-    {
-        // run
-        if (!mEventLoop.run())
-        {
-            mExitCode = -1;
-        }
-    }
-    else
-    {
-        mExitCode = -2;
-    }
-
-    onExit();
-
-    mEventLoop.onExit();
-
-    return mExitCode;
 }
 
 void Thread::setEventHandler(

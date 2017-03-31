@@ -71,7 +71,24 @@ void Application::onExit()
 
 int Application::run()
 {
-    return Thread::onRun();
+    // init
+    if (onInit())
+    {
+        // run
+        if (!mEventLoop.run())
+        {
+            mExitCode = -2;
+        }
+    }
+    else
+    {
+        mExitCode = -1;
+    }
+
+    // exit
+    onExit();
+
+    return mExitCode;
 }
 
 SEV_NS_END

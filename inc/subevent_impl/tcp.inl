@@ -75,7 +75,8 @@ bool TcpServer::open(
     mLocalEndPoint = localEndPoint;
     mAcceptHandler = acceptHandler;
 
-    return Network::getController()->registerTcpServer(this);
+    return Network::getController()->
+        registerTcpServer(shared_from_this());
 }
 
 void TcpServer::close()
@@ -88,7 +89,8 @@ void TcpServer::close()
         return;
     }
 
-    Network::getController()->unregisterTcpServer(this);
+    Network::getController()->
+        unregisterTcpServer(shared_from_this());
 
     delete mSocket;
     mSocket = nullptr;
@@ -98,7 +100,7 @@ void TcpServer::close()
     mAcceptHandler = nullptr;
 }
 
-bool TcpServer::accept(Thread* thread, TcpChannel* channel)
+bool TcpServer::accept(Thread* thread, const TcpChannelPtr& channel)
 {
     assert(Thread::getCurrent() != nullptr);
     assert(Network::getController() != nullptr);
@@ -123,7 +125,7 @@ bool TcpServer::accept(Thread* thread, TcpChannel* channel)
     return true;
 }
 
-TcpChannel* TcpServer::accept(const Event* event)
+TcpChannelPtr TcpServer::accept(const Event* event)
 {
     assert(Thread::getCurrent() != nullptr);
     assert(Network::getController() != nullptr);
@@ -131,12 +133,11 @@ TcpChannel* TcpServer::accept(const Event* event)
     const TcpAcceptEvent* acceptEvent =
         dynamic_cast<const TcpAcceptEvent*>(event);
 
-    TcpChannel* channel = acceptEvent->mTcpChannel;
-    acceptEvent->mTcpChannel = nullptr;
+    TcpChannelPtr channel;
+    acceptEvent->getParams(channel);
 
     if (!Network::getController()->registerTcpChannel(channel))
     {
-        delete channel;
         return nullptr;
     }
 
@@ -164,19 +165,13 @@ void TcpServer::onAccept()
             return;
         }
 
-        TcpChannel* channel = new TcpChannel(socket);
-
+        TcpServerPtr self(shared_from_this());
+        TcpChannelPtr channel(new TcpChannel(socket));
         TcpAcceptHandler handler = mAcceptHandler;
 
-        bool result = Thread::getCurrent()->post(
-            [this, handler, channel]() {
-                handler(this, channel);
-            });
-
-        if (result == false)
-        {
-            delete channel;
-        }
+        Thread::getCurrent()->post([self, handler, channel]() {
+            handler(self, channel);
+        });
     }
 }
 
@@ -207,11 +202,6 @@ TcpChannel::TcpChannel(Socket* socket)
 TcpChannel::~TcpChannel()
 {
     delete mSocket;
-
-    if (mCloseCanceller != nullptr)
-    {
-        mCloseCanceller->cancel();
-    }
 }
 
 void TcpChannel::create(Socket* socket)
@@ -250,7 +240,8 @@ void TcpChannel::close()
     mCloseCanceller.reset();
     mSendHandlers.clear();
 
-    Network::getController()->requestTcpChannelClose(this);
+    Network::getController()->
+        requestTcpChannelClose(shared_from_this());
 
     delete mSocket;
     mSocket = nullptr;
@@ -269,17 +260,24 @@ int32_t TcpChannel::send(const void* data, uint32_t size,
 
     if (sendHandler == nullptr)
     {
+        // sync
+
         return mSocket->send(data, size, Socket::SendFlags);
     }
-
-    mSendHandlers.push_back(sendHandler);
-
-    if (!Network::getController()->requestTcpSend(this, data, size))
+    else
     {
-        return -1;
-    }
+        // async
 
-    return 0;
+        mSendHandlers.push_back(sendHandler);
+
+        if (!Network::getController()->
+            requestTcpSend(shared_from_this(), data, size))
+        {
+            return -1;
+        }
+
+        return 0;
+    }
 }
 
 int32_t TcpChannel::receive(void* buff, uint32_t size)
@@ -295,7 +293,8 @@ int32_t TcpChannel::receive(void* buff, uint32_t size)
     int32_t result = mSocket->receive(buff, size);
     if ((result == 0) && (size > 0))
     {
-        Network::getController()->onTcpReceiveEof(this);
+        Network::getController()->
+            onTcpReceiveEof(shared_from_this());
     }
 
     return result;
@@ -311,15 +310,18 @@ bool TcpChannel::cancelSend()
         return false;
     }
 
-    return Network::getController()->cancelTcpSend(this);
+    return Network::getController()->
+        cancelTcpSend(shared_from_this());
 }
 
-void TcpChannel::setReceiveHandler(const TcpReceiveHandler& receiveHandler)
+void TcpChannel::setReceiveHandler(
+    const TcpReceiveHandler& receiveHandler)
 {
     mReceiveHandler = receiveHandler;
 }
 
-void TcpChannel::setCloseHandler(const TcpCloseHandler& closeHandler)
+void TcpChannel::setCloseHandler(
+    const TcpCloseHandler& closeHandler)
 {
     mCloseHandler = closeHandler;
     mCloseCanceller.reset();
@@ -339,10 +341,11 @@ void TcpChannel::onReceive()
 {
     if (mReceiveHandler != nullptr)
     {
+        TcpChannelPtr self = shared_from_this();
         TcpReceiveHandler handler = mReceiveHandler;
 
-        Thread::getCurrent()->post([this, handler]() {
-            handler(this);
+        Thread::getCurrent()->post([self, handler]() {
+            handler(self);
         });
     }
 }
@@ -351,11 +354,12 @@ void TcpChannel::onSend(int32_t errorCode)
 {
     if (!mSendHandlers.empty())
     {
+        TcpChannelPtr self = shared_from_this();
         TcpSendHandler handler = mSendHandlers.front();
         mSendHandlers.pop_front();
 
-        Thread::getCurrent()->post([this, handler, errorCode]() {
-            handler(this, errorCode);
+        Thread::getCurrent()->post([self, handler, errorCode]() {
+            handler(self, errorCode);
         });
     }
 }
@@ -371,14 +375,14 @@ void TcpChannel::onClose()
 
     if (mCloseHandler != nullptr)
     {
+        TcpChannelPtr self = shared_from_this();
         TcpCloseHandler handler = mCloseHandler;
         mCloseHandler = nullptr;
 
-        mCloseCanceller =
-            postCancelableTask(Thread::getCurrent(), [this, handler]() {
-
-            handler(this);
-        });
+        mCloseCanceller = postCancelableTask(
+            Thread::getCurrent(), [self, handler]() {
+                handler(self);
+            });
     }
 }
 
@@ -387,6 +391,7 @@ void TcpChannel::onClose()
 //----------------------------------------------------------------------------//
 
 TcpClient::TcpClient()
+    : mChannel(new TcpChannel())
 {
 }
 
@@ -412,7 +417,7 @@ void TcpClient::connect(
 
     if (peerEndPoint.isUnspec())
     {
-        onConnect(nullptr, -101);
+        onConnect(nullptr, -5101);
         return;
     }
 
@@ -420,7 +425,7 @@ void TcpClient::connect(
     endPointList.push_back(peerEndPoint);
 
     Network::getController()->requestTcpConnect(
-        this, endPointList, msecTimeout);
+        shared_from_this(), endPointList, msecTimeout);
 }
 
 void TcpClient::connect(
@@ -452,7 +457,7 @@ void TcpClient::connect(
 
         if (endPointList.empty())
         {
-            onConnect(nullptr, -110);
+            onConnect(nullptr, -5110);
             return;
         }
     }
@@ -462,7 +467,7 @@ void TcpClient::connect(
     }
 
     Network::getController()->requestTcpConnect(
-        this, endPointList, msecTimeout);
+        shared_from_this(), endPointList, msecTimeout);
 }
 
 bool TcpClient::cancelConnect()
@@ -472,30 +477,32 @@ bool TcpClient::cancelConnect()
 
     mConnectHandler = nullptr;
 
-    return Network::getController()->cancelTcpConnect(this);
+    return Network::getController()->
+        cancelTcpConnect(shared_from_this());
 }
 
 void TcpClient::onConnect(Socket* socket, int32_t errorCode)
 {
     if (socket != nullptr)
     {
-        create(socket);
+        mChannel->create(socket);
 
-        if (!Network::getController()->registerTcpChannel(this))
+        if (!Network::getController()->registerTcpChannel(mChannel))
         {
             // error
-            create(nullptr);
-            errorCode = -120;
+            mChannel->create(nullptr);
+            errorCode = -5120;
         }
     }
 
     if (mConnectHandler != nullptr)
     {
+        TcpClientPtr self(shared_from_this());
         TcpConnectHandler handler = mConnectHandler;
         mConnectHandler = nullptr;
 
-        Thread::getCurrent()->post([this, handler, errorCode]() {
-            handler(this, errorCode);
+        Thread::getCurrent()->post([self, handler, errorCode]() {
+            handler(self, errorCode);
         });
     }
 }

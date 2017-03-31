@@ -105,12 +105,12 @@ protected:
             TcpEventId::Accept, [&](const Event* event) {
 
             // accept
-            TcpChannel* newChannel = TcpServer::accept(event);
+            TcpChannelPtr newChannel = TcpServer::accept(event);
 
             mTcpChannels.insert(newChannel);
 
             // data received
-            newChannel->setReceiveHandler([&](TcpChannel* channel) {
+            newChannel->setReceiveHandler([&](TcpChannelPtr channel) {
 
                 for (;;)
                 {
@@ -127,11 +127,9 @@ protected:
             });
 
             // client closed
-            newChannel->setCloseHandler([&](TcpChannel* channel) {
+            newChannel->setCloseHandler([&](TcpChannelPtr channel) {
 
                 mTcpChannels.erase(channel);
-
-                delete channel;
             });
         });
 
@@ -144,7 +142,6 @@ protected:
         for (auto channel : mTcpChannels)
         {
             channel->close();
-            delete channel;
         }
         mTcpChannels.clear();
 
@@ -152,7 +149,7 @@ protected:
     }
 
 private:
-    std::set<TcpChannel*> mTcpChannels;
+    std::set<TcpChannelPtr> mTcpChannels;
 };
 
 //---------------------------------------------------------------------------//
@@ -175,14 +172,16 @@ protected:
 
         IpEndPoint local(9000);
 
+        mTcpServer = TcpServer::newInstance();
+
         // option
-        mTcpServer.getSocketOption().setReuseAddress(true);
+        mTcpServer->getSocketOption().setReuseAddress(true);
 
         std::cout << "open: " <<
             local.toString() << std::endl;
 
         // listen
-        mTcpServer.open(local, [&](TcpServer*, TcpChannel* newChannel) {
+        mTcpServer->open(local, [&](TcpServerPtr, TcpChannelPtr newChannel) {
 
             Thread* thread = mBalancer.find();
             if (thread == nullptr)
@@ -193,7 +192,6 @@ protected:
                     mBalancer.getClientCount() << std::endl;
 
                 newChannel->close();
-                delete newChannel;
 
                 return;
             }
@@ -202,7 +200,7 @@ protected:
                 newChannel->getPeerEndPoint().toString() << std::endl;
 
             // entrust this client to sub thread
-            mTcpServer.accept(thread, newChannel);
+            mTcpServer->accept(thread, newChannel);
 
         });
 
@@ -217,13 +215,13 @@ protected:
     void onExit() override
     {
         // server close
-        mTcpServer.close();
+        mTcpServer->close();
 
         Application::onExit();
     }
 
 private:
-    TcpServer mTcpServer;
+    TcpServerPtr mTcpServer;
     MySimpleBalancer<MyClientThread> mBalancer;
 
     Timer mEndTimer;

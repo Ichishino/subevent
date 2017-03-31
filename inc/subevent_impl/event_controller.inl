@@ -3,6 +3,7 @@
 
 #include <subevent/event_controller.hpp>
 #include <subevent/event.hpp>
+#include <subevent/common.hpp>
 
 SEV_NS_BEGIN
 

@@ -1,6 +1,7 @@
 #ifndef SUBEVENT_UDP_HPP
 #define SUBEVENT_UDP_HPP
 
+#include <memory>
 #include <functional>
 
 #include <subevent/std.hpp>
@@ -9,20 +10,28 @@
 SEV_NS_BEGIN
 
 class UdpReceiver;
+class UdpSender;
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-typedef std::function<void(UdpReceiver*)> UdpReceiveHandler;
+typedef std::shared_ptr<UdpReceiver> UdpReceiverPtr;
+typedef std::shared_ptr<UdpSender> UdpSenderPtr;
+
+typedef std::function<void(UdpReceiverPtr)> UdpReceiveHandler;
 
 //----------------------------------------------------------------------------//
 // UdpReceiver
 //----------------------------------------------------------------------------//
 
-class UdpReceiver
+class UdpReceiver : public std::enable_shared_from_this<UdpReceiver>
 {
 public:
-    SEV_DECL UdpReceiver();
+    SEV_DECL static UdpReceiverPtr newInstance()
+    {
+        return UdpReceiverPtr(new UdpReceiver());
+    }
+
     SEV_DECL ~UdpReceiver();
 
 public:
@@ -48,11 +57,13 @@ public:
     }
 
 private:
-    UdpReceiver(const UdpReceiver&) = delete;
-    UdpReceiver& operator=(const UdpReceiver&) = delete;
+    SEV_DECL UdpReceiver();
 
     SEV_DECL void onReceive();
     SEV_DECL void onClose();
+
+    UdpReceiver(const UdpReceiver&) = delete;
+    UdpReceiver& operator=(const UdpReceiver&) = delete;
 
     Socket* mSocket;
     SocketOption mSockOption;
@@ -67,10 +78,14 @@ private:
 // UdpSender
 //----------------------------------------------------------------------------//
 
-class UdpSender
+class UdpSender : public std::enable_shared_from_this<UdpSender>
 {
 public:
-    SEV_DECL UdpSender();
+    SEV_DECL static UdpSenderPtr newInstance()
+    {
+        return UdpSenderPtr(new UdpSender());
+    }
+
     SEV_DECL ~UdpSender();
 
 public:
@@ -93,6 +108,8 @@ public:
     }
 
 private:
+    SEV_DECL UdpSender();
+
     UdpSender(const UdpSender&) = delete;
     UdpSender& operator=(const UdpSender&) = delete;
 

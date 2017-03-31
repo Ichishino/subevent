@@ -207,7 +207,7 @@ bool SocketController::tryTcpConnect(TcpClientItem& item)
         if (!mSelector.registerSocket(
             sockHandle, SocketSelector::Connect, item.key))
         {
-            item.tcpClient->onConnect(nullptr, -103);
+            item.tcpClient->onConnect(nullptr, -5103);
             delete socket;
             return true;
         }
@@ -474,13 +474,13 @@ bool SocketController::onSelectTcpClose(
     }
 
     TcpChannelItem& item = it->second;
-    TcpChannel* tcpChannel = item.tcpChannel;
+    TcpChannelPtr tcpChannel = item.tcpChannel;
 
     while (!item.sendBuffer.empty())
     {
         if (tcpChannel != nullptr)
         {
-            tcpChannel->onSend(-201);
+            tcpChannel->onSend(-5201);
         }
 
         item.sendBuffer.pop_front();
@@ -536,7 +536,7 @@ bool SocketController::onSelectUdpReceive(
 // Register / Unregister (TCP)
 //---------------------------------------------------------------------------//
 
-bool SocketController::registerTcpServer(TcpServer* tcpServer)
+bool SocketController::registerTcpServer(const TcpServerPtr& tcpServer)
 {
     Socket::Handle sockHandle =
         tcpServer->mSocket->getHandle();
@@ -560,7 +560,7 @@ bool SocketController::registerTcpServer(TcpServer* tcpServer)
     return true;
 }
 
-void SocketController::unregisterTcpServer(TcpServer* tcpServer)
+void SocketController::unregisterTcpServer(const TcpServerPtr& tcpServer)
 {
     Socket::Handle sockHandle =
         tcpServer->mSocket->getHandle();
@@ -575,7 +575,7 @@ void SocketController::unregisterTcpServer(TcpServer* tcpServer)
     mTcpServers.erase(it);
 }
 
-bool SocketController::registerTcpChannel(TcpChannel* tcpChannel)
+bool SocketController::registerTcpChannel(const TcpChannelPtr& tcpChannel)
 {
     Socket::Handle sockHandle =
         tcpChannel->mSocket->getHandle();
@@ -605,7 +605,7 @@ bool SocketController::registerTcpChannel(TcpChannel* tcpChannel)
     return true;
 }
 
-void SocketController::unregisterTcpChannel(TcpChannel* tcpChannel)
+void SocketController::unregisterTcpChannel(const TcpChannelPtr& tcpChannel)
 {
     Socket::Handle sockHandle =
         tcpChannel->mSocket->getHandle();
@@ -626,7 +626,8 @@ void SocketController::unregisterTcpChannel(TcpChannel* tcpChannel)
 // Request / Cancel (TCP)
 //---------------------------------------------------------------------------//
 
-void SocketController::requestTcpConnect(TcpClient* tcpClient,
+void SocketController::requestTcpConnect(
+    const TcpClientPtr& tcpClient,
     const std::list<IpEndPoint>& endPointList,
     uint32_t msecTimeout)
 {
@@ -634,7 +635,7 @@ void SocketController::requestTcpConnect(TcpClient* tcpClient,
     item.tcpClient = tcpClient;
     item.endPointList = endPointList;
     item.msecTimeout = msecTimeout;
-    item.lastErrorCode = -100;
+    item.lastErrorCode = -5100;
 
     item.cancelTimer = new Timer();
     item.cancelTimer->start(
@@ -642,7 +643,7 @@ void SocketController::requestTcpConnect(TcpClient* tcpClient,
 
         if (cancelTcpConnect(tcpClient))
         {
-            tcpClient->onConnect(nullptr, -102);
+            tcpClient->onConnect(nullptr, -5102);
         }
     });
 
@@ -652,7 +653,7 @@ void SocketController::requestTcpConnect(TcpClient* tcpClient,
     }
 }
 
-bool SocketController::cancelTcpConnect(TcpClient* tcpClient)
+bool SocketController::cancelTcpConnect(const TcpClientPtr& tcpClient)
 {
     for (auto& pair : mTcpClients)
     {
@@ -675,7 +676,7 @@ bool SocketController::cancelTcpConnect(TcpClient* tcpClient)
 }
 
 bool SocketController::requestTcpSend(
-    TcpChannel* tcpChannel, const void* data, uint32_t size)
+    const TcpChannelPtr& tcpChannel, const void* data, uint32_t size)
 {
     Socket::Handle sockHandle =
         tcpChannel->mSocket->getHandle();
@@ -702,7 +703,7 @@ bool SocketController::requestTcpSend(
     return true;
 }
 
-bool SocketController::cancelTcpSend(TcpChannel* tcpChannel)
+bool SocketController::cancelTcpSend(const TcpChannelPtr& tcpChannel)
 {
     Socket::Handle sockHandle =
         tcpChannel->mSocket->getHandle();
@@ -725,7 +726,7 @@ bool SocketController::cancelTcpSend(TcpChannel* tcpChannel)
     return true;
 }
 
-void SocketController::requestTcpChannelClose(TcpChannel* tcpChannel)
+void SocketController::requestTcpChannelClose(const TcpChannelPtr& tcpChannel)
 {
     Socket::Handle sockHandle =
         tcpChannel->mSocket->getHandle();
@@ -748,7 +749,7 @@ void SocketController::requestTcpChannelClose(TcpChannel* tcpChannel)
     item.sendBuffer.clear();
 }
 
-void SocketController::onTcpReceiveEof(TcpChannel* tcpChannel)
+void SocketController::onTcpReceiveEof(const TcpChannelPtr& tcpChannel)
 {
     Socket::Handle sockHandle =
         tcpChannel->mSocket->getHandle();
@@ -772,7 +773,7 @@ void SocketController::onTcpReceiveEof(TcpChannel* tcpChannel)
 // Register / Unregister (UDP)
 //---------------------------------------------------------------------------//
 
-bool SocketController::registerUdpReceiver(UdpReceiver* udpReceiver)
+bool SocketController::registerUdpReceiver(const UdpReceiverPtr& udpReceiver)
 {
     Socket::Handle sockHandle =
         udpReceiver->mSocket->getHandle();
@@ -796,7 +797,7 @@ bool SocketController::registerUdpReceiver(UdpReceiver* udpReceiver)
     return true;
 }
 
-void SocketController::unregisterUdpReceiver(UdpReceiver* udpReceiver)
+void SocketController::unregisterUdpReceiver(const UdpReceiverPtr& udpReceiver)
 {
     Socket::Handle sockHandle =
         udpReceiver->mSocket->getHandle();

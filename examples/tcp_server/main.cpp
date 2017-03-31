@@ -22,23 +22,24 @@ protected:
 
         IpEndPoint local(9000);
 
+        mTcpServer = TcpServer::newInstance();
+
         // option
-        mTcpServer.getSocketOption().setReuseAddress(true);
+        mTcpServer->getSocketOption().setReuseAddress(true);
 
         std::cout << "open: " <<
             local.toString() << std::endl;
 
         // listen
-        mTcpServer.open(local, [&](TcpServer*, TcpChannel* newChannel) {
+        mTcpServer->open(local, [&](TcpServerPtr, TcpChannelPtr newChannel) {
 
             // accept
-            if (!mTcpServer.accept(this, newChannel))
+            if (!mTcpServer->accept(this, newChannel))
             {
                 // reached limit
                 std::cout << "reached limit" << std::endl;
 
                 newChannel->close();
-                delete newChannel;
 
                 return;
             }
@@ -49,7 +50,7 @@ protected:
             mTcpChannels.insert(newChannel);
 
             // data received
-            newChannel->setReceiveHandler([&](TcpChannel* channel) {
+            newChannel->setReceiveHandler([&](TcpChannelPtr channel) {
 
                 for (;;)
                 {
@@ -73,14 +74,12 @@ protected:
             });
 
             // client closed
-            newChannel->setCloseHandler([&](TcpChannel* channel) {
+            newChannel->setCloseHandler([&](TcpChannelPtr channel) {
 
                 std::cout << "closed: " <<
                     channel->getPeerEndPoint().toString() << std::endl;
 
                 mTcpChannels.erase(channel);
-
-                delete channel;
             });
 
         });
@@ -96,13 +95,12 @@ protected:
     void onExit() override
     {
         // server close
-        mTcpServer.close();
+        mTcpServer->close();
 
         // client close
-        for (TcpChannel* channel : mTcpChannels)
+        for (auto channel : mTcpChannels)
         {
             channel->close();
-            delete channel;
         }
         mTcpChannels.clear();
 
@@ -110,8 +108,8 @@ protected:
     }
 
 private:
-    TcpServer mTcpServer;
-    std::set<TcpChannel*> mTcpChannels;
+    TcpServerPtr mTcpServer;
+    std::set<TcpChannelPtr> mTcpChannels;
 
     Timer mEndTimer;
 };

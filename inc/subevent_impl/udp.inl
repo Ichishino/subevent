@@ -72,7 +72,8 @@ bool UdpReceiver::open(
     mLocalEndPoint = localEndPoint;
     mReceiveHandler = receiveHandler;
 
-    return Network::getController()->registerUdpReceiver(this);
+    return Network::getController()->
+        registerUdpReceiver(shared_from_this());
 }
 
 void UdpReceiver::close()
@@ -85,7 +86,8 @@ void UdpReceiver::close()
         return;
     }
 
-    Network::getController()->unregisterUdpReceiver(this);
+    Network::getController()->
+        unregisterUdpReceiver(shared_from_this());
 
     delete mSocket;
     mSocket = nullptr;
@@ -109,10 +111,11 @@ void UdpReceiver::onReceive()
 {
     if (mReceiveHandler != nullptr)
     {
+        UdpReceiverPtr self(shared_from_this());
         UdpReceiveHandler handler = mReceiveHandler;
 
-        Thread::getCurrent()->post([this, handler]() {
-            handler(this);
+        Thread::getCurrent()->post([self, handler]() {
+            handler(self);
         });
     }
 }

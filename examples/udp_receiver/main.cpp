@@ -21,14 +21,16 @@ protected:
 
         IpEndPoint local(9001);
 
+        mUdpReceiver = UdpReceiver::newInstance();
+
         // option
-        mUdpReceiver.getSocketOption().setReuseAddress(true);
+        mUdpReceiver->getSocketOption().setReuseAddress(true);
 
         std::cout << "open: " <<
             local.toString() << std::endl;
 
         // open
-        mUdpReceiver.open(local, [&](UdpReceiver*) {
+        mUdpReceiver->open(local, [&](UdpReceiverPtr) {
 
             // data received
             for (;;)
@@ -36,7 +38,7 @@ protected:
                 char buff[256];
                 IpEndPoint sender;
 
-                int res = mUdpReceiver.receive(buff, sizeof(buff), sender);
+                int res = mUdpReceiver->receive(buff, sizeof(buff), sender);
                 if (res <= 0)
                 {
                     break;
@@ -58,13 +60,13 @@ protected:
     void onExit() override
     {
         // receiver close
-        mUdpReceiver.close();
+        mUdpReceiver->close();
 
         Application::onExit();
     }
 
 private:
-    UdpReceiver mUdpReceiver;
+    UdpReceiverPtr mUdpReceiver;
 
     Timer mEndTimer;
 };

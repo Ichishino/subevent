@@ -21,8 +21,10 @@ protected:
 
         IpEndPoint receiver("127.0.0.1", 9001);
 
+        mUdpSender = UdpSender::newInstance();
+
         // create
-        mUdpSender.create(receiver);
+        mUdpSender->create(receiver);
 
         // repeat timer
         mSendTimer.start(1000, true, [&](Timer*) {
@@ -31,11 +33,11 @@ protected:
             uint32_t size = (uint32_t)(strlen(msg) + 1);
 
             std::cout << "send: " << msg <<
-                " to " << mUdpSender.getReceiverEndPoint().toString() <<
+                " to " << mUdpSender->getReceiverEndPoint().toString() <<
                 std::endl;
 
             // send
-            mUdpSender.send(msg, size);
+            mUdpSender->send(msg, size);
         });
 
         // end timer
@@ -51,13 +53,13 @@ protected:
     void onExit() override
     {
         // sender close
-        mUdpSender.close();
+        mUdpSender->close();
 
         Application::onExit();
     }
 
 private:
-    UdpSender mUdpSender;
+    UdpSenderPtr mUdpSender;
 
     Timer mSendTimer;
     Timer mEndTimer;

@@ -2,6 +2,7 @@
 #define SUBEVENT_TCP_HPP
 
 #include <list>
+#include <memory>
 #include <functional>
 
 #include <subevent/std.hpp>
@@ -19,25 +20,35 @@ class TcpChannel;
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+typedef std::shared_ptr<TcpServer> TcpServerPtr;
+typedef std::shared_ptr<TcpChannel> TcpChannelPtr;
+typedef std::shared_ptr<TcpClient> TcpClientPtr;
+
+typedef std::function<void(TcpServerPtr, TcpChannelPtr)> TcpAcceptHandler;
+typedef std::function<void(TcpClientPtr, int32_t)> TcpConnectHandler;
+typedef std::function<void(TcpChannelPtr)> TcpReceiveHandler;
+typedef std::function<void(TcpChannelPtr, int32_t)> TcpSendHandler;
+typedef std::function<void(TcpChannelPtr)> TcpCloseHandler;
+
 namespace TcpEventId
 {
     static const Event::Id Accept = 0xFB000001;
 }
 
-typedef std::function<void(TcpServer*, TcpChannel*)> TcpAcceptHandler;
-typedef std::function<void(TcpClient*, int32_t)> TcpConnectHandler;
-typedef std::function<void(TcpChannel*)> TcpReceiveHandler;
-typedef std::function<void(TcpChannel*, int32_t)> TcpSendHandler;
-typedef std::function<void(TcpChannel*)> TcpCloseHandler;
+typedef UserEvent<TcpEventId::Accept, TcpChannelPtr> TcpAcceptEvent;
 
 //----------------------------------------------------------------------------//
 // TcpServer
 //----------------------------------------------------------------------------//
 
-class TcpServer
+class TcpServer : public std::enable_shared_from_this<TcpServer>
 {
 public:
-    SEV_DECL TcpServer();
+    SEV_DECL static TcpServerPtr newInstance()
+    {
+        return TcpServerPtr(new TcpServer());
+    }
+
     SEV_DECL ~TcpServer();
 
 public:
@@ -49,9 +60,9 @@ public:
     SEV_DECL void close();
 
     SEV_DECL bool accept(
-        Thread* thread, TcpChannel* channel);
+        Thread* thread, const TcpChannelPtr& channel);
 
-    SEV_DECL static TcpChannel* accept(
+    SEV_DECL static TcpChannelPtr accept(
         const Event* delegateAcceptEvent);
 
     SEV_DECL SocketOption& getSocketOption();
@@ -67,11 +78,13 @@ public:
     }
 
 private:
-    TcpServer(const TcpServer&) = delete;
-    TcpServer& operator=(const TcpServer&) = delete;
+    SEV_DECL TcpServer();
 
     SEV_DECL void onAccept();
     SEV_DECL void onClose();
+
+    TcpServer(const TcpServer&) = delete;
+    TcpServer& operator=(const TcpServer&) = delete;
 
     Socket* mSocket;
     SocketOption mSockOption;
@@ -86,12 +99,10 @@ private:
 // TcpChannel
 //----------------------------------------------------------------------------//
 
-class TcpChannel
+class TcpChannel : public std::enable_shared_from_this<TcpChannel>
 {
 public:
-    SEV_DECL TcpChannel();
-    SEV_DECL TcpChannel(Socket* socket);
-    SEV_DECL virtual ~TcpChannel();
+    SEV_DECL ~TcpChannel();
 
 public:
     SEV_DECL int32_t send(const void* data, uint32_t size,
@@ -125,16 +136,18 @@ public:
         return mPeerEndPoint;
     }
 
-protected:
-    SEV_DECL void create(Socket* socket);
-
 private:
-    TcpChannel(const TcpChannel&) = delete;
-    TcpChannel& operator=(const TcpChannel&) = delete;
+    SEV_DECL TcpChannel();
+    SEV_DECL TcpChannel(Socket* socket);
+
+    SEV_DECL void create(Socket* socket);
 
     SEV_DECL void onReceive();
     SEV_DECL void onSend(int32_t errorCode);
     SEV_DECL void onClose();
+
+    TcpChannel(const TcpChannel&) = delete;
+    TcpChannel& operator=(const TcpChannel&) = delete;
 
     Socket* mSocket;
     SocketOption mSockOption;
@@ -146,6 +159,8 @@ private:
     TcpReceiveHandler mReceiveHandler;
     std::list<TcpSendHandler> mSendHandlers;
 
+    friend class TcpServer;
+    friend class TcpClient;
     friend class SocketController;
 };
 
@@ -153,10 +168,14 @@ private:
 // TcpClient
 //----------------------------------------------------------------------------//
 
-class TcpClient : public TcpChannel
+class TcpClient : public std::enable_shared_from_this<TcpClient>
 {
 public:
-    SEV_DECL TcpClient();
+    SEV_DECL static TcpClientPtr newInstance()
+    {
+        return TcpClientPtr(new TcpClient());
+    }
+
     SEV_DECL ~TcpClient();
 
     static const uint32_t DefaultTimeout = 15 * 1000;
@@ -174,43 +193,78 @@ public:
 
     SEV_DECL bool cancelConnect();
 
+public:
+    SEV_DECL int32_t send(const void* data, uint32_t size,
+        const TcpSendHandler& sendHandler = nullptr)
+    {
+        return mChannel->send(data, size, sendHandler);
+    }
+
+    SEV_DECL int32_t receive(void* buff, uint32_t size)
+    {
+        return mChannel->receive(buff, size);
+    }
+
+    SEV_DECL void close()
+    {
+        mChannel->close();
+    }
+
+    SEV_DECL bool cancelSend()
+    {
+        return mChannel->cancelSend();
+    }
+
+    SEV_DECL void setReceiveHandler(
+        const TcpReceiveHandler& receiveHandler)
+    {
+        mChannel->setReceiveHandler(receiveHandler);
+    }
+
+    SEV_DECL void setCloseHandler(
+        const TcpCloseHandler& closeHandler)
+    {
+        mChannel->setCloseHandler(closeHandler);
+    }
+
+    SEV_DECL SocketOption& getSocketOption()
+    {
+        return mChannel->getSocketOption();
+    }
+
+    SEV_DECL bool isClosed() const
+    {
+        return mChannel->isClosed();
+    }
+
+    SEV_DECL const IpEndPoint& getLocalEndPoint() const
+    {
+        return mChannel->getLocalEndPoint();
+    }
+
+    SEV_DECL const IpEndPoint& getPeerEndPoint() const
+    {
+        return mChannel->getPeerEndPoint();
+    }
+
+public:
+    SEV_DECL bool isEqual(const TcpChannelPtr& channel) const
+    {
+        return (mChannel == channel);
+    }
+
 private:
-    TcpClient(const TcpClient&) = delete;
-    TcpClient& operator=(const TcpClient&) = delete;
+    SEV_DECL TcpClient();
 
     SEV_DECL void onConnect(Socket* socket, int32_t errorCode);
 
+    TcpClient(const TcpClient&) = delete;
+    TcpClient& operator=(const TcpClient&) = delete;
+
+    TcpChannelPtr mChannel;
     TcpConnectHandler mConnectHandler;
 
     friend class SocketController;
-};
-
-//----------------------------------------------------------------------------//
-// TcpAcceptEvent
-//----------------------------------------------------------------------------//
-
-class TcpAcceptEvent : public Event
-{
-public:
-    SEV_DECL TcpAcceptEvent(TcpChannel* tcpChannel)
-        : Event(TcpEventId::Accept),
-        mTcpChannel(tcpChannel)
-    {
-    }
-
-    SEV_DECL ~TcpAcceptEvent()
-    {
-        delete mTcpChannel;
-    }
-
-public:
-    mutable TcpChannel* mTcpChannel;
-
-private:
-    TcpAcceptEvent(
-        const TcpAcceptEvent&) = delete;
-    TcpAcceptEvent& operator=(
-        const TcpAcceptEvent&) = delete;
 };
 
 SEV_NS_END

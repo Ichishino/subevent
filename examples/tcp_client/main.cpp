@@ -21,8 +21,10 @@ protected:
 
         IpEndPoint server("127.0.0.1", 9000);
 
+        mTcpClient = TcpClient::newInstance();
+
         // connect
-        mTcpClient.connect(server, [&](TcpClient*, int errorCode) {
+        mTcpClient->connect(server, [&](TcpClientPtr, int errorCode) {
 
             std::cout << "connect: " << errorCode << std::endl;
 
@@ -34,8 +36,8 @@ protected:
             }
 
             std::cout <<
-                "from " << mTcpClient.getLocalEndPoint().toString() <<
-                " to " << mTcpClient.getPeerEndPoint().toString() <<
+                "from " << mTcpClient->getLocalEndPoint().toString() <<
+                " to " << mTcpClient->getPeerEndPoint().toString() <<
                 std::endl;
 
             // repeat timer
@@ -47,17 +49,17 @@ protected:
                 std::cout << "send: " << msg << std::endl;
 
                 // send
-                mTcpClient.send(msg, size);
+                mTcpClient->send(msg, size);
             });
         });
 
         // data received
-        mTcpClient.setReceiveHandler([&](TcpChannel*) {
+        mTcpClient->setReceiveHandler([&](TcpChannelPtr) {
 
             for (;;)
             {
                 char buff[256];
-                int res = mTcpClient.receive(buff, sizeof(buff));
+                int res = mTcpClient->receive(buff, sizeof(buff));
                 if (res <= 0)
                 {
                     break;
@@ -68,7 +70,7 @@ protected:
         });
 
         // server closed
-        mTcpClient.setCloseHandler([&](TcpChannel*) {
+        mTcpClient->setCloseHandler([&](TcpChannelPtr) {
 
             mSendTimer.cancel();
             stop();
@@ -80,13 +82,13 @@ protected:
     void onExit() override
     {
         // close
-        mTcpClient.close();
+        mTcpClient->close();
 
         Application::onExit();
     }
 
 private:
-    TcpClient mTcpClient;
+    TcpClientPtr mTcpClient;
     Timer mSendTimer;
 };
 

@@ -25,21 +25,46 @@ public:
         // Windows: (maxOfEachThread <= 63)
         // Linux: (maxOfEachThread <= 1024)
 
-        mThreadPool.resize(threadCount);
         mMaxOfEachThread = maxOfEachThread;
 
         for (size_t index = 0; index < threadCount; ++index)
         {
             // automatically deleted by parent
             auto thread = new ThreadType(parent);
-            thread->start();
+            if (!thread->start())
+            {
+                delete thread;
+                break;
+            }
 
-            mThreadPool[index] = thread;
+            mThreadPool.push_back(thread);
+        }
+
+        // CPU affinity
+        uint16_t cpuCount = Processor::getCount();
+        if (cpuCount > 1)
+        {
+            uint16_t cpu = 1;
+            for (auto thread : mThreadPool)
+            {
+                if (cpu >= cpuCount)
+                {
+                    cpu = 1;
+                }
+
+                Processor::bind(thread, cpu);
+                ++cpu;
+            }
         }
     }
 
     ThreadType* find()
     {
+        if (mThreadPool.empty())
+        {
+            return nullptr;
+        }
+
         size_t startIndex = mIndex;
 
         for (;;)
@@ -93,7 +118,10 @@ private:
 class MyClientThread : public Thread
 {
 public:
-    using Thread::Thread;
+    MyClientThread(Thread* parent)
+        : Thread(parent)
+    {
+    }
 
 protected:
     bool onInit() override
@@ -158,14 +186,14 @@ private:
 
 class MyApp : public Application
 {
-public:
-    using Application::Application;
-
 protected:
     bool onInit() override
     {
         Application::onInit();
         Network::init(this);
+
+        // CPU affinity
+        Processor::bind(this, 0);
 
         // init sub threads
         mBalancer.createThreads(this, 10, 50); // in this case limit is 500 clients (10 * 50)
@@ -233,8 +261,8 @@ private:
 
 SEV_IMPL_GLOBAL
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
-    MyApp app(argc, argv);
+    MyApp app;
     return app.run();
 }

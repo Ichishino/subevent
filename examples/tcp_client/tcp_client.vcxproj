@@ -166,6 +166,7 @@
     <ClInclude Include="..\..\inc\subevent\timer.hpp" />
     <ClInclude Include="..\..\inc\subevent\timer_manager.hpp" />
     <ClInclude Include="..\..\inc\subevent\udp.hpp" />
+    <ClInclude Include="..\..\inc\subevent\utility.hpp" />
     <ClInclude Include="..\..\inc\subevent_core.hpp" />
     <ClInclude Include="..\..\inc\subevent_net.hpp" />
   </ItemGroup>
@@ -185,6 +186,7 @@
     <None Include="..\..\inc\subevent_impl\timer.inl" />
     <None Include="..\..\inc\subevent_impl\timer_manager.inl" />
     <None Include="..\..\inc\subevent_impl\udp.inl" />
+    <None Include="..\..\inc\subevent_impl\utility.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -28,9 +28,6 @@ SEV_USING_NS
 
 class MyApp : public Application
 {
-public:
-    using Application::Application;
-
 protected:
     bool onInit() override
     {
@@ -55,9 +52,9 @@ protected:
 
 SEV_IMPL_GLOBAL
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
-    MyApp app(argc, argv);
+    MyApp app;
     return app.run();
 }
 ```
@@ -70,9 +67,6 @@ stop();
 ```C++
 class MyThread : public Thread
 {
-public:
-    using Thread::Thread;
-
 protected:
     bool onInit() override
     {
@@ -109,7 +103,7 @@ delete myThread;
 typedef UserEvent<1, int, std::string> MyEvent;
 ```
 ```C++
-// Send (to other threads or self)
+// Send (to another thread or self)
 int param1 = 20;
 std::string param2 = "data";
 myThread->post(new MyEvent(param1, param2));

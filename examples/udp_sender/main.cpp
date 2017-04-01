@@ -10,9 +10,6 @@ SEV_USING_NS
 
 class MyApp : public Application
 {
-public:
-    using Application::Application;
-
 protected:
     bool onInit() override
     {
@@ -71,8 +68,8 @@ private:
 
 SEV_IMPL_GLOBAL
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
-    MyApp app(argc, argv);
+    MyApp app;
     return app.run();
 }

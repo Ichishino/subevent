@@ -10,6 +10,7 @@
 #include <subevent/application.hpp>
 #include <subevent/event.hpp>
 #include <subevent/timer.hpp>
+#include <subevent/utility.hpp>
 
 #ifdef SEV_HEADER_ONLY
 #include <subevent_impl/application.inl>
@@ -20,6 +21,7 @@
 #include <subevent_impl/event_controller.inl>
 #include <subevent_impl/event_loop.inl>
 #include <subevent_impl/timer_manager.inl>
+#include <subevent_impl/utility.inl>
 #endif
 
 #endif // SUBEVENT_CORE_HEADERS_HPP

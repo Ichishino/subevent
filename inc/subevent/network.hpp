@@ -43,10 +43,10 @@ protected:
             return false;
         }
 
-        setEventController(sockController);
+        this->setEventController(sockController);
 
         // tcp accept for multithreading
-        setEventHandler(
+        this->setEventHandler(
             TcpEventId::Accept, [&](const Event* event) {
 
             TcpChannelPtr channel = TcpServer::accept(event);
@@ -69,13 +69,13 @@ public:
     uint32_t getSocketCount() const
     {
         return dynamic_cast<const SocketController*>(
-            getEventController())->getSocketCount();
+            this->getEventController())->getSocketCount();
     }
 
     bool isSocketFull() const
     {
         return dynamic_cast<const SocketController*>(
-            getEventController())->isFull();
+            this->getEventController())->isFull();
     }
 };
 

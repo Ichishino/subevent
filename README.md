@@ -60,7 +60,7 @@ int main(int, char**)
 ```
 * How to End MyApp
 ```C++
-// call "void Application::stop()"
+// call "void NetApplication::stop()"
 stop();
 ```
 * Thread

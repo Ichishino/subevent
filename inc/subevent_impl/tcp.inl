@@ -30,7 +30,7 @@ bool TcpServer::open(
     int32_t listenBacklog)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (!isClosed())
     {
@@ -75,21 +75,21 @@ bool TcpServer::open(
     mLocalEndPoint = localEndPoint;
     mAcceptHandler = acceptHandler;
 
-    return Network::getController()->
+    return SocketController::getInstance()->
         registerTcpServer(shared_from_this());
 }
 
 void TcpServer::close()
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (isClosed())
     {
         return;
     }
 
-    Network::getController()->
+    SocketController::getInstance()->
         unregisterTcpServer(shared_from_this());
 
     delete mSocket;
@@ -103,7 +103,7 @@ void TcpServer::close()
 bool TcpServer::accept(Thread* thread, const TcpChannelPtr& channel)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (isClosed())
     {
@@ -112,7 +112,8 @@ bool TcpServer::accept(Thread* thread, const TcpChannelPtr& channel)
 
     if (thread == Thread::getCurrent())
     {
-        if (!Network::getController()->registerTcpChannel(channel))
+        if (!SocketController::getInstance()->
+            registerTcpChannel(channel))
         {
             return false;
         }
@@ -128,7 +129,7 @@ bool TcpServer::accept(Thread* thread, const TcpChannelPtr& channel)
 TcpChannelPtr TcpServer::accept(const Event* event)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     const TcpAcceptEvent* acceptEvent =
         dynamic_cast<const TcpAcceptEvent*>(event);
@@ -136,7 +137,8 @@ TcpChannelPtr TcpServer::accept(const Event* event)
     TcpChannelPtr channel;
     acceptEvent->getParams(channel);
 
-    if (!Network::getController()->registerTcpChannel(channel))
+    if (!SocketController::getInstance()->
+        registerTcpChannel(channel))
     {
         return nullptr;
     }
@@ -222,7 +224,7 @@ void TcpChannel::create(Socket* socket)
 void TcpChannel::close()
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (isClosed())
     {
@@ -240,7 +242,7 @@ void TcpChannel::close()
     mCloseCanceller.reset();
     mSendHandlers.clear();
 
-    Network::getController()->
+    SocketController::getInstance()->
         requestTcpChannelClose(shared_from_this());
 
     delete mSocket;
@@ -251,7 +253,7 @@ int32_t TcpChannel::send(const void* data, uint32_t size,
     const TcpSendHandler& sendHandler)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (isClosed())
     {
@@ -270,7 +272,7 @@ int32_t TcpChannel::send(const void* data, uint32_t size,
 
         mSendHandlers.push_back(sendHandler);
 
-        if (!Network::getController()->
+        if (!SocketController::getInstance()->
             requestTcpSend(shared_from_this(), data, size))
         {
             return -1;
@@ -283,7 +285,7 @@ int32_t TcpChannel::send(const void* data, uint32_t size,
 int32_t TcpChannel::receive(void* buff, uint32_t size)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (isClosed())
     {
@@ -293,7 +295,7 @@ int32_t TcpChannel::receive(void* buff, uint32_t size)
     int32_t result = mSocket->receive(buff, size);
     if ((result == 0) && (size > 0))
     {
-        Network::getController()->
+        SocketController::getInstance()->
             onTcpReceiveEof(shared_from_this());
     }
 
@@ -303,14 +305,14 @@ int32_t TcpChannel::receive(void* buff, uint32_t size)
 bool TcpChannel::cancelSend()
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (isClosed())
     {
         return false;
     }
 
-    return Network::getController()->
+    return SocketController::getInstance()->
         cancelTcpSend(shared_from_this());
 }
 
@@ -405,7 +407,7 @@ void TcpClient::connect(
     uint32_t msecTimeout)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (!isClosed())
     {
@@ -424,8 +426,9 @@ void TcpClient::connect(
     std::list<IpEndPoint> endPointList;
     endPointList.push_back(peerEndPoint);
 
-    Network::getController()->requestTcpConnect(
-        shared_from_this(), endPointList, msecTimeout);
+    SocketController::getInstance()->
+        requestTcpConnect(
+            shared_from_this(), endPointList, msecTimeout);
 }
 
 void TcpClient::connect(
@@ -434,7 +437,7 @@ void TcpClient::connect(
     uint32_t msecTimeout)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (!isClosed())
     {
@@ -466,18 +469,19 @@ void TcpClient::connect(
         endPointList.push_back(peerEndPoint);
     }
 
-    Network::getController()->requestTcpConnect(
-        shared_from_this(), endPointList, msecTimeout);
+    SocketController::getInstance()->
+        requestTcpConnect(
+            shared_from_this(), endPointList, msecTimeout);
 }
 
 bool TcpClient::cancelConnect()
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     mConnectHandler = nullptr;
 
-    return Network::getController()->
+    return SocketController::getInstance()->
         cancelTcpConnect(shared_from_this());
 }
 
@@ -487,7 +491,8 @@ void TcpClient::onConnect(Socket* socket, int32_t errorCode)
     {
         mChannel->create(socket);
 
-        if (!Network::getController()->registerTcpChannel(mChannel))
+        if (!SocketController::getInstance()->
+            registerTcpChannel(mChannel))
         {
             // error
             mChannel->create(nullptr);

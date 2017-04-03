@@ -90,9 +90,6 @@
     <None Include="..\..\inc\subevent_impl\event_loop.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="..\..\inc\subevent_impl\network.inl">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="..\..\inc\subevent_impl\semaphore.inl">
       <Filter>Header Files</Filter>
     </None>

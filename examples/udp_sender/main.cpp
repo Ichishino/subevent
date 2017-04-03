@@ -8,13 +8,12 @@ SEV_USING_NS
 // MyApp
 //---------------------------------------------------------------------------//
 
-class MyApp : public Application
+class MyApp : public NetApplication
 {
 protected:
     bool onInit() override
     {
-        Application::onInit();
-        Network::init(this);
+        NetApplication::onInit();
 
         IpEndPoint receiver("127.0.0.1", 9001);
 
@@ -52,7 +51,7 @@ protected:
         // sender close
         mUdpSender->close();
 
-        Application::onExit();
+        NetApplication::onExit();
     }
 
 private:

@@ -159,15 +159,15 @@ EventController* EventLoop::getController()
     return mController;
 }
 
+const EventController* EventLoop::getController() const
+{
+    return mController;
+}
+
 void EventLoop::setController(EventController* controller)
 {
     delete mController;
     mController = controller;
-}
-
-uint32_t EventLoop::getQueuedEventCount() const
-{
-    return mController->getQueuedEventCount();
 }
 
 SEV_NS_END

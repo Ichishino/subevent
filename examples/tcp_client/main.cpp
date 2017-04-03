@@ -8,13 +8,12 @@ SEV_USING_NS
 // MyApp
 //---------------------------------------------------------------------------//
 
-class MyApp : public Application
+class MyApp : public NetApplication
 {
 protected:
     bool onInit() override
     {
-        Application::onInit();
-        Network::init(this);
+        NetApplication::onInit();
 
         IpEndPoint server("127.0.0.1", 9000);
 
@@ -81,7 +80,7 @@ protected:
         // close
         mTcpClient->close();
 
-        Application::onExit();
+        NetApplication::onExit();
     }
 
 private:

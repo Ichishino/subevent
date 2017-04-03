@@ -11,7 +11,6 @@
 #include <subevent/udp.hpp>
 
 #ifdef SEV_HEADER_ONLY
-#include <subevent_impl/network.inl>
 #include <subevent_impl/tcp.inl>
 #include <subevent_impl/udp.inl>
 #include <subevent_impl/socket.inl>

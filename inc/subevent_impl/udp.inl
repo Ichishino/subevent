@@ -30,7 +30,7 @@ bool UdpReceiver::open(
     const UdpReceiveHandler& receiveHandler)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (!isClosed())
     {
@@ -72,21 +72,21 @@ bool UdpReceiver::open(
     mLocalEndPoint = localEndPoint;
     mReceiveHandler = receiveHandler;
 
-    return Network::getController()->
+    return SocketController::getInstance()->
         registerUdpReceiver(shared_from_this());
 }
 
 void UdpReceiver::close()
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (isClosed())
     {
         return;
     }
 
-    Network::getController()->
+    SocketController::getInstance()->
         unregisterUdpReceiver(shared_from_this());
 
     delete mSocket;
@@ -124,7 +124,7 @@ int32_t UdpReceiver::receive(
     void* buff, uint32_t size, IpEndPoint& senderEndPoint)
 {
     assert(Thread::getCurrent() != nullptr);
-    assert(Network::getController() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
 
     if (isClosed())
     {

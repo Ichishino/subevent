@@ -2,32 +2,94 @@
 #define SUBEVENT_NETWORK_HPP
 
 #include <subevent/std.hpp>
+#include <subevent/thread.hpp>
+#include <subevent/application.hpp>
+#include <subevent/socket.hpp>
+#include <subevent/socket_controller.hpp>
+#include <subevent/tcp.hpp>
 
 SEV_NS_BEGIN
 
-class Thread;
-class SocketController;
-
 //---------------------------------------------------------------------------//
-// Network
+// NetWorker
 //---------------------------------------------------------------------------//
 
-class Network
+template <typename BaseClass>
+class NetWorker : public BaseClass
 {
 public:
-    SEV_DECL static bool init(Thread* thread);
+    using BaseClass::BaseClass;
 
-    SEV_DECL static uint32_t getSocketCount(Thread* thread);
-    SEV_DECL static bool isSocketFull(Thread* thread);
+protected:
+    bool onInit() override
+    {
+#ifdef _WIN32
+        if (!WinSock::init())
+        {
+            return false;
+        }
+#endif
+        if (!BaseClass::onInit())
+        {
+            return false;
+        }
+
+        // async socket controller
+        SocketController* sockController = new SocketController();
+
+        if (!sockController->onInit())
+        {
+            delete sockController;
+            return false;
+        }
+
+        setEventController(sockController);
+
+        // tcp accept for multithreading
+        setEventHandler(
+            TcpEventId::Accept, [&](const Event* event) {
+
+            TcpChannelPtr channel = TcpServer::accept(event);
+
+            if (channel != nullptr)
+            {
+                onTcpAccept(channel);
+            }
+        });
+
+        return true;
+    }
+
+    virtual void onTcpAccept(TcpChannelPtr channel)
+    {
+        // for multithreading
+    }
 
 public:
-    SEV_DECL static SocketController* getController(Thread* thread);
-    SEV_DECL static SocketController* getController();
+    uint32_t getSocketCount() const
+    {
+        return dynamic_cast<const SocketController*>(
+            getEventController())->getSocketCount();
+    }
 
-private:
-    Network() = delete;
-    ~Network() = delete;
+    bool isSocketFull() const
+    {
+        return dynamic_cast<const SocketController*>(
+            getEventController())->isFull();
+    }
 };
+
+//---------------------------------------------------------------------------//
+// NetApplication
+//---------------------------------------------------------------------------//
+
+typedef NetWorker<Application> NetApplication;
+
+//---------------------------------------------------------------------------//
+// NetThread
+//---------------------------------------------------------------------------//
+
+typedef NetWorker<Thread> NetThread;
 
 SEV_NS_END
 

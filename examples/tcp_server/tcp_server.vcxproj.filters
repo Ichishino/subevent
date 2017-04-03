@@ -120,9 +120,6 @@
     <None Include="..\..\inc\subevent_impl\application.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="..\..\inc\subevent_impl\network.inl">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="..\..\inc\subevent_impl\utility.inl">
       <Filter>Header Files</Filter>
     </None>

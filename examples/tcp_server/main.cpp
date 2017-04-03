@@ -9,13 +9,12 @@ SEV_USING_NS
 // MyApp
 //---------------------------------------------------------------------------//
 
-class MyApp : public Application
+class MyApp : public NetApplication
 {
 protected:
     bool onInit() override
     {
-        Application::onInit();
-        Network::init(this);
+        NetApplication::onInit();
 
         IpEndPoint local(9000);
 
@@ -101,7 +100,7 @@ protected:
         }
         mTcpChannels.clear();
 
-        Application::onExit();
+        NetApplication::onExit();
     }
 
 private:

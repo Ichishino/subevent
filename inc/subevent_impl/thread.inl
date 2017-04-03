@@ -216,6 +216,11 @@ bool Thread::post(const std::function<void()>& task)
     return post(new TaskEvent(task));
 }
 
+uint32_t Thread::getQueuedEventCount() const
+{
+    return getEventController()->getQueuedEventCount();
+}
+
 void Thread::setChildFinishedHandler(const ChildFinishedHandler& handler)
 {
     mChildFinishedHandler = handler;

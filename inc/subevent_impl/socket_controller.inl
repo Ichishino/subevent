@@ -130,6 +130,12 @@ void SocketController::onExit()
     EventController::onExit();
 }
 
+SocketController* SocketController::getInstance()
+{
+    return dynamic_cast<SocketController*>(
+        Thread::getCurrent()->getEventController());
+}
+
 void SocketController::closeAllItems()
 {
     // TcpServer

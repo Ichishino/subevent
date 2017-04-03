@@ -50,9 +50,8 @@ public:
         return mStatus.load();
     }
 
-    SEV_DECL uint32_t getQueuedEventCount() const;
-
     SEV_DECL EventController* getController();
+    SEV_DECL const EventController* getController() const;
     SEV_DECL void setController(EventController* controller);
 
     SEV_DECL bool onInit();

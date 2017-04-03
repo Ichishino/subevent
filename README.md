@@ -26,12 +26,12 @@ SEV_USING_NS
 // MyApp
 //---------------------------------------------------------------------------//
 
-class MyApp : public Application
+class MyApp : public NetApplication
 {
 protected:
     bool onInit() override
     {
-        Application::onInit();
+        NetApplication::onInit();
 
         // Your initialization code here.
 
@@ -42,7 +42,7 @@ protected:
     {
         // Your deinitialization code here.
 
-        Application::onExit();
+        NetApplication::onExit();
     }
 };
 
@@ -65,12 +65,12 @@ stop();
 ```
 * Thread
 ```C++
-class MyThread : public Thread
+class MyThread : public NetThread
 {
 protected:
     bool onInit() override
     {
-        Thread::onInit();
+        NetThread::onInit();
 
         // Your initialization code here.
 
@@ -81,7 +81,7 @@ protected:
     {
         // Your deinitialization code here.
 
-        Thread::onExit();
+        NetThread::onExit();
     }
 };
 ```

@@ -175,7 +175,6 @@
     <None Include="..\..\inc\subevent_impl\event.inl" />
     <None Include="..\..\inc\subevent_impl\event_controller.inl" />
     <None Include="..\..\inc\subevent_impl\event_loop.inl" />
-    <None Include="..\..\inc\subevent_impl\network.inl" />
     <None Include="..\..\inc\subevent_impl\semaphore.inl" />
     <None Include="..\..\inc\subevent_impl\socket.inl" />
     <None Include="..\..\inc\subevent_impl\socket_controller.inl" />

@@ -6,14 +6,14 @@
 SEV_USING_NS
 
 //---------------------------------------------------------------------------//
-// MySimpleBalancer
+// MyThreadPool
 //---------------------------------------------------------------------------//
 
 template <typename ThreadType>
-class MySimpleBalancer
+class MyThreadPool
 {
 public:
-    MySimpleBalancer()
+    MyThreadPool()
     {
         mIndex = (size_t)-1;
         mMaxOfEachThread = 0;
@@ -37,7 +37,7 @@ public:
                 break;
             }
 
-            mThreadPool.push_back(thread);
+            mThreads.push_back(thread);
         }
 
         // CPU affinity
@@ -45,7 +45,7 @@ public:
         if (cpuCount > 1)
         {
             uint16_t cpu = 1;
-            for (auto thread : mThreadPool)
+            for (auto thread : mThreads)
             {
                 if (cpu >= cpuCount)
                 {
@@ -60,7 +60,7 @@ public:
 
     ThreadType* find()
     {
-        if (mThreadPool.empty())
+        if (mThreads.empty())
         {
             return nullptr;
         }
@@ -71,7 +71,7 @@ public:
         {
             ++mIndex;
 
-            if (mIndex >= mThreadPool.size())
+            if (mIndex >= mThreads.size())
             {
                 mIndex = 0;
             }
@@ -80,9 +80,9 @@ public:
                 break;
             }
 
-            auto thread = mThreadPool[mIndex];
+            auto thread = mThreads[mIndex];
 
-            if (Network::getSocketCount(thread) < mMaxOfEachThread)
+            if (thread->getSocketCount() < mMaxOfEachThread)
             {
                 // found
                 return thread;
@@ -93,13 +93,13 @@ public:
         return nullptr;
     }
 
-    size_t getClientCount() const
+    size_t getChannelCount() const
     {
         size_t clients = 0;
 
-        for (auto thread : mThreadPool)
+        for (auto thread : mThreads)
         {
-            clients += Network::getSocketCount(thread);
+            clients += thread->getSocketCount();
         }
 
         return clients;
@@ -108,60 +108,54 @@ public:
 private:
     size_t mIndex;
     size_t mMaxOfEachThread;
-    std::vector<ThreadType*> mThreadPool;
+    std::vector<ThreadType*> mThreads;
 };
 
 //---------------------------------------------------------------------------//
-// MyClientThread
+// MyThread
 //---------------------------------------------------------------------------//
 
-class MyClientThread : public Thread
+class MyThread : public NetThread
 {
 public:
-    MyClientThread(Thread* parent)
-        : Thread(parent)
+    MyThread(Thread* parent)
+        : NetThread(parent)
     {
     }
 
 protected:
     bool onInit() override
     {
-        Thread::onInit();
-        Network::init(this);
+        NetThread::onInit();
+        return true;
+    }
 
-        setEventHandler(
-            TcpEventId::Accept, [&](const Event* event) {
+    void onTcpAccept(TcpChannelPtr newChannel) override
+    {
+        mTcpChannels.insert(newChannel);
 
-            // accept
-            TcpChannelPtr newChannel = TcpServer::accept(event);
+        // data received
+        newChannel->setReceiveHandler([&](TcpChannelPtr channel) {
 
-            mTcpChannels.insert(newChannel);
-
-            // data received
-            newChannel->setReceiveHandler([&](TcpChannelPtr channel) {
-
-                for (;;)
+            for (;;)
+            {
+                char buff[256];
+                int res = channel->receive(buff, sizeof(buff));
+                if (res <= 0)
                 {
-                    char buff[256];
-                    int res = channel->receive(buff, sizeof(buff));
-                    if (res <= 0)
-                    {
-                        break;
-                    }
-
-                    // send
-                    channel->send(buff, res);
+                    break;
                 }
-            });
 
-            // client closed
-            newChannel->setCloseHandler([&](TcpChannelPtr channel) {
-
-                mTcpChannels.erase(channel);
-            });
+                // send
+                channel->send(buff, res);
+            }
         });
 
-        return true;
+        // client closed
+        newChannel->setCloseHandler([&](TcpChannelPtr channel) {
+
+            mTcpChannels.erase(channel);
+        });
     }
 
     void onExit() override
@@ -173,7 +167,7 @@ protected:
         }
         mTcpChannels.clear();
 
-        Thread::onExit();
+        NetThread::onExit();
     }
 
 private:
@@ -184,19 +178,18 @@ private:
 // MyApp
 //---------------------------------------------------------------------------//
 
-class MyApp : public Application
+class MyApp : public NetApplication
 {
 protected:
     bool onInit() override
     {
-        Application::onInit();
-        Network::init(this);
+        NetApplication::onInit();
 
         // CPU affinity
         Processor::bind(this, 0);
 
         // init sub threads
-        mBalancer.createThreads(this, 10, 50); // in this case limit is 500 clients (10 * 50)
+        mThreadPool.createThreads(this, 10, 50); // in this case limit is 500 clients (10 * 50)
 
         IpEndPoint local(9000);
 
@@ -211,13 +204,13 @@ protected:
         // listen
         mTcpServer->open(local, [&](TcpServerPtr, TcpChannelPtr newChannel) {
 
-            Thread* thread = mBalancer.find();
+            Thread* thread = mThreadPool.find();
             if (thread == nullptr)
             {
                 // reached limit
 
                 std::cout << "reached limit: " <<
-                    mBalancer.getClientCount() << std::endl;
+                    mThreadPool.getChannelCount() << std::endl;
 
                 newChannel->close();
 
@@ -245,12 +238,12 @@ protected:
         // server close
         mTcpServer->close();
 
-        Application::onExit();
+        NetApplication::onExit();
     }
 
 private:
     TcpServerPtr mTcpServer;
-    MySimpleBalancer<MyClientThread> mBalancer;
+    MyThreadPool<MyThread> mThreadPool;
 
     Timer mEndTimer;
 };

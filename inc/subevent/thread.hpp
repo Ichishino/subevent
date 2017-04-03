@@ -96,27 +96,30 @@ public:
         return mEventLoop.getStatus();
     }
 
-    SEV_DECL uint32_t getQueuedEventCount() const
-    {
-        return mEventLoop.getQueuedEventCount();
-    }
+    SEV_DECL uint32_t getQueuedEventCount() const;
 
 public:
     SEV_DECL static Thread* getCurrent();
 
+public:
     SEV_DECL EventController* getEventController()
     {
         return mEventLoop.getController();
     }
 
-    SEV_DECL void setEventController(EventController* eventController)
+    SEV_DECL const EventController* getEventController() const
     {
-        mEventLoop.setController(eventController);
+        return mEventLoop.getController();
     }
 
 protected:
     SEV_DECL virtual bool onInit();
     SEV_DECL virtual void onExit();
+
+    SEV_DECL void setEventController(EventController* eventController)
+    {
+        mEventLoop.setController(eventController);
+    }
 
 private:
     static SEV_TLS Thread* gThread;

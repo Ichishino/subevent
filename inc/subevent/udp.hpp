@@ -43,8 +43,6 @@ public:
 
     SEV_DECL int32_t receive(void* buff, uint32_t size,
         IpEndPoint& senderEndPoint);
-    SEV_DECL std::vector<char> receiveAll(
-        IpEndPoint& senderEndPoint, uint32_t reserveSize = 256);
 
     SEV_DECL SocketOption& getSocketOption();
 

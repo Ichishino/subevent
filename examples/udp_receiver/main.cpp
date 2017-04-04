@@ -31,16 +31,21 @@ protected:
 
             // data received
 
-            IpEndPoint sender;
-            auto data = receiver->receiveAll(sender);
-
-            if (data.empty())
+            for (;;)
             {
-                return;
-            }
+                char buff[256];
+                IpEndPoint sender;
 
-            std::cout << "recv: " << &data[0] <<
-                " from " << sender.toString() << std::endl;
+                int32_t res = receiver->receive(buff, sizeof(buff), sender);
+
+                if (res <= 0)
+                {
+                    break;
+                }
+
+                std::cout << "recv: " << buff <<
+                    " from " << sender.toString() << std::endl;
+            }
         });
 
         // end timer

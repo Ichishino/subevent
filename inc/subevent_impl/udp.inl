@@ -135,37 +135,6 @@ int32_t UdpReceiver::receive(
     return mSocket->receiveFrom(senderEndPoint, buff, size);
 }
 
-std::vector<char> UdpReceiver::receiveAll(
-    IpEndPoint& senderEndPoint, uint32_t reserveSize)
-{
-    assert(Thread::getCurrent() != nullptr);
-    assert(SocketController::getInstance() != nullptr);
-
-    uint32_t total = 0;
-    std::vector<char> buff;
-
-    buff.reserve(reserveSize * 2);
-    buff.resize(reserveSize);
-
-    for (;;)
-    {
-        // receive
-        int32_t size = receive(
-            &buff[total], reserveSize, senderEndPoint);
-
-        if (size <= 0)
-        {
-            buff.resize(total);
-            break;
-        }
-
-        total += size;
-        buff.resize(total + reserveSize);
-    }
-
-    return buff;
-}
-
 void UdpReceiver::onClose()
 {
     delete mSocket;

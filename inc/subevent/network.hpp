@@ -60,7 +60,7 @@ protected:
         return true;
     }
 
-    virtual void onTcpAccept(TcpChannelPtr channel)
+    virtual void onTcpAccept(const TcpChannelPtr& /* newChannel */)
     {
         // for multithreading
     }

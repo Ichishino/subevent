@@ -24,11 +24,12 @@ typedef std::shared_ptr<TcpServer> TcpServerPtr;
 typedef std::shared_ptr<TcpChannel> TcpChannelPtr;
 typedef std::shared_ptr<TcpClient> TcpClientPtr;
 
-typedef std::function<void(TcpServerPtr, TcpChannelPtr)> TcpAcceptHandler;
-typedef std::function<void(TcpClientPtr, int32_t)> TcpConnectHandler;
-typedef std::function<void(TcpChannelPtr)> TcpReceiveHandler;
-typedef std::function<void(TcpChannelPtr, int32_t)> TcpSendHandler;
-typedef std::function<void(TcpChannelPtr)> TcpCloseHandler;
+typedef std::function<
+    void(const TcpServerPtr&, const TcpChannelPtr&)> TcpAcceptHandler;
+typedef std::function<void(const TcpClientPtr&, int32_t)> TcpConnectHandler;
+typedef std::function<void(const TcpChannelPtr&)> TcpReceiveHandler;
+typedef std::function<void(const TcpChannelPtr&, int32_t)> TcpSendHandler;
+typedef std::function<void(const TcpChannelPtr&)> TcpCloseHandler;
 
 namespace TcpEventId
 {

@@ -27,7 +27,8 @@ protected:
             local.toString() << std::endl;
 
         // listen
-        mTcpServer->open(local, [&](TcpServerPtr, TcpChannelPtr newChannel) {
+        mTcpServer->open(local,
+            [&](const TcpServerPtr&, const TcpChannelPtr& newChannel) {
 
             // accept
             if (!mTcpServer->accept(this, newChannel))
@@ -46,7 +47,8 @@ protected:
             mTcpChannels.insert(newChannel);
 
             // data received
-            newChannel->setReceiveHandler([&](TcpChannelPtr channel) {
+            newChannel->setReceiveHandler(
+                [&](const TcpChannelPtr& channel) {
 
                 for (;;)
                 {
@@ -70,7 +72,8 @@ protected:
             });
 
             // client closed
-            newChannel->setCloseHandler([&](TcpChannelPtr channel) {
+            newChannel->setCloseHandler(
+                [&](const TcpChannelPtr& channel) {
 
                 std::cout << "closed: " <<
                     channel->getPeerEndPoint().toString() << std::endl;

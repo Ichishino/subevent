@@ -26,7 +26,7 @@ protected:
             local.toString() << std::endl;
 
         // open
-        mUdpReceiver->open(local, [&](UdpReceiverPtr) {
+        mUdpReceiver->open(local, [&](const UdpReceiverPtr&) {
 
             // data received
             for (;;)

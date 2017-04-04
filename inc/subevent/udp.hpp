@@ -18,7 +18,7 @@ class UdpSender;
 typedef std::shared_ptr<UdpReceiver> UdpReceiverPtr;
 typedef std::shared_ptr<UdpSender> UdpSenderPtr;
 
-typedef std::function<void(UdpReceiverPtr)> UdpReceiveHandler;
+typedef std::function<void(const UdpReceiverPtr&)> UdpReceiveHandler;
 
 //----------------------------------------------------------------------------//
 // UdpReceiver

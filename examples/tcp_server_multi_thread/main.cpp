@@ -130,12 +130,13 @@ protected:
         return true;
     }
 
-    void onTcpAccept(TcpChannelPtr newChannel) override
+    void onTcpAccept(const TcpChannelPtr& newChannel) override
     {
         mTcpChannels.insert(newChannel);
 
         // data received
-        newChannel->setReceiveHandler([&](TcpChannelPtr channel) {
+        newChannel->setReceiveHandler(
+            [&](const TcpChannelPtr& channel) {
 
             for (;;)
             {
@@ -152,7 +153,8 @@ protected:
         });
 
         // client closed
-        newChannel->setCloseHandler([&](TcpChannelPtr channel) {
+        newChannel->setCloseHandler(
+            [&](const TcpChannelPtr& channel) {
 
             mTcpChannels.erase(channel);
         });
@@ -202,7 +204,8 @@ protected:
             local.toString() << std::endl;
 
         // listen
-        mTcpServer->open(local, [&](TcpServerPtr, TcpChannelPtr newChannel) {
+        mTcpServer->open(local,
+            [&](const TcpServerPtr&, const TcpChannelPtr& newChannel) {
 
             Thread* thread = mThreadPool.find();
             if (thread == nullptr)

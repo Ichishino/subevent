@@ -26,23 +26,21 @@ protected:
             local.toString() << std::endl;
 
         // open
-        mUdpReceiver->open(local, [&](const UdpReceiverPtr&) {
+        mUdpReceiver->open(local,
+            [&](const UdpReceiverPtr& receiver) {
 
             // data received
-            for (;;)
+
+            IpEndPoint sender;
+            auto data = receiver->receiveAll(sender);
+
+            if (data.empty())
             {
-                char buff[256];
-                IpEndPoint sender;
-
-                int res = mUdpReceiver->receive(buff, sizeof(buff), sender);
-                if (res <= 0)
-                {
-                    break;
-                }
-
-                std::cout << "recv: " << buff <<
-                    " from " << sender.toString() << std::endl;
+                return;
             }
+
+            std::cout << "recv: " << &data[0] <<
+                " from " << sender.toString() << std::endl;
         });
 
         // end timer

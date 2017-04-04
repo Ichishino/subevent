@@ -302,6 +302,35 @@ int32_t TcpChannel::receive(void* buff, uint32_t size)
     return result;
 }
 
+std::vector<char> TcpChannel::receiveAll(uint32_t reserveSize)
+{
+    assert(Thread::getCurrent() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
+
+    uint32_t total = 0;
+    std::vector<char> buff;
+
+    buff.reserve(reserveSize * 2);
+    buff.resize(reserveSize);
+
+    for (;;)
+    {
+        // receive
+        int32_t size = receive(&buff[total], reserveSize);
+
+        if (size <= 0)
+        {
+            buff.resize(total);
+            break;
+        }
+
+        total += size;
+        buff.resize(total + reserveSize);
+    }
+
+    return buff;
+}
+
 bool TcpChannel::cancelSend()
 {
     assert(Thread::getCurrent() != nullptr);

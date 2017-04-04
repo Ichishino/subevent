@@ -138,18 +138,16 @@ protected:
         newChannel->setReceiveHandler(
             [&](const TcpChannelPtr& channel) {
 
-            for (;;)
-            {
-                char buff[256];
-                int res = channel->receive(buff, sizeof(buff));
-                if (res <= 0)
-                {
-                    break;
-                }
+            auto data = channel->receiveAll();
 
-                // send
-                channel->send(buff, res);
+            if (data.empty())
+            {
+                return;
             }
+
+            // send
+            channel->send(
+                &data[0], static_cast<uint32_t>(data.size()));
         });
 
         // client closed
@@ -225,7 +223,6 @@ protected:
 
             // entrust this client to sub thread
             mTcpServer->accept(thread, newChannel);
-
         });
 
         // end timer

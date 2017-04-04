@@ -20,7 +20,8 @@ protected:
         mTcpClient = TcpClient::newInstance();
 
         // connect
-        mTcpClient->connect(server, [&](const TcpClientPtr&, int errorCode) {
+        mTcpClient->connect(server,
+            [&](const TcpClientPtr&, int errorCode) {
 
             std::cout << "connect: " << errorCode << std::endl;
 
@@ -50,23 +51,22 @@ protected:
         });
 
         // data received
-        mTcpClient->setReceiveHandler([&](const TcpChannelPtr&) {
+        mTcpClient->setReceiveHandler(
+            [&](const TcpChannelPtr& channel) {
 
-            for (;;)
+            auto data = channel->receiveAll();
+
+            if (data.empty())
             {
-                char buff[256];
-                int res = mTcpClient->receive(buff, sizeof(buff));
-                if (res <= 0)
-                {
-                    break;
-                }
-
-                std::cout << "recv: " << buff << std::endl;
+                return;
             }
+
+            std::cout << "recv: " << &data[0] << std::endl;
         });
 
         // server closed
-        mTcpClient->setCloseHandler([&](const TcpChannelPtr&) {
+        mTcpClient->setCloseHandler(
+            [&](const TcpChannelPtr&) {
 
             mSendTimer.cancel();
             stop();

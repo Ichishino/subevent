@@ -50,25 +50,23 @@ protected:
             newChannel->setReceiveHandler(
                 [&](const TcpChannelPtr& channel) {
 
-                for (;;)
+                auto data = channel->receiveAll();
+
+                if (data.empty())
                 {
-                    char buff[256];
-                    int res = channel->receive(buff, sizeof(buff));
-                    if (res <= 0)
-                    {
-                        break;
-                    }
-
-                    std::cout << "recv: " << buff <<
-                        " from " << channel->getPeerEndPoint().toString() <<
-                        std::endl;
-                    std::cout << "send: " << buff <<
-                        " to " << channel->getPeerEndPoint().toString() <<
-                        std::endl;
-
-                    // send
-                    channel->send(buff, res);
+                    return;
                 }
+
+                std::cout << "recv: " << &data[0] <<
+                    " from " << channel->getPeerEndPoint().toString() <<
+                    std::endl;
+                std::cout << "send: " << &data[0] <<
+                    " to " << channel->getPeerEndPoint().toString() <<
+                    std::endl;
+
+                // send
+                channel->send(
+                    &data[0], static_cast<uint32_t>(data.size()));
             });
 
             // client closed

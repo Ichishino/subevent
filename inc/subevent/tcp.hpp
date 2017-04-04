@@ -110,6 +110,7 @@ public:
         const TcpSendHandler& sendHandler = nullptr);
 
     SEV_DECL int32_t receive(void* buff, uint32_t size);
+    SEV_DECL std::vector<char> receiveAll(uint32_t reserveSize = 256);
 
     SEV_DECL void close();
 

@@ -41,7 +41,7 @@ public:
 
     SEV_DECL void close();
 
-    SEV_DECL int32_t receive(void* buff, uint32_t size,
+    SEV_DECL int32_t receive(void* buff, size_t size,
         IpEndPoint& senderEndPoint);
 
     SEV_DECL SocketOption& getSocketOption();
@@ -93,7 +93,7 @@ public:
 
     SEV_DECL void close();
 
-    SEV_DECL int32_t send(const void* data, uint32_t size);
+    SEV_DECL int32_t send(const void* data, size_t size);
 
     SEV_DECL SocketOption& getSocketOption();
 

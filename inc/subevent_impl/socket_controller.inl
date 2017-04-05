@@ -4,7 +4,6 @@
 #include <cassert>
 
 #include <subevent/socket_controller.hpp>
-#include <subevent/std.hpp>
 #include <subevent/thread.hpp>
 #include <subevent/timer.hpp>
 #include <subevent/tcp.hpp>
@@ -486,7 +485,7 @@ bool SocketController::onSelectTcpClose(
     {
         if (tcpChannel != nullptr)
         {
-            tcpChannel->onSend(-5201);
+            tcpChannel->onSend(-5211);
         }
 
         item.sendBuffer.pop_front();

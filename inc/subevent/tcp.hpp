@@ -2,6 +2,7 @@
 #define SUBEVENT_TCP_HPP
 
 #include <list>
+#include <vector>
 #include <memory>
 #include <functional>
 
@@ -106,11 +107,11 @@ public:
     SEV_DECL ~TcpChannel();
 
 public:
-    SEV_DECL int32_t send(const void* data, uint32_t size,
+    SEV_DECL int32_t send(const void* data, size_t size,
         const TcpSendHandler& sendHandler = nullptr);
 
-    SEV_DECL int32_t receive(void* buff, uint32_t size);
-    SEV_DECL std::vector<char> receiveAll(uint32_t reserveSize = 256);
+    SEV_DECL int32_t receive(void* buff, size_t size);
+    SEV_DECL std::vector<char> receiveAll(size_t reserveSize = 256);
 
     SEV_DECL void close();
 
@@ -196,13 +197,13 @@ public:
     SEV_DECL bool cancelConnect();
 
 public:
-    SEV_DECL int32_t send(const void* data, uint32_t size,
+    SEV_DECL int32_t send(const void* data, size_t size,
         const TcpSendHandler& sendHandler = nullptr)
     {
         return mChannel->send(data, size, sendHandler);
     }
 
-    SEV_DECL int32_t receive(void* buff, uint32_t size)
+    SEV_DECL int32_t receive(void* buff, size_t size)
     {
         return mChannel->receive(buff, size);
     }

@@ -7,6 +7,7 @@
 #include <subevent/thread.hpp>
 #include <subevent/common.hpp>
 #include <subevent/event.hpp>
+#include <subevent/event_controller.hpp>
 #include <subevent/semaphore.hpp>
 
 #ifdef _WIN32

@@ -4,7 +4,6 @@
 #ifdef _WIN32
 
 #include <cassert>
-#include <algorithm>
 
 #include <subevent/socket_selector.hpp>
 

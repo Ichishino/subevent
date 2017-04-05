@@ -3,7 +3,6 @@
 
 #include <map>
 #include <atomic>
-#include <string>
 
 #include <subevent/std.hpp>
 #include <subevent/event.hpp>

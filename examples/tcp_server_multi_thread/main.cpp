@@ -16,16 +16,16 @@ public:
     MyThreadPool()
     {
         mIndex = (size_t)-1;
-        mMaxOfEachThread = 0;
+        mMaxSocketsOfEachThread = 0;
     }
 
     void createThreads(
-        Thread* parent, size_t threadCount, size_t maxOfEachThread)
+        Thread* parent, size_t threadCount, size_t maxSocketsOfEachThread)
     {
-        // Windows: (maxOfEachThread <= 63)
-        // Linux: (maxOfEachThread <= 1024)
+        // Windows: (maxSocketsOfEachThread <= 63)
+        // Linux: (maxSocketsOfEachThread <= 1024)
 
-        mMaxOfEachThread = maxOfEachThread;
+        mMaxSocketsOfEachThread = maxSocketsOfEachThread;
 
         for (size_t index = 0; index < threadCount; ++index)
         {
@@ -82,7 +82,7 @@ public:
 
             auto thread = mThreads[mIndex];
 
-            if (thread->getSocketCount() < mMaxOfEachThread)
+            if (thread->getSocketCount() < mMaxSocketsOfEachThread)
             {
                 // found
                 return thread;
@@ -107,7 +107,7 @@ public:
 
 private:
     size_t mIndex;
-    size_t mMaxOfEachThread;
+    size_t mMaxSocketsOfEachThread;
     std::vector<ThreadType*> mThreads;
 };
 
@@ -146,8 +146,7 @@ protected:
             }
 
             // send
-            channel->send(
-                &data[0], static_cast<uint32_t>(data.size()));
+            channel->send(&data[0], data.size());
         });
 
         // client closed

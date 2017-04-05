@@ -5,7 +5,6 @@
 
 #include <subevent/udp.hpp>
 #include <subevent/thread.hpp>
-#include <subevent/network.hpp>
 #include <subevent/socket.hpp>
 #include <subevent/socket_controller.hpp>
 
@@ -121,7 +120,7 @@ void UdpReceiver::onReceive()
 }
 
 int32_t UdpReceiver::receive(
-    void* buff, uint32_t size, IpEndPoint& senderEndPoint)
+    void* buff, size_t size, IpEndPoint& senderEndPoint)
 {
     assert(Thread::getCurrent() != nullptr);
     assert(SocketController::getInstance() != nullptr);
@@ -131,8 +130,14 @@ int32_t UdpReceiver::receive(
         return -1;
     }
 
+    if (size > INT32_MAX)
+    {
+        return -6301;
+    }
+
     // receive
-    return mSocket->receiveFrom(senderEndPoint, buff, size);
+    return mSocket->receiveFrom(
+        senderEndPoint, buff, static_cast<int32_t>(size));
 }
 
 void UdpReceiver::onClose()
@@ -188,15 +193,21 @@ bool UdpSender::create(const IpEndPoint& receiverEndPoint)
     return true;
 }
 
-int32_t UdpSender::send(const void* data, uint32_t size)
+int32_t UdpSender::send(const void* data, size_t size)
 {
     if (isClosed())
     {
         return -1;
     }
 
+    if (size > INT32_MAX)
+    {
+        return -6201;
+    }
+
     // send (need async?)
-    return mSocket->sendTo(mReceiverEndPoint, data, size);
+    return mSocket->sendTo(
+        mReceiverEndPoint, data, static_cast<int32_t>(size));
 }
 
 void UdpSender::close()

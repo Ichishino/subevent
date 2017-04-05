@@ -5,7 +5,6 @@
 
 #include <subevent/tcp.hpp>
 #include <subevent/thread.hpp>
-#include <subevent/network.hpp>
 #include <subevent/socket_controller.hpp>
 
 SEV_NS_BEGIN
@@ -249,7 +248,7 @@ void TcpChannel::close()
     mSocket = nullptr;
 }
 
-int32_t TcpChannel::send(const void* data, uint32_t size,
+int32_t TcpChannel::send(const void* data, size_t size,
     const TcpSendHandler& sendHandler)
 {
     assert(Thread::getCurrent() != nullptr);
@@ -260,11 +259,17 @@ int32_t TcpChannel::send(const void* data, uint32_t size,
         return -1;
     }
 
+    if (size > INT32_MAX)
+    {
+        return -5201;
+    }
+
     if (sendHandler == nullptr)
     {
         // sync
 
-        return mSocket->send(data, size, Socket::SendFlags);
+        return mSocket->send(
+            data, static_cast<int32_t>(size), Socket::SendFlags);
     }
     else
     {
@@ -272,8 +277,8 @@ int32_t TcpChannel::send(const void* data, uint32_t size,
 
         mSendHandlers.push_back(sendHandler);
 
-        if (!SocketController::getInstance()->
-            requestTcpSend(shared_from_this(), data, size))
+        if (!SocketController::getInstance()->requestTcpSend(
+            shared_from_this(), data, static_cast<int32_t>(size)))
         {
             return -1;
         }
@@ -282,7 +287,7 @@ int32_t TcpChannel::send(const void* data, uint32_t size,
     }
 }
 
-int32_t TcpChannel::receive(void* buff, uint32_t size)
+int32_t TcpChannel::receive(void* buff, size_t size)
 {
     assert(Thread::getCurrent() != nullptr);
     assert(SocketController::getInstance() != nullptr);
@@ -292,7 +297,12 @@ int32_t TcpChannel::receive(void* buff, uint32_t size)
         return -1;
     }
 
-    int32_t result = mSocket->receive(buff, size);
+    if (size > INT32_MAX)
+    {
+        return -5301;
+    }
+
+    int32_t result = mSocket->receive(buff, static_cast<int32_t>(size));
     if ((result == 0) && (size > 0))
     {
         SocketController::getInstance()->
@@ -302,10 +312,15 @@ int32_t TcpChannel::receive(void* buff, uint32_t size)
     return result;
 }
 
-std::vector<char> TcpChannel::receiveAll(uint32_t reserveSize)
+std::vector<char> TcpChannel::receiveAll(size_t reserveSize)
 {
     assert(Thread::getCurrent() != nullptr);
     assert(SocketController::getInstance() != nullptr);
+
+    if (reserveSize > INT32_MAX)
+    {
+        return std::vector<char>();
+    }
 
     uint32_t total = 0;
     std::vector<char> buff;

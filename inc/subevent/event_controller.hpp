@@ -1,7 +1,6 @@
 #ifndef SUBEVENT_EVENT_CONTROLLER_HPP
 #define SUBEVENT_EVENT_CONTROLLER_HPP
 
-#include <list>
 #include <queue>
 #include <mutex>
 

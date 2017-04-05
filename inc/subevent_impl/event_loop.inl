@@ -1,9 +1,6 @@
 #ifndef SUBEVENT_EVENT_LOOP_INL
 #define SUBEVENT_EVENT_LOOP_INL
 
-#include <algorithm>
-#include <iterator>
-
 #include <subevent/event_loop.hpp>
 #include <subevent/event_controller.hpp>
 #include <subevent/common.hpp>

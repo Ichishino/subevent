@@ -65,8 +65,7 @@ protected:
                     std::endl;
 
                 // send
-                channel->send(
-                    &data[0], static_cast<uint32_t>(data.size()));
+                channel->send(&data[0], data.size());
             });
 
             // client closed

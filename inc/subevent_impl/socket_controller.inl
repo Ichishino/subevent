@@ -76,20 +76,15 @@ bool SocketController::onInit()
 
 void SocketController::onExit()
 {
-    bool finished = false;
-
     closeAllItems();
-
-    if (isAllItemsClosed())
-    {
-        finished = true;
-    }
+    bool finished = isAllItemsClosed();
 
     while (finished == false)
     {
         Event* event = nullptr;
         static const uint32_t msec = 3000;
 
+        // wait
         WaitResult result = wait(msec, event);
 
         switch (result)
@@ -98,11 +93,7 @@ void SocketController::onExit()
         case WaitResult::Cancel:
             {
                 delete event;
-
-                if (isAllItemsClosed())
-                {
-                    finished = true;
-                }
+                finished = isAllItemsClosed();
             }
             break;
         case WaitResult::Timeout:
@@ -117,8 +108,9 @@ void SocketController::onExit()
                     delete item.closeTimer;
                 }
                 mTcpChannels.clear();
+                finished = true;
             }
-            return;
+            break;
         case WaitResult::Error:
             assert(false);
             finished = true;

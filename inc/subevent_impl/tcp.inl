@@ -337,7 +337,8 @@ std::vector<char> TcpChannel::receiveAll(size_t reserveSize)
             total += size;
         }
 
-        if (static_cast<size_t>(size) < reserveSize)
+        if ((size <= 0) ||
+            (static_cast<size_t>(size) < reserveSize))
         {
             buff.resize(total);
             break;

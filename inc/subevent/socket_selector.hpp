@@ -71,8 +71,6 @@ public:
         Socket::Handle sockHandle, uint32_t eventFlags, RegKey& key);
     SEV_DECL void unregisterSocket(const RegKey& key);
 
-    SEV_DECL bool modifyFlags(const RegKey& key, uint32_t eventFlags, bool enable);
-
     SEV_DECL WaitResult wait(uint32_t msec, SocketEvents& sockEvents);
     SEV_DECL void cancel();
 
@@ -98,7 +96,6 @@ private:
 #endif
 
     std::atomic<uint32_t> mSocketCount;
-    std::map<Socket::Handle, uint32_t> mFlagsMap;
     int32_t mErrorCode;
 };
 

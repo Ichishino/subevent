@@ -24,7 +24,6 @@ SocketSelector::~SocketSelector()
 {
     assert(mSockHandleMap.empty());
     assert(mSocketCount == 0);
-    assert(mFlagsMap.empty());
 }
 
 bool SocketSelector::registerSocket(
@@ -51,7 +50,6 @@ bool SocketSelector::registerSocket(
 
     mSockHandleMap[eventHandle] = sockHandle;
     mEventHandles[mSocketCount] = eventHandle;
-    mFlagsMap[sockHandle] = eventFlags;
 
     key.sockHandle = sockHandle;
     key.eventHandle = eventHandle;
@@ -80,47 +78,10 @@ void SocketSelector::unregisterSocket(const RegKey& key)
             WSACloseEvent(eventHandle);
 
             mSockHandleMap.erase(eventHandle);
-            mFlagsMap.erase(sockHandle);
 
             break;
         }
     }
-}
-
-bool SocketSelector::modifyFlags(
-    const RegKey& key, uint32_t eventFlags, bool enable)
-{
-    assert(mSockHandleMap.count(key.eventHandle) == 1);
-    assert(mSocketCount > 0);
-
-    Socket::Handle sockHandle = key.sockHandle;
-    Win::Handle eventHandle = key.eventHandle;
-
-    if (enable)
-    {
-        eventFlags =
-            static_cast<uint32_t>(
-                mFlagsMap[sockHandle] | eventFlags);
-    }
-    else
-    {
-        eventFlags =
-            static_cast<uint32_t>(
-                mFlagsMap[sockHandle] & ~eventFlags);
-    }
-
-    if (WSAEventSelect(
-        sockHandle, eventHandle, eventFlags) == SOCKET_ERROR)
-    {
-        assert(false);
-        mErrorCode = WSAGetLastError();
-
-        return false;
-    }
-
-    mFlagsMap[sockHandle] = eventFlags;
-
-    return true;
 }
 
 WaitResult SocketSelector::wait(uint32_t msec, SocketEvents& sockEvents)

@@ -58,7 +58,6 @@ SocketSelector::SocketSelector()
 
 SocketSelector::~SocketSelector()
 {
-    assert(mFlagsMap.empty());
     assert(mSocketCount == 0);
 
     if ((mEpollFd >= 0) && (mCancelFd >= 0))
@@ -81,8 +80,6 @@ SocketSelector::~SocketSelector()
 bool SocketSelector::registerSocket(
     Socket::Handle sockHandle, uint32_t eventFlags, RegKey& key)
 {
-    assert(mFlagsMap.count(sockHandle) == 0);
-
     if (mSocketCount >= MaxSockets)
     {
         return false;
@@ -106,7 +103,6 @@ bool SocketSelector::registerSocket(
 
     key.sockHandle = sockHandle;
 
-    mFlagsMap[sockHandle] = eventFlags;
     ++mSocketCount;
 
     return true;
@@ -115,7 +111,6 @@ bool SocketSelector::registerSocket(
 void SocketSelector::unregisterSocket(const RegKey& key)
 {
     assert(mSocketCount > 0);
-    assert(mFlagsMap.count(key.sockHandle) == 1);
 
     struct epoll_event e;
     if (epoll_ctl(mEpollFd, EPOLL_CTL_DEL, key.sockHandle, &e) != 0)
@@ -127,49 +122,7 @@ void SocketSelector::unregisterSocket(const RegKey& key)
     int32_t flag = fcntl(key.sockHandle, F_GETFL, 0);
     fcntl(key.sockHandle, F_SETFL, (flag & ~O_NONBLOCK));
 
-    mFlagsMap.erase(key.sockHandle);
     --mSocketCount;
-}
-
-bool SocketSelector::modifyFlags(
-    const RegKey& key, uint32_t eventFlags, bool enable)
-{
-    assert(mSocketCount > 0);
-    assert(mFlagsMap.count(key.sockHandle) == 1);
-
-    struct epoll_event e;
-    memset(&e, 0x00, sizeof(e));
-
-    e.data.fd = key.sockHandle;
-
-    if ((eventFlags == Send) || (eventFlags == Receive))
-    {
-        if (enable)
-        {
-            eventFlags = mFlagsMap[key.sockHandle] | eventFlags;
-        }
-        else
-        {
-            eventFlags = mFlagsMap[key.sockHandle] & ~eventFlags;
-        }
-
-        e.events = eventFlags | EPOLLET;
-    }
-    else
-    {
-        return false;
-    }
-
-    if (epoll_ctl(mEpollFd, EPOLL_CTL_MOD, key.sockHandle, &e) != 0)
-    {
-        mErrorCode = errno;
-        assert(false);
-        return false;
-    }
-
-    mFlagsMap[key.sockHandle] = eventFlags;
-
-    return true;
 }
 
 WaitResult SocketSelector::wait(uint32_t msec, SocketEvents& sockEvents)

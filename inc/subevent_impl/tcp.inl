@@ -319,13 +319,12 @@ std::vector<char> TcpChannel::receiveAll(size_t reserveSize)
 
     if (reserveSize > INT32_MAX)
     {
-        return std::vector<char>();
+        reserveSize = INT32_MAX;
     }
 
-    uint32_t total = 0;
+    size_t total = 0;
     std::vector<char> buff;
 
-    buff.reserve(reserveSize * 2);
     buff.resize(reserveSize);
 
     for (;;)
@@ -333,13 +332,17 @@ std::vector<char> TcpChannel::receiveAll(size_t reserveSize)
         // receive
         int32_t size = receive(&buff[total], reserveSize);
 
-        if (size <= 0)
+        if (size > 0)
+        {
+            total += size;
+        }
+
+        if (static_cast<size_t>(size) < reserveSize)
         {
             buff.resize(total);
             break;
         }
 
-        total += size;
         buff.resize(total + reserveSize);
     }
 

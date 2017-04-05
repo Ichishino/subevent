@@ -132,7 +132,7 @@ int32_t UdpReceiver::receive(
 
     if (size > INT32_MAX)
     {
-        return -6301;
+        size = INT32_MAX;
     }
 
     // receive

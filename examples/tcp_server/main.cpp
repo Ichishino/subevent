@@ -77,7 +77,6 @@ protected:
 
                 mTcpChannels.erase(channel);
             });
-
         });
 
         // end timer

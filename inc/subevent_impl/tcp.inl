@@ -159,20 +159,24 @@ void TcpServer::onAccept()
 {
     if (mAcceptHandler != nullptr)
     {
-        Socket* socket = mSocket->accept();
-
-        if (socket == nullptr)
+        for (;;)
         {
-            return;
+            // accept
+            Socket *socket = mSocket->accept();
+
+            if (socket == nullptr)
+            {
+                break;
+            }
+
+            TcpServerPtr self(shared_from_this());
+            TcpChannelPtr channel(new TcpChannel(socket));
+            TcpAcceptHandler handler = mAcceptHandler;
+
+            Thread::getCurrent()->post([self, handler, channel]() {
+                handler(self, channel);
+            });
         }
-
-        TcpServerPtr self(shared_from_this());
-        TcpChannelPtr channel(new TcpChannel(socket));
-        TcpAcceptHandler handler = mAcceptHandler;
-
-        Thread::getCurrent()->post([self, handler, channel]() {
-            handler(self, channel);
-        });
     }
 }
 

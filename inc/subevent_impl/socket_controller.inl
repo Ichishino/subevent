@@ -324,16 +324,6 @@ void SocketController::startTcpChannelCloseTimer(TcpChannelItem& item)
 
 void SocketController::onSelectEvent(SocketSelector::SocketEvents& sockEvents)
 {
-    for (auto& item : sockEvents.close)
-    {
-        // close
-        if (onSelectTcpClose(item.sockHandle, item.errorCode))
-        {
-            continue;
-        }
-
-    }
-
     for (auto& item : sockEvents.read)
     {
         // accept
@@ -365,6 +355,15 @@ void SocketController::onSelectEvent(SocketSelector::SocketEvents& sockEvents)
 
         // send
         if (onSelectTcpSend(item.sockHandle, item.errorCode))
+        {
+            continue;
+        }
+    }
+
+    for (auto& item : sockEvents.close)
+    {
+        // close
+        if (onSelectTcpClose(item.sockHandle, item.errorCode))
         {
             continue;
         }

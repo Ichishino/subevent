@@ -162,7 +162,7 @@ void TcpServer::onAccept()
         for (;;)
         {
             // accept
-            Socket *socket = mSocket->accept();
+            Socket* socket = mSocket->accept();
 
             if (socket == nullptr)
             {
@@ -316,7 +316,7 @@ int32_t TcpChannel::receive(void* buff, size_t size)
     return result;
 }
 
-std::vector<char> TcpChannel::receiveAll(size_t reserveSize)
+std::vector<unsigned char> TcpChannel::receiveAll(size_t reserveSize)
 {
     assert(Thread::getCurrent() != nullptr);
     assert(SocketController::getInstance() != nullptr);
@@ -327,7 +327,7 @@ std::vector<char> TcpChannel::receiveAll(size_t reserveSize)
     }
 
     size_t total = 0;
-    std::vector<char> buff;
+    std::vector<unsigned char> buff;
 
     buff.resize(reserveSize);
 

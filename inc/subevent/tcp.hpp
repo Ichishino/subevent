@@ -111,7 +111,7 @@ public:
         const TcpSendHandler& sendHandler = nullptr);
 
     SEV_DECL int32_t receive(void* buff, size_t size);
-    SEV_DECL std::vector<char> receiveAll(size_t reserveSize = 256);
+    SEV_DECL std::vector<unsigned char> receiveAll(size_t reserveSize = 256);
 
     SEV_DECL void close();
 
@@ -206,6 +206,11 @@ public:
     SEV_DECL int32_t receive(void* buff, size_t size)
     {
         return mChannel->receive(buff, size);
+    }
+
+    SEV_DECL std::vector<unsigned char> receiveAll()
+    {
+        return mChannel->receiveAll();
     }
 
     SEV_DECL void close()

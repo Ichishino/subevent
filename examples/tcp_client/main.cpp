@@ -41,7 +41,7 @@ protected:
             mSendTimer.start(1000, true, [&](Timer*) {
             
                 const char* msg = "hello";
-                uint32_t size = static_cast<uint32_t>(strlen(msg) + 1);
+                size_t size = strlen(msg) + 1;
 
                 std::cout << "send: " << msg << std::endl;
 

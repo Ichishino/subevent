@@ -2,6 +2,7 @@
 #define SUBEVENT_TCP_INL
 
 #include <cassert>
+#include <cstring>
 
 #include <subevent/tcp.hpp>
 #include <subevent/thread.hpp>
@@ -173,7 +174,7 @@ void TcpServer::onAccept()
             TcpChannelPtr channel(new TcpChannel(socket));
             TcpAcceptHandler handler = mAcceptHandler;
 
-            Thread::getCurrent()->post([self, handler, channel]() {
+            Thread::getCurrent()->post([self, channel, handler]() {
                 handler(self, channel);
             });
         }
@@ -252,7 +253,8 @@ void TcpChannel::close()
     mSocket = nullptr;
 }
 
-int32_t TcpChannel::send(const void* data, size_t size,
+int32_t TcpChannel::send(
+    const void* data, size_t size,
     const TcpSendHandler& sendHandler)
 {
     assert(Thread::getCurrent() != nullptr);
@@ -279,16 +281,45 @@ int32_t TcpChannel::send(const void* data, size_t size,
     {
         // async
 
-        mSendHandlers.push_back(sendHandler);
+        std::vector<char> buff;
+        buff.resize(size);
+        memcpy(&buff[0], data, size);
 
-        if (!SocketController::getInstance()->requestTcpSend(
-            shared_from_this(), data, static_cast<int32_t>(size)))
-        {
-            return -1;
-        }
-
-        return 0;
+        return send(std::move(buff), sendHandler);
     }
+}
+
+int32_t TcpChannel::sendString(
+    const std::string& data,
+    const TcpSendHandler& sendHandler)
+{
+    return send(
+        data.c_str(),
+        sizeof(std::string::value_type) * (data.size() + 1),
+        sendHandler);
+}
+
+int32_t TcpChannel::send(
+    std::vector<char>&& data,
+    const TcpSendHandler& sendHandler)
+{
+    assert(Thread::getCurrent() != nullptr);
+    assert(SocketController::getInstance() != nullptr);
+
+    if (isClosed())
+    {
+        return -1;
+    }
+
+    mSendHandlers.push_back(sendHandler);
+
+    if (!SocketController::getInstance()->requestTcpSend(
+        shared_from_this(), std::forward<std::vector<char>>(data)))
+    {
+        return -1;
+    }
+
+    return 0;
 }
 
 int32_t TcpChannel::receive(void* buff, size_t size)
@@ -398,7 +429,7 @@ void TcpChannel::onReceive()
         TcpChannelPtr self = shared_from_this();
         TcpReceiveHandler handler = mReceiveHandler;
 
-        Thread::getCurrent()->post([self, handler]() {
+        Thread::getCurrent()->post([=]() {
             handler(self);
         });
     }

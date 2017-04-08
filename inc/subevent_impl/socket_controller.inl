@@ -2,6 +2,7 @@
 #define SUBEVENT_SOCKET_CONTROLLER_INL
 
 #include <cassert>
+#include <utility>
 
 #include <subevent/socket_controller.hpp>
 #include <subevent/thread.hpp>
@@ -249,19 +250,19 @@ void SocketController::tryTcpSend(TcpChannelItem& item)
         TcpChannelItem::SendData& sendData =
             item.sendBuffer.front();
 
-        const char* data = &sendData.addr[sendData.index];
-        uint32_t size = sendData.size - sendData.index;
+        const char* data = &sendData.buff[sendData.index];
+        size_t size = sendData.buff.size() - sendData.index;
         Socket* socket = item.tcpChannel->mSocket;
 
         // send
         int32_t result = socket->send(
-            data, size, Socket::SendFlags);
+            data, static_cast<uint32_t>(size), Socket::SendFlags);
 
         if (result >= 0)
         {
-            sendData.index += static_cast<uint32_t>(result);
+            sendData.index += static_cast<size_t>(result);
 
-            if (sendData.index == sendData.size)
+            if (sendData.index == sendData.buff.size())
             {
                 // success
                 item.tcpChannel->onSend(0);
@@ -672,7 +673,7 @@ bool SocketController::cancelTcpConnect(const TcpClientPtr& tcpClient)
 }
 
 bool SocketController::requestTcpSend(
-    const TcpChannelPtr& tcpChannel, const void* data, uint32_t size)
+    const TcpChannelPtr& tcpChannel, std::vector<char>&& data)
 {
     Socket::Handle sockHandle =
         tcpChannel->mSocket->getHandle();
@@ -686,8 +687,7 @@ bool SocketController::requestTcpSend(
     TcpChannelItem& item = it->second;
 
     TcpChannelItem::SendData sendData;
-    sendData.addr = static_cast<const char*>(data);
-    sendData.size = size;
+    sendData.buff = std::move(data);
     sendData.index = 0;
     item.sendBuffer.push_back(std::move(sendData));
 

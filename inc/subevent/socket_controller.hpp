@@ -3,6 +3,7 @@
 
 #include <map>
 #include <list>
+#include <vector>
 
 #include <subevent/std.hpp>
 #include <subevent/event_controller.hpp>
@@ -46,7 +47,7 @@ public:
 
     SEV_DECL bool requestTcpSend(
         const TcpChannelPtr& tcpChannel,
-        const void* data, uint32_t size);
+        std::vector<char>&& data);
     SEV_DECL bool cancelTcpSend(const TcpChannelPtr& tcpChannel);
 
     SEV_DECL void requestTcpChannelClose(const TcpChannelPtr& tcpChannel);
@@ -119,9 +120,8 @@ private:
 
         struct SendData
         {
-            const char* addr;
-            uint32_t size;
-            uint32_t index;
+            std::vector<char> buff;
+            size_t index;
         };
 
         std::list<SendData> sendBuffer;

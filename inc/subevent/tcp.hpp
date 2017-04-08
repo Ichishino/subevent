@@ -4,6 +4,7 @@
 #include <list>
 #include <vector>
 #include <memory>
+#include <utility>
 #include <functional>
 
 #include <subevent/std.hpp>
@@ -109,6 +110,11 @@ public:
 public:
     SEV_DECL int32_t send(const void* data, size_t size,
         const TcpSendHandler& sendHandler = nullptr);
+    SEV_DECL int32_t sendString(const std::string& data,
+        const TcpSendHandler& sendHandler = nullptr);
+
+    SEV_DECL int32_t send(std::vector<char>&& data,
+        const TcpSendHandler& sendHandler);
 
     SEV_DECL int32_t receive(void* buff, size_t size);
     SEV_DECL std::vector<unsigned char> receiveAll(size_t reserveSize = 256);
@@ -201,6 +207,19 @@ public:
         const TcpSendHandler& sendHandler = nullptr)
     {
         return mChannel->send(data, size, sendHandler);
+    }
+
+    SEV_DECL int32_t sendString(const std::string& data,
+        const TcpSendHandler& sendHandler = nullptr)
+    {
+        return mChannel->sendString(data, sendHandler);
+    }
+
+    SEV_DECL int32_t send(std::vector<char>&& data,
+        const TcpSendHandler& sendHandler)
+    {
+        return mChannel->send(
+            std::forward<std::vector<char>>(data), sendHandler);
     }
 
     SEV_DECL int32_t receive(void* buff, size_t size)

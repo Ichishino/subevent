@@ -110,14 +110,13 @@ public:
 public:
     SEV_DECL int32_t send(const void* data, size_t size,
         const TcpSendHandler& sendHandler = nullptr);
+    SEV_DECL int32_t send(std::vector<char>&& data,
+        const TcpSendHandler& sendHandler);
     SEV_DECL int32_t sendString(const std::string& data,
         const TcpSendHandler& sendHandler = nullptr);
 
-    SEV_DECL int32_t send(std::vector<char>&& data,
-        const TcpSendHandler& sendHandler);
-
     SEV_DECL int32_t receive(void* buff, size_t size);
-    SEV_DECL std::vector<unsigned char> receiveAll(size_t reserveSize = 256);
+    SEV_DECL std::vector<char> receiveAll(size_t reserveSize = 256);
 
     SEV_DECL void close();
 
@@ -219,7 +218,8 @@ public:
         const TcpSendHandler& sendHandler)
     {
         return mChannel->send(
-            std::forward<std::vector<char>>(data), sendHandler);
+            std::forward<std::vector<char>>(data),
+            sendHandler);
     }
 
     SEV_DECL int32_t receive(void* buff, size_t size)
@@ -227,7 +227,7 @@ public:
         return mChannel->receive(buff, size);
     }
 
-    SEV_DECL std::vector<unsigned char> receiveAll()
+    SEV_DECL std::vector<char> receiveAll()
     {
         return mChannel->receiveAll();
     }

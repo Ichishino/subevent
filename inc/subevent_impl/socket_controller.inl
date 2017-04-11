@@ -250,13 +250,13 @@ void SocketController::tryTcpSend(TcpChannelItem& item)
         TcpChannelItem::SendData& sendData =
             item.sendBuffer.front();
 
-        const char* data = &sendData.buff[sendData.index];
         size_t size = sendData.buff.size() - sendData.index;
         Socket* socket = item.tcpChannel->mSocket;
 
         // send
         int32_t result = socket->send(
-            data, static_cast<uint32_t>(size), Socket::SendFlags);
+            &sendData.buff[sendData.index],
+            static_cast<uint32_t>(size), Socket::SendFlags);
 
         if (result >= 0)
         {
@@ -673,7 +673,8 @@ bool SocketController::cancelTcpConnect(const TcpClientPtr& tcpClient)
 }
 
 bool SocketController::requestTcpSend(
-    const TcpChannelPtr& tcpChannel, std::vector<char>&& data)
+    const TcpChannelPtr& tcpChannel,
+    std::vector<char>&& data)
 {
     Socket::Handle sockHandle =
         tcpChannel->mSocket->getHandle();

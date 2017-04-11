@@ -10,6 +10,7 @@
 #include <subevent/application.hpp>
 #include <subevent/event.hpp>
 #include <subevent/timer.hpp>
+#include <subevent/buffer_stream.hpp>
 #include <subevent/utility.hpp>
 
 #ifdef SEV_HEADER_ONLY

@@ -151,10 +151,12 @@
   <ItemGroup>
     <ClInclude Include="..\..\inc\subevent.hpp" />
     <ClInclude Include="..\..\inc\subevent\application.hpp" />
+    <ClInclude Include="..\..\inc\subevent\buffer_stream.hpp" />
     <ClInclude Include="..\..\inc\subevent\common.hpp" />
     <ClInclude Include="..\..\inc\subevent\event.hpp" />
     <ClInclude Include="..\..\inc\subevent\event_controller.hpp" />
     <ClInclude Include="..\..\inc\subevent\event_loop.hpp" />
+    <ClInclude Include="..\..\inc\subevent\http.hpp" />
     <ClInclude Include="..\..\inc\subevent\network.hpp" />
     <ClInclude Include="..\..\inc\subevent\semaphore.hpp" />
     <ClInclude Include="..\..\inc\subevent\socket.hpp" />
@@ -175,6 +177,7 @@
     <None Include="..\..\inc\subevent_impl\event.inl" />
     <None Include="..\..\inc\subevent_impl\event_controller.inl" />
     <None Include="..\..\inc\subevent_impl\event_loop.inl" />
+    <None Include="..\..\inc\subevent_impl\http.inl" />
     <None Include="..\..\inc\subevent_impl\semaphore.inl" />
     <None Include="..\..\inc\subevent_impl\socket.inl" />
     <None Include="..\..\inc\subevent_impl\socket_controller.inl" />

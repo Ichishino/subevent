@@ -174,7 +174,7 @@ void TcpServer::onAccept()
             TcpChannelPtr channel(new TcpChannel(socket));
             TcpAcceptHandler handler = mAcceptHandler;
 
-            Thread::getCurrent()->post([self, channel, handler]() {
+            Thread::getCurrent()->post([self, handler, channel]() {
                 handler(self, channel);
             });
         }
@@ -314,7 +314,8 @@ int32_t TcpChannel::send(
     mSendHandlers.push_back(sendHandler);
 
     if (!SocketController::getInstance()->requestTcpSend(
-        shared_from_this(), std::forward<std::vector<char>>(data)))
+        shared_from_this(),
+        std::forward<std::vector<char>>(data)))
     {
         return -1;
     }
@@ -338,6 +339,7 @@ int32_t TcpChannel::receive(void* buff, size_t size)
     }
 
     int32_t result = mSocket->receive(buff, static_cast<int32_t>(size));
+
     if ((result == 0) && (size > 0))
     {
         SocketController::getInstance()->
@@ -347,7 +349,7 @@ int32_t TcpChannel::receive(void* buff, size_t size)
     return result;
 }
 
-std::vector<unsigned char> TcpChannel::receiveAll(size_t reserveSize)
+std::vector<char> TcpChannel::receiveAll(size_t reserveSize)
 {
     assert(Thread::getCurrent() != nullptr);
     assert(SocketController::getInstance() != nullptr);
@@ -358,28 +360,36 @@ std::vector<unsigned char> TcpChannel::receiveAll(size_t reserveSize)
     }
 
     size_t total = 0;
-    std::vector<unsigned char> buff;
+    std::vector<char> buff;
 
-    buff.resize(reserveSize);
-
-    for (;;)
+    try
     {
-        // receive
-        int32_t size = receive(&buff[total], reserveSize);
+        buff.resize(reserveSize);
 
-        if (size > 0)
+        for (;;)
         {
-            total += size;
-        }
+            // receive
+            int32_t size = receive(&buff[total], reserveSize);
 
-        if ((size <= 0) ||
-            (static_cast<size_t>(size) < reserveSize))
-        {
-            buff.resize(total);
-            break;
-        }
+            if (size > 0)
+            {
+                total += size;
+            }
 
-        buff.resize(total + reserveSize);
+            if ((size <= 0) ||
+                (static_cast<size_t>(size) < reserveSize))
+            {
+                buff.resize(total);
+                break;
+            }
+
+            buff.resize(total + reserveSize);
+        }
+    }
+    catch (...)
+    {
+        buff.clear();
+        close();
     }
 
     return buff;
@@ -429,8 +439,23 @@ void TcpChannel::onReceive()
         TcpChannelPtr self = shared_from_this();
         TcpReceiveHandler handler = mReceiveHandler;
 
-        Thread::getCurrent()->post([=]() {
+        Thread::getCurrent()->post([self, handler]() {
+
             handler(self);
+
+            if (self->isClosed())
+            {
+                return;
+            }
+
+            char eof[1];
+            int32_t result =
+                self->mSocket->receive(eof, sizeof(eof), MSG_PEEK);
+            if (result == 0)
+            {
+                SocketController::getInstance()->
+                    onTcpReceiveEof(self);
+            }
         });
     }
 }

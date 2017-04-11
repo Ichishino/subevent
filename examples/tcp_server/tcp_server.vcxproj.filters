@@ -76,6 +76,12 @@
     <ClInclude Include="..\..\inc\subevent\utility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\buffer_stream.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\http.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\inc\subevent_impl\event.inl">
@@ -121,6 +127,9 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\utility.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\inc\subevent_impl\http.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

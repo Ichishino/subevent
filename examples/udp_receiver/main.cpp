@@ -48,7 +48,7 @@ protected:
             }
         });
 
-        // end timer
+        // app end timer
         mEndTimer.start(60 * 1000, false, [&](Timer*) {
             stop();
         });

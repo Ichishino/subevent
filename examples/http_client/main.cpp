@@ -15,31 +15,34 @@ protected:
     {
         NetApplication::onInit();
 
-        IpEndPoint receiver("127.0.0.1", 9001);
+        mHttpClient = HttpClient::newInstance();
 
-        mUdpSender = UdpSender::newInstance();
+        std::string url = "http://example.com";
 
-        // create
-        mUdpSender->create(receiver);
+        // GET request
+        mHttpClient->requestGet(
+            url, [](const HttpClientPtr client, int errorCode) {
+        
+            if (errorCode != 0)
+            {
+                // network error
+                return;
+            }
 
-        // repeat timer
-        mSendTimer.start(1000, true, [&](Timer*) {
+            uint16_t statusCode =
+                client->getResponse().getStatusCode();
+            
+            if (statusCode == 200)
+            {
+                std::string response =
+                    client->getResponse().getBodyString();
 
-            const char* msg = "hello";
-            size_t size = strlen(msg) + 1;
-
-            std::cout << "send: " << msg <<
-                " to " << mUdpSender->getReceiverEndPoint().toString() <<
-                std::endl;
-
-            // send
-            mUdpSender->send(msg, size);
+                std::cout << response << std::endl;
+            }
         });
 
         // app end timer
         mEndTimer.start(60 * 1000, false, [&](Timer*) {
-
-            mSendTimer.cancel();
             stop();
         });
 
@@ -48,16 +51,13 @@ protected:
 
     void onExit() override
     {
-        // sender close
-        mUdpSender->close();
+        mHttpClient->close();
 
         NetApplication::onExit();
     }
 
 private:
-    UdpSenderPtr mUdpSender;
-
-    Timer mSendTimer;
+    HttpClientPtr mHttpClient;
     Timer mEndTimer;
 };
 

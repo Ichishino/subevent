@@ -173,6 +173,7 @@ public:
     SEV_DECL bool isEmpty() const;
 
 public:
+    SEV_DECL void setContentLength(size_t contentLength);
     SEV_DECL size_t getContentLength() const;
 
 public:
@@ -234,15 +235,20 @@ public:
         return mHeader;
     }
 
-    SEV_DECL void setBody(const std::string& body)
-    {
-        OStringStream oss(mBody);
-        oss.writeString(body);
-    }
-
+public:
     SEV_DECL void setBody(std::vector<char>&& body)
     {
         mBody = std::move(body);
+    }
+
+    SEV_DECL void setBody(const std::string& body)
+    {
+        mBody.resize(body.size());
+
+        if (!body.empty())
+        {
+            memcpy(&mBody[0], body.c_str(), body.size());
+        }
     }
 
     SEV_DECL std::vector<char>& getBody()
@@ -260,22 +266,15 @@ public:
         return std::move(mBody);
     }
 
-    SEV_DECL void setBodyString(const std::string& body)
+    SEV_DECL std::string getBodyAsString() const
     {
-        OStringStream oss(mBody);
-        oss.writeString(body);
+        return std::string(mBody.begin(), mBody.end());
     }
 
-    SEV_DECL std::string getBodyString()
-    {
-        IStringStream iss(mBody);
-        return iss.readString();
-    }
-
+public:
     SEV_DECL bool isEmpty() const;
     SEV_DECL void clear();
 
-public:
     SEV_DECL void serializeMessage(OStringStream& oss) const;
     SEV_DECL bool deserializeMessage(IStringStream& iss);
 
@@ -341,9 +340,20 @@ public:
         return mHeader;
     }
 
+public:
     SEV_DECL void setBody(std::vector<char>&& body)
     {
         mBody = std::move(body);
+    }
+
+    SEV_DECL void setBody(const std::string& body)
+    {
+        mBody.resize(body.size());
+
+        if (!body.empty())
+        {
+            memcpy(&mBody[0], body.c_str(), body.size());
+        }
     }
 
     SEV_DECL std::vector<char>& getBody()
@@ -361,22 +371,15 @@ public:
         return std::move(mBody);
     }
 
-    SEV_DECL void setBodyString(const std::string& body)
-    {
-        OStringStream oss(mBody);
-        oss.writeString(body);
-    }
-
     SEV_DECL std::string getBodyAsString() const
     {
-        IStringStream iss(mBody);
-        return iss.readString();
+        return std::string(mBody.begin(), mBody.end());
     }
 
+public:
     SEV_DECL void clear();
     SEV_DECL bool isEmpty() const;
 
-public:
     SEV_DECL void serializeMessage(OStringStream& oss) const;
     SEV_DECL bool deserializeMessage(IStringStream& iss);
 

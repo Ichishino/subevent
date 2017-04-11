@@ -323,6 +323,12 @@ bool HttpHeader::deserialize(IStringStream& iss)
     return true;
 }
 
+void HttpHeader::setContentLength(size_t contentLength)
+{
+    remove("Content-Length");
+    add("Content-Length", std::to_string(contentLength));
+}
+
 size_t HttpHeader::getContentLength() const
 {
     size_t contentLength = 0;
@@ -369,13 +375,9 @@ bool HttpRequest::isEmpty() const
 void HttpRequest::serializeMessage(OStringStream& oss) const
 {
     // method + path + protocol
-    oss.writeString(
-        mMethod +
-        " " +
-        mPath +
-        " " +
-        mProtocol +
-        "\r\n");
+    oss << mMethod << " "
+        << mPath << " "
+        << mProtocol << "\r\n";
 
     // header
     mHeader.serialize(oss);
@@ -495,13 +497,9 @@ bool HttpResponse::isEmpty() const
 void HttpResponse::serializeMessage(OStringStream& oss) const
 {
     // protocol + status code + message
-    oss.writeString(
-        mProtocol +
-        " " +
-        std::to_string(mStatusCode) +
-        " " +
-        mMessage +
-        "\r\n");
+    oss << mProtocol << " "
+        << mStatusCode << " "
+        << mMessage << "\r\n";
 
     // header
     mHeader.serialize(oss);
@@ -563,22 +561,26 @@ bool HttpResponse::deserializeMessage(IStringStream& iss)
     return true;
 }
 
-void HttpResponse::serializeBody(OBufferStream& oss) const
+void HttpResponse::serializeBody(OBufferStream& obs) const
 {
     // body
     if (!mBody.empty())
     {
-        oss.writeBytes(&mBody[0], mBody.size());
+        obs.writeBytes(&mBody[0], mBody.size());
     }
 }
 
-bool HttpResponse::deserializeBody(IBufferStream& iss)
+bool HttpResponse::deserializeBody(IBufferStream& ibs)
 {
     // body
-    if (!iss.isEnd())
+    if (!ibs.isEnd())
     {
-        mBody.resize(iss.getReadableSize());
-        iss.readBytes(&mBody[0], mBody.size());
+        mBody.resize(ibs.getReadableSize());
+
+        if (!ibs.readBytes(&mBody[0], mBody.size()))
+        {
+            return false;
+        }
     }
 
     return true;
@@ -663,7 +665,12 @@ bool HttpClient::request(
     }
 
     mRequest.setMethod(method);
-    mRequest.setBodyString(body);
+
+    if (!body.empty())
+    {
+        mRequest.setBody(body);
+    }
+
     mResponseHandler = responseHandler;
     mOutputFileName = outputFileName;
 
@@ -762,9 +769,17 @@ void HttpClient::sendHttpRequest()
 {
     mRequest.setPath(mUrl.getPath());
 
+    // Host
     if (!mRequest.getHeader().isExists("Host"))
     {
         mRequest.getHeader().add("Host", mUrl.getHost());
+    }
+
+    // Content Length
+    if (!mRequest.getBody().empty())
+    {
+        mRequest.getHeader().setContentLength(
+            mRequest.getBody().size());
     }
 
     std::vector<char> requestData;
@@ -772,7 +787,16 @@ void HttpClient::sendHttpRequest()
     // serialize
     OStringStream oss(requestData);
     mRequest.serializeMessage(oss);
-    mRequest.serializeBody(oss);
+
+    if (!mRequest.getBody().empty())
+    {
+        mRequest.serializeBody(oss);
+    }
+    else
+    {
+        // cut null
+        requestData.resize(requestData.size() - 1);
+    }
 
     // send
     int32_t result = mTcpClient->send(
@@ -878,6 +902,24 @@ bool HttpClient::deserializeResponseBody(IBufferStream& ibs)
     return true;
 }
 
+void HttpClient::onResponse(int32_t errorCode)
+{
+    if (errorCode != 0)
+    {
+        mTcpClient->close();
+    }
+
+    if (mResponseHandler != nullptr)
+    {
+        HttpClientPtr self = shared_from_this();
+        HttpResponseHandler handler = mResponseHandler;
+
+        Thread::getCurrent()->post([self, handler, errorCode]() {
+            handler(self, errorCode);
+        });
+    }
+}
+
 void HttpClient::onTcpConnect(
     const TcpClientPtr& /* client */, int32_t errorCode)
 {
@@ -919,24 +961,6 @@ void HttpClient::onTcpClose(const TcpChannelPtr& /* channel */)
     if (!isResponseCompleted())
     {
         onResponse(-1);
-    }
-}
-
-void HttpClient::onResponse(int32_t errorCode)
-{
-    if (errorCode != 0)
-    {
-        mTcpClient->close();
-    }
-
-    if (mResponseHandler != nullptr)
-    {
-        HttpClientPtr self = shared_from_this();
-        HttpResponseHandler handler = mResponseHandler;
-
-        Thread::getCurrent()->post([self, handler, errorCode]() {
-            handler(self, errorCode);
-        });
     }
 }
 

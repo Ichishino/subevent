@@ -35,7 +35,7 @@ protected:
             if (statusCode == 200)
             {
                 std::string response =
-                    client->getResponse().getBodyString();
+                    client->getResponse().getBodyAsString();
 
                 std::cout << response << std::endl;
             }

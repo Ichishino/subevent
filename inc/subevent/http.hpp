@@ -367,7 +367,7 @@ public:
         oss.writeString(body);
     }
 
-    SEV_DECL std::string getBodyString()
+    SEV_DECL std::string getBodyAsString() const
     {
         IStringStream iss(mBody);
         return iss.readString();

@@ -19,7 +19,7 @@ C++ Event Driven and Network Application Library
 ### Example
 * A Simple Application
 ```C++
-#include "subevent.hpp"
+#include <subevent/subevent.hpp>
 
 SEV_USING_NS
 

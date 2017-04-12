@@ -9,8 +9,8 @@
 #include <subevent/http.hpp>
 
 #ifdef SEV_HEADER_ONLY
-#include <subevent_impl/ssl_socket.inl>
-#include <subevent_impl/http.inl>
+#include <subevent/ssl_socket.inl>
+#include <subevent/http.inl>
 #endif
 
 #endif // SUBEVENT_HTTP_HEADERS_HPP

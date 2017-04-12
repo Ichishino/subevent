@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "subevent.hpp"
-#include "subevent_http.hpp"
+#include <subevent/subevent.hpp>
+#include <subevent/subevent_http.hpp>
 
 SEV_USING_NS
 

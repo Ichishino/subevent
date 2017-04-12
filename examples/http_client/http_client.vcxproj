@@ -153,7 +153,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\subevent.hpp" />
     <ClInclude Include="..\..\inc\subevent\application.hpp" />
     <ClInclude Include="..\..\inc\subevent\buffer_stream.hpp" />
     <ClInclude Include="..\..\inc\subevent\common.hpp" />
@@ -168,7 +167,9 @@
     <ClInclude Include="..\..\inc\subevent\socket_selector.hpp" />
     <ClInclude Include="..\..\inc\subevent\ssl_socket.hpp" />
     <ClInclude Include="..\..\inc\subevent\std.hpp" />
+    <ClInclude Include="..\..\inc\subevent\subevent.hpp" />
     <ClInclude Include="..\..\inc\subevent\subevent_core.hpp" />
+    <ClInclude Include="..\..\inc\subevent\subevent_http.hpp" />
     <ClInclude Include="..\..\inc\subevent\subevent_net.hpp" />
     <ClInclude Include="..\..\inc\subevent\tcp.hpp" />
     <ClInclude Include="..\..\inc\subevent\thread.hpp" />
@@ -178,23 +179,23 @@
     <ClInclude Include="..\..\inc\subevent\utility.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\inc\subevent_impl\application.inl" />
-    <None Include="..\..\inc\subevent_impl\event.inl" />
-    <None Include="..\..\inc\subevent_impl\event_controller.inl" />
-    <None Include="..\..\inc\subevent_impl\event_loop.inl" />
-    <None Include="..\..\inc\subevent_impl\http.inl" />
-    <None Include="..\..\inc\subevent_impl\semaphore.inl" />
-    <None Include="..\..\inc\subevent_impl\socket.inl" />
-    <None Include="..\..\inc\subevent_impl\socket_controller.inl" />
-    <None Include="..\..\inc\subevent_impl\socket_selector_linux.inl" />
-    <None Include="..\..\inc\subevent_impl\socket_selector_win.inl" />
-    <None Include="..\..\inc\subevent_impl\ssl_socket.inl" />
-    <None Include="..\..\inc\subevent_impl\tcp.inl" />
-    <None Include="..\..\inc\subevent_impl\thread.inl" />
-    <None Include="..\..\inc\subevent_impl\timer.inl" />
-    <None Include="..\..\inc\subevent_impl\timer_manager.inl" />
-    <None Include="..\..\inc\subevent_impl\udp.inl" />
-    <None Include="..\..\inc\subevent_impl\utility.inl" />
+    <None Include="..\..\inc\subevent\application.inl" />
+    <None Include="..\..\inc\subevent\event.inl" />
+    <None Include="..\..\inc\subevent\event_controller.inl" />
+    <None Include="..\..\inc\subevent\event_loop.inl" />
+    <None Include="..\..\inc\subevent\http.inl" />
+    <None Include="..\..\inc\subevent\semaphore.inl" />
+    <None Include="..\..\inc\subevent\socket.inl" />
+    <None Include="..\..\inc\subevent\socket_controller.inl" />
+    <None Include="..\..\inc\subevent\socket_selector_linux.inl" />
+    <None Include="..\..\inc\subevent\socket_selector_win.inl" />
+    <None Include="..\..\inc\subevent\ssl_socket.inl" />
+    <None Include="..\..\inc\subevent\tcp.inl" />
+    <None Include="..\..\inc\subevent\thread.inl" />
+    <None Include="..\..\inc\subevent\timer.inl" />
+    <None Include="..\..\inc\subevent\timer_manager.inl" />
+    <None Include="..\..\inc\subevent\udp.inl" />
+    <None Include="..\..\inc\subevent\utility.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

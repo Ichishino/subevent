@@ -14,15 +14,15 @@
 #include <subevent/utility.hpp>
 
 #ifdef SEV_HEADER_ONLY
-#include <subevent_impl/application.inl>
-#include <subevent_impl/thread.inl>
-#include <subevent_impl/event.inl>
-#include <subevent_impl/timer.inl>
-#include <subevent_impl/semaphore.inl>
-#include <subevent_impl/event_controller.inl>
-#include <subevent_impl/event_loop.inl>
-#include <subevent_impl/timer_manager.inl>
-#include <subevent_impl/utility.inl>
+#include <subevent/application.inl>
+#include <subevent/thread.inl>
+#include <subevent/event.inl>
+#include <subevent/timer.inl>
+#include <subevent/semaphore.inl>
+#include <subevent/event_controller.inl>
+#include <subevent/event_loop.inl>
+#include <subevent/timer_manager.inl>
+#include <subevent/utility.inl>
 #endif
 
 #endif // SUBEVENT_CORE_HEADERS_HPP

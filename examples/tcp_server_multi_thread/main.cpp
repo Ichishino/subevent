@@ -1,7 +1,7 @@
 #include <set>
 #include <iostream>
 
-#include "subevent.hpp"
+#include <subevent/subevent.hpp>
 
 SEV_USING_NS
 

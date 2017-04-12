@@ -143,7 +143,9 @@ In each directory:
 $ cmake .
 $ make
 ```
-* TODO  
-HTTP/2  
-HTTP server  
-etc  
+
+### TODO
+* HTTP/2
+* HTTP server
+* WebSocket
+* etc

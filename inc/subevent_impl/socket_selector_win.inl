@@ -77,6 +77,9 @@ void SocketSelector::unregisterSocket(const RegKey& key)
             WSAEventSelect(sockHandle, NULL, 0);
             WSACloseEvent(eventHandle);
 
+            u_long value = 0;
+            ioctlsocket(sockHandle, FIONBIO, &value);
+
             mSockHandleMap.erase(eventHandle);
 
             break;

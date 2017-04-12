@@ -105,7 +105,7 @@ private:
 class TcpChannel : public std::enable_shared_from_this<TcpChannel>
 {
 public:
-    SEV_DECL ~TcpChannel();
+    SEV_DECL virtual ~TcpChannel();
 
 public:
     SEV_DECL int32_t send(const void* data, size_t size,
@@ -176,7 +176,7 @@ private:
 // TcpClient
 //----------------------------------------------------------------------------//
 
-class TcpClient : public std::enable_shared_from_this<TcpClient>
+class TcpClient : public TcpChannel
 {
 public:
     SEV_DECL static TcpClientPtr newInstance()
@@ -184,7 +184,7 @@ public:
         return TcpClientPtr(new TcpClient());
     }
 
-    SEV_DECL ~TcpClient();
+    SEV_DECL ~TcpClient() override;
 
     static const uint32_t DefaultTimeout = 15 * 1000;
 
@@ -201,94 +201,17 @@ public:
 
     SEV_DECL bool cancelConnect();
 
-public:
-    SEV_DECL int32_t send(const void* data, size_t size,
-        const TcpSendHandler& sendHandler = nullptr)
-    {
-        return mChannel->send(data, size, sendHandler);
-    }
-
-    SEV_DECL int32_t sendString(const std::string& data,
-        const TcpSendHandler& sendHandler = nullptr)
-    {
-        return mChannel->sendString(data, sendHandler);
-    }
-
-    SEV_DECL int32_t send(std::vector<char>&& data,
-        const TcpSendHandler& sendHandler)
-    {
-        return mChannel->send(
-            std::forward<std::vector<char>>(data),
-            sendHandler);
-    }
-
-    SEV_DECL int32_t receive(void* buff, size_t size)
-    {
-        return mChannel->receive(buff, size);
-    }
-
-    SEV_DECL std::vector<char> receiveAll()
-    {
-        return mChannel->receiveAll();
-    }
-
-    SEV_DECL void close()
-    {
-        mChannel->close();
-    }
-
-    SEV_DECL bool cancelSend()
-    {
-        return mChannel->cancelSend();
-    }
-
-    SEV_DECL void setReceiveHandler(
-        const TcpReceiveHandler& receiveHandler)
-    {
-        mChannel->setReceiveHandler(receiveHandler);
-    }
-
-    SEV_DECL void setCloseHandler(
-        const TcpCloseHandler& closeHandler)
-    {
-        mChannel->setCloseHandler(closeHandler);
-    }
-
-    SEV_DECL SocketOption& getSocketOption()
-    {
-        return mChannel->getSocketOption();
-    }
-
-    SEV_DECL bool isClosed() const
-    {
-        return mChannel->isClosed();
-    }
-
-    SEV_DECL const IpEndPoint& getLocalEndPoint() const
-    {
-        return mChannel->getLocalEndPoint();
-    }
-
-    SEV_DECL const IpEndPoint& getPeerEndPoint() const
-    {
-        return mChannel->getPeerEndPoint();
-    }
-
-public:
-    SEV_DECL bool isEqual(const TcpChannelPtr& channel) const
-    {
-        return (mChannel == channel);
-    }
-
-private:
+protected:
     SEV_DECL TcpClient();
 
+private:
+    SEV_DECL virtual Socket* createSocket(
+        const IpEndPoint& peerEndPoint, int32_t& errorCode);
     SEV_DECL void onConnect(Socket* socket, int32_t errorCode);
 
     TcpClient(const TcpClient&) = delete;
     TcpClient& operator=(const TcpClient&) = delete;
 
-    TcpChannelPtr mChannel;
     TcpConnectHandler mConnectHandler;
 
     friend class SocketController;

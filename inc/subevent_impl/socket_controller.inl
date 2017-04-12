@@ -184,21 +184,14 @@ bool SocketController::tryTcpConnect(TcpClientItem& item)
     {
         IpEndPoint& peerEndPoint = item.endPointList.front();
 
-        Socket* socket = new Socket();
-
-        // create
-        if (!socket->create(
-            peerEndPoint.getFamily(),
-            Socket::Type::Tcp,
-            Socket::Protocol::Tcp))
+        int32_t errorCode;
+        Socket* socket =
+            item.tcpClient->createSocket(peerEndPoint, errorCode);
+        if (socket == nullptr)
         {
-            item.tcpClient->onConnect(nullptr, socket->getErrorCode());
-            delete socket;
+            item.tcpClient->onConnect(nullptr, errorCode);
             return true;
         }
-
-        // option
-        socket->setOption(item.tcpClient->getSocketOption());
 
         Socket::Handle sockHandle = socket->getHandle();
 

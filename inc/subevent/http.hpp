@@ -398,7 +398,7 @@ private:
 // HttpClient
 //----------------------------------------------------------------------------//
 
-class HttpClient : public std::enable_shared_from_this<HttpClient>
+class HttpClient : public TcpClient
 {
 public:
     SEV_DECL static HttpClientPtr newInstance()
@@ -406,7 +406,7 @@ public:
         return HttpClientPtr(new HttpClient());
     }
 
-    SEV_DECL ~HttpClient();
+    SEV_DECL ~HttpClient() override;
 
 public:
 
@@ -454,8 +454,6 @@ public:
         const HttpResponseHandler& responseHandler,
         const std::string& outputFileName = "");
 
-    SEV_DECL void close();
-
     SEV_DECL bool isResponseCompleted() const;
 
 public:
@@ -474,11 +472,6 @@ public:
         return mResponse;
     }
 
-    SEV_DECL const TcpClientPtr& getTcpClient() const
-    {
-        return mTcpClient;
-    }
-
 private:
     SEV_DECL HttpClient();
 
@@ -491,6 +484,9 @@ private:
     SEV_DECL void onTcpReceive(const TcpChannelPtr& channel);
     SEV_DECL void onTcpClose(const TcpChannelPtr& channel);
     SEV_DECL void onResponse(int32_t errorCode);
+
+    SEV_DECL Socket* createSocket(
+        const IpEndPoint& peerEndPoint, int32_t& errorCode) override;
 
     HttpClient(const HttpClient&) = delete;
     HttpClient& operator=(const HttpClient&) = delete;
@@ -554,11 +550,11 @@ private:
     size_t mReceivedResponseBodySize;
     ChunkedResponse mChunkedResponse;
 
-    std::string mOutputFileName;
+    std::vector<char> mResponseTempBuffer;
 
-    TcpClientPtr mTcpClient;
+    std::string mOutputFileName;
 };
 
 SEV_NS_END
 
-#endif /* SUBEVENT_HTTP_HPP */
+#endif // SUBEVENT_HTTP_HPP

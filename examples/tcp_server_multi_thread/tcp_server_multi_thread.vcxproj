@@ -163,14 +163,14 @@
     <ClInclude Include="..\..\inc\subevent\socket_controller.hpp" />
     <ClInclude Include="..\..\inc\subevent\socket_selector.hpp" />
     <ClInclude Include="..\..\inc\subevent\std.hpp" />
+    <ClInclude Include="..\..\inc\subevent\subevent_core.hpp" />
+    <ClInclude Include="..\..\inc\subevent\subevent_net.hpp" />
     <ClInclude Include="..\..\inc\subevent\tcp.hpp" />
     <ClInclude Include="..\..\inc\subevent\thread.hpp" />
     <ClInclude Include="..\..\inc\subevent\timer.hpp" />
     <ClInclude Include="..\..\inc\subevent\timer_manager.hpp" />
     <ClInclude Include="..\..\inc\subevent\udp.hpp" />
     <ClInclude Include="..\..\inc\subevent\utility.hpp" />
-    <ClInclude Include="..\..\inc\subevent_core.hpp" />
-    <ClInclude Include="..\..\inc\subevent_net.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\inc\subevent_impl\application.inl" />

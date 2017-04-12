@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "subevent.hpp"
+#include "subevent_http.hpp"
 
 SEV_USING_NS
 
@@ -21,7 +22,7 @@ protected:
 
         // GET request
         mHttpClient->requestGet(
-            url, [](const HttpClientPtr client, int errorCode) {
+            url, [](const HttpClientPtr& client, int errorCode) {
         
             if (errorCode != 0)
             {

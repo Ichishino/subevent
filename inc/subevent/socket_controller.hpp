@@ -24,7 +24,7 @@ class SocketController : public EventController
 {
 public:
     SEV_DECL SocketController();
-    SEV_DECL ~SocketController();
+    SEV_DECL ~SocketController() override;
 
 public:
     SEV_DECL WaitResult wait(uint32_t msec, Event*& event) override;

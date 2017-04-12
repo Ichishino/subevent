@@ -19,7 +19,7 @@ public:
     SEV_DECL explicit Application(const std::string& name = "");
     SEV_DECL Application(
         int32_t argc, char* argv[], const std::string& name = "");
-    SEV_DECL virtual ~Application();
+    SEV_DECL virtual ~Application() override;
 
 public:
     SEV_DECL int32_t run();

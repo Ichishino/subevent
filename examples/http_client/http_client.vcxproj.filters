@@ -1,140 +1,142 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="ソース ファイル">
+    <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="ヘッダー ファイル">
+    <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="リソース ファイル">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\subevent.hpp">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\subevent_core.hpp">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\subevent_net.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\application.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\buffer_stream.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\common.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\event.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\event_controller.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\event_loop.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\http.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\network.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\semaphore.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\socket.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\socket_controller.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\socket_selector.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\std.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\tcp.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\thread.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\timer.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\timer_manager.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\udp.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\utility.hpp">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\subevent_core.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\subevent_net.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\ssl_socket.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\inc\subevent_impl\application.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\event.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\event_controller.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\event_loop.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\http.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\semaphore.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\socket.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\socket_controller.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\socket_selector_linux.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\socket_selector_win.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\tcp.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\thread.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\timer.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\timer_manager.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\udp.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent_impl\utility.inl">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\inc\subevent_impl\ssl_socket.inl">
+      <Filter>Header Files</Filter>
     </None>
   </ItemGroup>
 </Project>

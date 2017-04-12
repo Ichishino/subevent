@@ -32,6 +32,11 @@ public:
         return &mBuff[mCur];
     }
 
+    SEV_DECL const std::vector<char>& getBuffer() const
+    {
+        return mBuff;
+    }
+
     SEV_DECL size_t getSize() const
     {
         return mBuff.size();
@@ -210,6 +215,11 @@ public:
     SEV_DECL char* getPtr()
     {
         return &mBuff[mCur];
+    }
+
+    SEV_DECL const std::vector<char>& getBuffer() const
+    {
+        return mBuff;
     }
 
     SEV_DECL size_t getSize() const
@@ -480,4 +490,4 @@ public:
 
 SEV_NS_END
 
-#endif /* SUBEVENT_BUFFER_STREAM_HPP */
+#endif // SUBEVENT_BUFFER_STREAM_HPP

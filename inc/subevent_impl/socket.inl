@@ -748,6 +748,12 @@ bool Socket::isBlockingError() const
 #endif
 }
 
+bool Socket::onConnect()
+{
+    // for OpenSSL
+    return true;
+}
+
 int Socket::getLastError()
 {
 #ifdef _WIN32

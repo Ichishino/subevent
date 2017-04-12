@@ -375,9 +375,7 @@ std::vector<char> TcpChannel::receiveAll(size_t reserveSize)
             {
                 total += size;
             }
-
-            if ((size <= 0) ||
-                (static_cast<size_t>(size) < reserveSize))
+            else
             {
                 buff.resize(total);
                 break;
@@ -436,7 +434,7 @@ void TcpChannel::onReceive()
 {
     if (mReceiveHandler != nullptr)
     {
-        TcpChannelPtr self = shared_from_this();
+        TcpChannelPtr self(shared_from_this());
         TcpReceiveHandler handler = mReceiveHandler;
 
         Thread::getCurrent()->post([self, handler]() {
@@ -464,7 +462,7 @@ void TcpChannel::onSend(int32_t errorCode)
 {
     if (!mSendHandlers.empty())
     {
-        TcpChannelPtr self = shared_from_this();
+        TcpChannelPtr self(shared_from_this());
         TcpSendHandler handler = mSendHandlers.front();
         mSendHandlers.pop_front();
 
@@ -485,7 +483,7 @@ void TcpChannel::onClose()
 
     if (mCloseHandler != nullptr)
     {
-        TcpChannelPtr self = shared_from_this();
+        TcpChannelPtr self(shared_from_this());
         TcpCloseHandler handler = mCloseHandler;
         mCloseHandler = nullptr;
 
@@ -501,7 +499,6 @@ void TcpChannel::onClose()
 //----------------------------------------------------------------------------//
 
 TcpClient::TcpClient()
-    : mChannel(new TcpChannel())
 {
 }
 
@@ -531,12 +528,14 @@ void TcpClient::connect(
         return;
     }
 
+    TcpClientPtr self(
+        std::static_pointer_cast<TcpClient>(shared_from_this()));
+
     std::list<IpEndPoint> endPointList;
     endPointList.push_back(peerEndPoint);
 
     SocketController::getInstance()->
-        requestTcpConnect(
-            shared_from_this(), endPointList, msecTimeout);
+        requestTcpConnect(self, endPointList, msecTimeout);
 }
 
 void TcpClient::connect(
@@ -577,9 +576,11 @@ void TcpClient::connect(
         endPointList.push_back(peerEndPoint);
     }
 
+    TcpClientPtr self(
+        std::static_pointer_cast<TcpClient>(shared_from_this()));
+
     SocketController::getInstance()->
-        requestTcpConnect(
-            shared_from_this(), endPointList, msecTimeout);
+        requestTcpConnect(self, endPointList, msecTimeout);
 }
 
 bool TcpClient::cancelConnect()
@@ -589,28 +590,58 @@ bool TcpClient::cancelConnect()
 
     mConnectHandler = nullptr;
 
-    return SocketController::getInstance()->
-        cancelTcpConnect(shared_from_this());
+    TcpClientPtr self(
+        std::static_pointer_cast<TcpClient>(shared_from_this()));
+
+    return SocketController::getInstance()->cancelTcpConnect(self);
+}
+
+Socket* TcpClient::createSocket(
+    const IpEndPoint& peerEndPoint, int32_t& errorCode)
+{
+    Socket* socket = new Socket();
+
+    // create
+    if (!socket->create(
+        peerEndPoint.getFamily(),
+        Socket::Type::Tcp,
+        Socket::Protocol::Tcp))
+    {
+        errorCode = socket->getErrorCode();
+        delete socket;
+        return nullptr;
+    }
+
+    // option
+    socket->setOption(getSocketOption());
+
+    errorCode = 0;
+
+    return socket;
 }
 
 void TcpClient::onConnect(Socket* socket, int32_t errorCode)
 {
+    TcpClientPtr self(
+        std::static_pointer_cast<TcpClient>(shared_from_this()));
+
     if (socket != nullptr)
     {
-        mChannel->create(socket);
+        create(socket);
+
+        mSocket->onConnect();
 
         if (!SocketController::getInstance()->
-            registerTcpChannel(mChannel))
+            registerTcpChannel(self))
         {
             // error
-            mChannel->create(nullptr);
+            create(nullptr);
             errorCode = -5120;
         }
     }
 
     if (mConnectHandler != nullptr)
     {
-        TcpClientPtr self(shared_from_this());
         TcpConnectHandler handler = mConnectHandler;
         mConnectHandler = nullptr;
 

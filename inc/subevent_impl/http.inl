@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include <subevent/http.hpp>
+#include <subevent/ssl_socket.hpp>
 
 SEV_NS_BEGIN
 
@@ -117,6 +118,17 @@ bool HttpUrl::parse(const std::string& url)
             return false;
         }
     }
+    else
+    {
+        if (mScheme == "https")
+        {
+            mPort = 443;
+        }
+        else
+        {
+            mPort = 80;
+        }
+    }
 
     if (src.empty())
     {
@@ -142,7 +154,7 @@ std::string HttpUrl::compose() const
 
     url += mHost;
 
-    if ((mPort != 80) && (mPort != 0))
+    if ((mPort != 80) && (mPort != 443))
     {
         url += ":" + std::to_string(mPort);
     }
@@ -168,7 +180,7 @@ void HttpUrl::clear()
     mUser.clear();
     mPassword.clear();
     mHost.clear();
-    mPort = 80;
+    mPort = 0;
     mPath = "/";
     mQuery.clear();
     mFragment.clear();
@@ -633,16 +645,10 @@ bool HttpClient::ChunkedResponse::setChunkSize(IStringStream& iss)
 
 HttpClient::HttpClient()
 {
-    mTcpClient = TcpClient::newInstance();
 }
 
 HttpClient::~HttpClient()
 {
-}
-
-void HttpClient::close()
-{
-    mTcpClient->close();
 }
 
 bool HttpClient::request(
@@ -657,6 +663,7 @@ bool HttpClient::request(
     mResponse.clear();
     mReceivedResponseBodySize = 0;
     mChunkedResponse.clear();
+    mResponseTempBuffer.clear();
     mOutputFileName.empty();
 
     if (!mUrl.parse(url))
@@ -674,16 +681,15 @@ bool HttpClient::request(
     mResponseHandler = responseHandler;
     mOutputFileName = outputFileName;
 
-    if (mTcpClient->isClosed())
+    if (isClosed())
     {
         // connect
-        mTcpClient->connect(
-            mUrl.getHost(), mUrl.getPort(),
+        connect(mUrl.getHost(), mUrl.getPort(),
             SEV_MFN2(HttpClient::onTcpConnect));
 
-        mTcpClient->setReceiveHandler(
+        setReceiveHandler(
             SEV_MFN1(HttpClient::onTcpReceive));
-        mTcpClient->setCloseHandler(
+        setCloseHandler(
             SEV_MFN1(HttpClient::onTcpClose));
     }
     else
@@ -799,7 +805,7 @@ void HttpClient::sendHttpRequest()
     }
 
     // send
-    int32_t result = mTcpClient->send(
+    int32_t result = send(
         std::move(requestData),
         SEV_MFN2(HttpClient::onTcpSend));
     if (result < 0)
@@ -842,6 +848,11 @@ bool HttpClient::deserializeResponseBody(IBufferStream& ibs)
         }
 
         mReceivedResponseBodySize += size;
+    }
+
+    if (size == 0)
+    {
+        return true;
     }
 
     if (!mOutputFileName.empty())
@@ -902,16 +913,50 @@ bool HttpClient::deserializeResponseBody(IBufferStream& ibs)
     return true;
 }
 
+Socket* HttpClient::createSocket(
+    const IpEndPoint& peerEndPoint, int32_t& errorCode)
+{
+    Socket* socket;
+
+    if (mUrl.getScheme() == "https")
+    {
+        socket = new SecureSocket();
+    }
+    else
+    {
+        socket = new Socket();
+    }
+
+    // create
+    if (!socket->create(
+        peerEndPoint.getFamily(),
+        Socket::Type::Tcp,
+        Socket::Protocol::Tcp))
+    {
+        errorCode = socket->getErrorCode();
+        delete socket;
+        return nullptr;
+    }
+
+    // option
+    socket->setOption(getSocketOption());
+
+    errorCode = 0;
+
+    return socket;
+}
+
 void HttpClient::onResponse(int32_t errorCode)
 {
     if (errorCode != 0)
     {
-        mTcpClient->close();
+        close();
     }
 
     if (mResponseHandler != nullptr)
     {
-        HttpClientPtr self = shared_from_this();
+        HttpClientPtr self(
+            std::static_pointer_cast<HttpClient>(shared_from_this()));
         HttpResponseHandler handler = mResponseHandler;
 
         Thread::getCurrent()->post([self, handler, errorCode]() {
@@ -945,15 +990,34 @@ void HttpClient::onTcpSend(
 
 void HttpClient::onTcpReceive(const TcpChannelPtr& channel)
 {
-    auto buff = channel->receiveAll(10240);
+    auto response = channel->receiveAll(10240);
 
-    if (isResponseCompleted() || buff.empty())
+    if (isResponseCompleted() || response.empty())
     {
         return;
     }
 
-    IStringStream iss(buff);
-    onHttpResponse(iss);
+    if (!mResponseTempBuffer.empty())
+    {
+        std::vector<char> temp;
+
+        std::copy(
+            mResponseTempBuffer.begin(),
+            mResponseTempBuffer.end(),
+            std::back_inserter(temp));
+        std::copy(
+            response.begin(),
+            response.end(),
+            std::back_inserter(temp));
+
+        IStringStream iss(temp);
+        onHttpResponse(iss);
+    }
+    else
+    {
+        IStringStream iss(response);
+        onHttpResponse(iss);
+    }
 }
 
 void HttpClient::onTcpClose(const TcpChannelPtr& /* channel */)
@@ -971,9 +1035,17 @@ void HttpClient::onHttpResponse(IStringStream& iss)
         if (!mResponse.deserializeMessage(iss))
         {
             // parse error
-            onResponse(-8001);
+            mResponse.clear();
+
+            // keep
+            const auto& buff = iss.getBuffer();
+            std::copy(buff.begin(), buff.end(),
+                std::back_inserter(mResponseTempBuffer));
+
             return;
         }
+
+        mResponseTempBuffer.clear();
 
         std::string transferEncoding =
             mResponse.getHeader().findOne("Transfer-Encoding");

@@ -105,7 +105,7 @@ class Socket
 {
 public:
     SEV_DECL Socket();
-    SEV_DECL ~Socket();
+    SEV_DECL virtual ~Socket();
 
 #ifdef _WIN32
     typedef SOCKET Handle;
@@ -141,20 +141,22 @@ public:
         const Protocol& protocol);
     SEV_DECL bool bind(const IpEndPoint& endPoint);
 
-    SEV_DECL void shutdown(int32_t how);
-    SEV_DECL void close();
-
     SEV_DECL bool listen(int32_t backlog);
     SEV_DECL Socket* accept();
     SEV_DECL bool connect(const IpEndPoint& peerEndPoint);
 
-    SEV_DECL int32_t send(const void* data, uint32_t size, int32_t flags = 0);
-    SEV_DECL int32_t receive(void* buff, uint32_t size, int32_t flags = 0);
+    SEV_DECL void shutdown(int32_t how);
 
     SEV_DECL int32_t sendTo(const IpEndPoint& receiverEndPoint,
         const void* data, uint32_t size, int32_t flags = 0);
     SEV_DECL int32_t receiveFrom(IpEndPoint& senderEndPoint,
         void* buff, uint32_t size, int32_t flags = 0);
+
+    SEV_DECL virtual int32_t send(
+        const void* data, uint32_t size, int32_t flags = 0);
+    SEV_DECL virtual int32_t receive(
+        void* buff, uint32_t size, int32_t flags = 0);
+    SEV_DECL virtual void close();
 
 public:
     SEV_DECL bool getLocalEndPoint(IpEndPoint& localEndPoint) const;
@@ -181,9 +183,10 @@ public:
     SEV_DECL bool isBlockingError() const;
 
 public:
+    SEV_DECL virtual bool onConnect();
     SEV_DECL static int getLastError();
 
-private:
+protected:
     Socket(const Socket&) = delete;
     Socket& operator=(const Socket&) = delete;
 

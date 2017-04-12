@@ -6,7 +6,7 @@ C++ Event Driven and Network Application Library
 ### Features
 * Event driven App/Thread.
 * Async TCP/UDP client and server.
-* Async HTTP client.
+* Async HTTP/HTTPS client.
 * Multiple TCP connections in single thread.
 * Header only.
 * C++11, Linux/Windows.
@@ -145,6 +145,5 @@ $ make
 ```
 * TODO  
 HTTP/2  
-HTTPS  
 HTTP server  
 etc  

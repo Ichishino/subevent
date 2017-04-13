@@ -89,7 +89,7 @@ private:
     Socket* mSocket;
 
     typedef std::pair<int32_t, int32_t> Key;
-    typedef std::vector<uint8_t> Value;
+    typedef std::vector<char> Value;
     typedef std::map<Key, Value> Map;
 
     Map* mStore;

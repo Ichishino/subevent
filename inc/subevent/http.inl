@@ -276,10 +276,10 @@ void HttpHeader::serialize(OStringStream& oss) const
 {
     for (const auto& field : mFields)
     {
-        oss.writeString(field.name + ":" + field.value + "\r\n");
+        oss << field.name << ":" << field.value << "\r\n";
     }
 
-    oss.writeString("\r\n");
+    oss << "\r\n";
 }
 
 bool HttpHeader::deserialize(IStringStream& iss)

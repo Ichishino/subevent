@@ -2,8 +2,11 @@
 #define SUBEVENT_HTTP_HPP
 
 #include <list>
+#include <vector>
 #include <string>
 #include <memory>
+#include <iterator>
+#include <functional>
 
 #include <subevent/std.hpp>
 #include <subevent/buffer_stream.hpp>
@@ -243,11 +246,13 @@ public:
 
     SEV_DECL void setBody(const std::string& body)
     {
-        mBody.resize(body.size());
+        mBody.clear();
 
         if (!body.empty())
         {
-            memcpy(&mBody[0], body.c_str(), body.size());
+            std::copy(
+                body.begin(), body.end(),
+                std::back_inserter(mBody));
         }
     }
 
@@ -348,11 +353,13 @@ public:
 
     SEV_DECL void setBody(const std::string& body)
     {
-        mBody.resize(body.size());
+        mBody.clear();
 
         if (!body.empty())
         {
-            memcpy(&mBody[0], body.c_str(), body.size());
+            std::copy(
+                body.begin(), body.end(),
+                std::back_inserter(mBody));
         }
     }
 

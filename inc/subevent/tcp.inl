@@ -2,7 +2,6 @@
 #define SUBEVENT_TCP_INL
 
 #include <cassert>
-#include <cstring>
 
 #include <subevent/tcp.hpp>
 #include <subevent/thread.hpp>
@@ -294,11 +293,12 @@ int32_t TcpChannel::send(
     {
         // async
 
-        std::vector<char> buff;
-        buff.resize(size);
-        memcpy(&buff[0], data, size);
+        const char* bytes =
+            reinterpret_cast<const char*>(data);
 
-        return send(std::move(buff), sendHandler);
+        return send(
+            std::vector<char>(bytes, bytes + size),
+            sendHandler);
     }
 }
 

@@ -5,12 +5,13 @@
 // Headers
 //----------------------------------------------------------------------------//
 
-#include <subevent/socket.hpp>
 #include <subevent/network.hpp>
+#include <subevent/socket.hpp>
 #include <subevent/tcp.hpp>
 #include <subevent/udp.hpp>
 
 #ifdef SEV_HEADER_ONLY
+#include <subevent/network.inl>
 #include <subevent/socket.inl>
 #include <subevent/socket_controller.inl>
 #include <subevent/socket_selector_linux.inl>

@@ -14,15 +14,8 @@
 #include <ws2tcpip.h>
 #include <windows.h>
 #else
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/epoll.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <errno.h>
 #endif
 
 SEV_NS_BEGIN
@@ -272,24 +265,6 @@ private:
 
     } mSockAddr;
 };
-
-//---------------------------------------------------------------------------//
-// WinSock
-//---------------------------------------------------------------------------//
-
-#ifdef _WIN32
-class WinSock
-{
-public:
-    SEV_DECL static bool init();
-
-private:
-    SEV_DECL WinSock();
-    SEV_DECL ~WinSock();
-
-    int32_t mErrorCode;
-};
-#endif
 
 SEV_NS_END
 

@@ -5,6 +5,14 @@
 
 #include <subevent/socket.hpp>
 
+#ifdef _WIN32
+#else
+#include <unistd.h>
+#include <netdb.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
+#endif
+
 SEV_NS_BEGIN
 
 //---------------------------------------------------------------------------//
@@ -762,38 +770,6 @@ int Socket::getLastError()
     return errno;
 #endif
 }
-
-//---------------------------------------------------------------------------//
-// WinSock
-//---------------------------------------------------------------------------//
-
-#ifdef _WIN32
-
-#pragma comment(lib, "ws2_32.lib")
-
-WinSock::WinSock()
-{
-    WORD sockVer = MAKEWORD(2, 2);
-    WSADATA wsaData;
-
-    mErrorCode = WSAStartup(sockVer, &wsaData);
-}
-
-WinSock::~WinSock()
-{
-    if (mErrorCode == 0)
-    {
-        WSACleanup();
-    }
-}
-
-bool WinSock::init()
-{
-    static WinSock winSock;
-    return (winSock.mErrorCode == 0);
-}
-
-#endif
 
 SEV_NS_END
 

@@ -11,6 +11,22 @@
 SEV_NS_BEGIN
 
 //---------------------------------------------------------------------------//
+// Network
+//---------------------------------------------------------------------------//
+
+class Network
+{
+public:
+    SEV_DECL static bool init();
+
+private:
+    SEV_DECL Network();
+    SEV_DECL ~Network();
+
+    int32_t mErrorCode;
+};
+
+//---------------------------------------------------------------------------//
 // NetWorker
 //---------------------------------------------------------------------------//
 
@@ -23,12 +39,11 @@ public:
 protected:
     bool onInit() override
     {
-#ifdef _WIN32
-        if (!WinSock::init())
+        if (!Network::init())
         {
             return false;
         }
-#endif
+
         if (!BaseClass::onInit())
         {
             return false;

@@ -10,6 +10,11 @@
 #include <subevent/socket.hpp>
 #include <subevent/semaphore.hpp>
 
+#ifdef _WIN32
+#else
+#include <sys/epoll.h>
+#endif
+
 SEV_NS_BEGIN
 
 //---------------------------------------------------------------------------//

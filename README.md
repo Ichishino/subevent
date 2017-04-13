@@ -9,12 +9,17 @@ C++ Event Driven and Network Application Library
 * Async HTTP/HTTPS client.
 * Multiple TCP connections in single thread.
 * Header only.
-* C++11, Linux/Windows.
 * Easy to use.
 
+### Requirements
+* C++11 or later
+* Linux or Windows
+* OpenSSL (if use HTTP function)
+
 ### Compile Options
-* `-std=c++11`
+* `-std=c++11` (or later option)
 * `-pthread` or `-lpthread`
+* `-lssl` and `-lcrypt` (for OpenSSL)
 
 ### Example
 * A Simple Application

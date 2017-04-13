@@ -160,6 +160,8 @@ void TcpServer::onAccept()
 {
     if (mAcceptHandler != nullptr)
     {
+        std::list<TcpChannelPtr> channels;
+
         for (;;)
         {
             // accept
@@ -170,14 +172,25 @@ void TcpServer::onAccept()
                 break;
             }
 
-            TcpServerPtr self(shared_from_this());
-            TcpChannelPtr channel(new TcpChannel(socket));
-            TcpAcceptHandler handler = mAcceptHandler;
-
-            Thread::getCurrent()->post([self, handler, channel]() {
-                handler(self, channel);
-            });
+            channels.push_back(
+                TcpChannelPtr(new TcpChannel(socket)));
         }
+
+        if (channels.empty())
+        {
+            return;
+        }
+
+        TcpServerPtr self(shared_from_this());
+        TcpAcceptHandler handler = mAcceptHandler;
+
+        Thread::getCurrent()->post([self, handler, channels]() {
+
+            for (auto& channel : channels)
+            {
+                handler(self, channel);
+            }
+        });
     }
 }
 

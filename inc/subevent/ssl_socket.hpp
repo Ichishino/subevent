@@ -50,4 +50,4 @@ private:
 
 SEV_NS_END
 
-#endif /* SUBEVENT_SSL_SOCKET_HPP */
+#endif // SUBEVENT_SSL_SOCKET_HPP

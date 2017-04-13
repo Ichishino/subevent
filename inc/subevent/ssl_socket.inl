@@ -124,4 +124,4 @@ void OpenSsl::init()
 
 SEV_NS_END
 
-#endif /* SUBEVENT_SSL_SOCKET_INL */
+#endif // SUBEVENT_SSL_SOCKET_INL

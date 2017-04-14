@@ -34,9 +34,9 @@ Thread::Thread(const std::string& name, Thread* parent)
     mHandle = 0;
     mExitCode = 0;
 
-    mName = name;
-    mParent = parent;
+    setName(name);
 
+    mParent = parent;
     mInitResult = false;
 
     if (mParent != nullptr)

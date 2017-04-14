@@ -1,6 +1,8 @@
 #ifndef SUBEVENT_NETWORK_INL
 #define SUBEVENT_NETWORK_INL
 
+#include <cassert>
+
 #include <subevent/network.hpp>
 
 #ifdef _WIN32
@@ -14,7 +16,7 @@
 SEV_NS_BEGIN
 
 //---------------------------------------------------------------------------//
-// NetworkSetup
+// Network
 //---------------------------------------------------------------------------//
 
 #ifdef _WIN32
@@ -47,6 +49,45 @@ bool Network::init()
 {
     static Network network;
     return (network.mErrorCode == 0);
+}
+
+//---------------------------------------------------------------------------//
+// NetWorker
+//---------------------------------------------------------------------------//
+
+NetWorker::NetWorker(Thread* thread)
+    : mThread(thread)
+{
+    Network::init();
+
+    // async socket controller
+    mThread->setEventController(new SocketController());
+
+    // tcp accept for multithreading
+    mThread->setEventHandler(
+        TcpEventId::Accept, [&](const Event* event) {
+
+        TcpChannelPtr channel = TcpServer::accept(event);
+
+        if (channel != nullptr)
+        {
+            onTcpAccept(channel);
+        }
+    });
+}
+
+NetWorker::~NetWorker()
+{
+}
+
+bool NetWorker::requestTcpAccept(const TcpChannelPtr& newChannel)
+{
+    return mThread->post(new TcpAcceptEvent(newChannel));
+}
+
+void NetWorker::onTcpAccept(const TcpChannelPtr& /* newChannel */)
+{
+    // for multithreading
 }
 
 SEV_NS_END

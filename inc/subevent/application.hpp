@@ -24,6 +24,8 @@ public:
 public:
     SEV_DECL int32_t run();
 
+    SEV_DECL void setArgs(int32_t argc, char* argv[]);
+
     SEV_DECL const std::vector<std::string>& getArgs() const
     {
         return mArgs;

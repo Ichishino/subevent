@@ -14,6 +14,7 @@
 
 SEV_NS_BEGIN
 
+class NetWorker;
 class HttpClient;
 
 //---------------------------------------------------------------------------//
@@ -408,9 +409,9 @@ private:
 class HttpClient : public TcpClient
 {
 public:
-    SEV_DECL static HttpClientPtr newInstance()
+    SEV_DECL static HttpClientPtr newInstance(NetWorker* netWorker)
     {
-        return HttpClientPtr(new HttpClient());
+        return HttpClientPtr(new HttpClient(netWorker));
     }
 
     SEV_DECL ~HttpClient() override;
@@ -480,7 +481,7 @@ public:
     }
 
 private:
-    SEV_DECL HttpClient();
+    SEV_DECL HttpClient(NetWorker* netWorker);
 
     SEV_DECL void sendHttpRequest();
     SEV_DECL bool deserializeResponseBody(IBufferStream& ibs);
@@ -495,6 +496,7 @@ private:
     SEV_DECL Socket* createSocket(
         const IpEndPoint& peerEndPoint, int32_t& errorCode) override;
 
+    HttpClient() = delete;
     HttpClient(const HttpClient&) = delete;
     HttpClient& operator=(const HttpClient&) = delete;
 

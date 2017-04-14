@@ -3,6 +3,7 @@
 
 #include <cassert>
 
+#include <subevent/network.hpp>
 #include <subevent/udp.hpp>
 #include <subevent/thread.hpp>
 #include <subevent/socket.hpp>
@@ -14,8 +15,12 @@ SEV_NS_BEGIN
 // UdpReceiver
 //----------------------------------------------------------------------------//
 
-UdpReceiver::UdpReceiver()
+UdpReceiver::UdpReceiver(NetWorker* netWorker)
 {
+    assert(netWorker != nullptr);
+    assert(netWorker->getSocketController() != nullptr);
+
+    mNetWorker = netWorker;
     mSocket = nullptr;
 }
 
@@ -28,11 +33,16 @@ bool UdpReceiver::open(
     const IpEndPoint& localEndPoint,
     const UdpReceiveHandler& receiveHandler)
 {
-    assert(Thread::getCurrent() != nullptr);
-    assert(SocketController::getInstance() != nullptr);
+    assert(NetWorker::getCurrent() != nullptr);
 
     if (!isClosed())
     {
+        return false;
+    }
+
+    if (mNetWorker != NetWorker::getCurrent())
+    {
+        assert(false);
         return false;
     }
 
@@ -71,21 +81,26 @@ bool UdpReceiver::open(
     mLocalEndPoint = localEndPoint;
     mReceiveHandler = receiveHandler;
 
-    return SocketController::getInstance()->
+    return mNetWorker->getSocketController()->
         registerUdpReceiver(shared_from_this());
 }
 
 void UdpReceiver::close()
 {
-    assert(Thread::getCurrent() != nullptr);
-    assert(SocketController::getInstance() != nullptr);
+    assert(NetWorker::getCurrent() != nullptr);
 
     if (isClosed())
     {
         return;
     }
 
-    SocketController::getInstance()->
+    if (mNetWorker != NetWorker::getCurrent())
+    {
+        assert(false);
+        return;
+    }
+
+    mNetWorker->getSocketController()->
         unregisterUdpReceiver(shared_from_this());
 
     delete mSocket;
@@ -108,22 +123,23 @@ SocketOption& UdpReceiver::getSocketOption()
 
 void UdpReceiver::onReceive()
 {
-    if (mReceiveHandler != nullptr)
+    if (mReceiveHandler == nullptr)
     {
-        UdpReceiverPtr self(shared_from_this());
-        UdpReceiveHandler handler = mReceiveHandler;
-
-        Thread::getCurrent()->post([self, handler]() {
-            handler(self);
-        });
+        return;
     }
+
+    UdpReceiverPtr self(shared_from_this());
+    UdpReceiveHandler handler = mReceiveHandler;
+
+    Thread::getCurrent()->post([self, handler]() {
+        handler(self);
+    });
 }
 
 int32_t UdpReceiver::receive(
     void* buff, size_t size, IpEndPoint& senderEndPoint)
 {
-    assert(Thread::getCurrent() != nullptr);
-    assert(SocketController::getInstance() != nullptr);
+    assert(NetWorker::getCurrent() != nullptr);
 
     if (isClosed())
     {
@@ -153,8 +169,12 @@ void UdpReceiver::onClose()
 // UdpSender
 //----------------------------------------------------------------------------//
 
-UdpSender::UdpSender()
+UdpSender::UdpSender(NetWorker* netWorker)
 {
+    assert(netWorker != nullptr);
+    assert(netWorker->getSocketController() != nullptr);
+
+    mNetWorker = netWorker;
     mSocket = nullptr;
 }
 
@@ -165,6 +185,14 @@ UdpSender::~UdpSender()
 
 bool UdpSender::create(const IpEndPoint& receiverEndPoint)
 {
+    assert(NetWorker::getCurrent() != nullptr);
+
+    if (mNetWorker != NetWorker::getCurrent())
+    {
+        assert(false);
+        return false;
+    }
+
     if (receiverEndPoint.isUnspec())
     {
         return false;
@@ -195,9 +223,17 @@ bool UdpSender::create(const IpEndPoint& receiverEndPoint)
 
 int32_t UdpSender::send(const void* data, size_t size)
 {
+    assert(NetWorker::getCurrent() != nullptr);
+
     if (isClosed())
     {
         return -1;
+    }
+
+    if (mNetWorker != NetWorker::getCurrent())
+    {
+        assert(false);
+        return -6200;
     }
 
     if (size > INT32_MAX)
@@ -214,6 +250,12 @@ void UdpSender::close()
 {
     if (isClosed())
     {
+        return;
+    }
+
+    if (mNetWorker != NetWorker::getCurrent())
+    {
+        assert(false);
         return;
     }
 

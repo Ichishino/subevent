@@ -65,7 +65,14 @@ public:
         return mChilds;
     }
 
+    SEV_DECL static Thread* getCurrent();
+
 public:
+    SEV_DECL void setName(const std::string& name)
+    {
+        mName = name;
+    }
+
     SEV_DECL const std::string& getName() const
     {
         return mName;
@@ -99,9 +106,11 @@ public:
     SEV_DECL uint32_t getQueuedEventCount() const;
 
 public:
-    SEV_DECL static Thread* getCurrent();
+    SEV_DECL void setEventController(EventController* eventController)
+    {
+        mEventLoop.setController(eventController);
+    }
 
-public:
     SEV_DECL EventController* getEventController()
     {
         return mEventLoop.getController();
@@ -115,11 +124,6 @@ public:
 protected:
     SEV_DECL virtual bool onInit();
     SEV_DECL virtual void onExit();
-
-    SEV_DECL void setEventController(EventController* eventController)
-    {
-        mEventLoop.setController(eventController);
-    }
 
 private:
     static SEV_TLS Thread* gThread;

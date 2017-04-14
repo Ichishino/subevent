@@ -68,8 +68,6 @@ public:
         return (getSocketCount() >= SocketSelector::MaxSockets);
     }
 
-    SEV_DECL static SocketController* getInstance();
-
 private:
     SEV_DECL void onSelectEvent(SocketSelector::SocketEvents& sockEvents);
     SEV_DECL bool onSelectTcpAccept(Socket::Handle sockHandle, int32_t errorCode);

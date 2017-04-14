@@ -1,113 +1,8 @@
-#include <set>
 #include <iostream>
 
 #include <subevent/subevent.hpp>
 
 SEV_USING_NS
-
-//---------------------------------------------------------------------------//
-// MyApp
-//---------------------------------------------------------------------------//
-
-class MyApp : public NetApplication
-{
-protected:
-    bool onInit() override
-    {
-        NetApplication::onInit();
-
-        IpEndPoint local(9000);
-
-        mTcpServer = TcpServer::newInstance();
-
-        // option
-        mTcpServer->getSocketOption().setReuseAddress(true);
-
-        std::cout << "open: " <<
-            local.toString() << std::endl;
-
-        // listen
-        mTcpServer->open(local,
-            [&](const TcpServerPtr&, const TcpChannelPtr& newChannel) {
-
-            // accept
-            if (!mTcpServer->accept(this, newChannel))
-            {
-                // reached limit
-                std::cout << "reached limit" << std::endl;
-
-                newChannel->close();
-
-                return;
-            }
-
-            std::cout << "accept: " <<
-                newChannel->getPeerEndPoint().toString() << std::endl;
-
-            mTcpChannels.insert(newChannel);
-
-            // data received
-            newChannel->setReceiveHandler(
-                [&](const TcpChannelPtr& channel) {
-
-                auto data = channel->receiveAll();
-
-                if (data.empty())
-                {
-                    return;
-                }
-
-                std::cout << "recv: " << &data[0] <<
-                    " from " << channel->getPeerEndPoint().toString() <<
-                    std::endl;
-                std::cout << "send: " << &data[0] <<
-                    " to " << channel->getPeerEndPoint().toString() <<
-                    std::endl;
-
-                // send
-                channel->send(&data[0], data.size());
-            });
-
-            // client closed
-            newChannel->setCloseHandler(
-                [&](const TcpChannelPtr& channel) {
-
-                std::cout << "closed: " <<
-                    channel->getPeerEndPoint().toString() << std::endl;
-
-                mTcpChannels.erase(channel);
-            });
-        });
-
-        // app end timer
-        mEndTimer.start(60 * 1000, false, [&](Timer*) {
-            stop();
-        });
-
-        return true;
-    }
-
-    void onExit() override
-    {
-        // server close
-        mTcpServer->close();
-
-        // client close
-        for (auto channel : mTcpChannels)
-        {
-            channel->close();
-        }
-        mTcpChannels.clear();
-
-        NetApplication::onExit();
-    }
-
-private:
-    TcpServerPtr mTcpServer;
-    std::set<TcpChannelPtr> mTcpChannels;
-
-    Timer mEndTimer;
-};
 
 //---------------------------------------------------------------------------//
 // Main
@@ -117,6 +12,43 @@ SEV_IMPL_GLOBAL
 
 int main(int, char**)
 {
-    MyApp app;
+    NetApplication app;
+
+    TcpServerPtr server = TcpServer::newInstance(&app);
+
+    server->getSocketOption().setReuseAddress(true);
+
+    IpEndPoint local(9000);
+
+    // listen
+    server->open(local, [&](const TcpServerPtr&,
+        const TcpChannelPtr& newChannel) {
+
+        if (server->accept(&app, newChannel))
+        {
+            // receive handler
+            newChannel->setReceiveHandler(
+                [&](const TcpChannelPtr& channel) {
+
+                auto message = channel->receiveAll();
+
+                std::cout << &message[0] << std::endl;
+
+                channel->send(&message[0], message.size());
+            });
+
+            // close handler
+            newChannel->setCloseHandler(
+                [&](const TcpChannelPtr& /*channel*/) {
+            });
+        }
+    });
+
+    // app end timer
+    Timer timer;
+    timer.start(60 * 1000, false, [&](Timer*) {
+        app.stop();
+    });
+
     return app.run();
 }

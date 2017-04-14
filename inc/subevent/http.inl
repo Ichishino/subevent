@@ -3,9 +3,11 @@
 
 #include <cstdio>
 #include <fstream>
+#include <cassert>
 #include <iterator>
 #include <algorithm>
 
+#include <subevent/network.hpp>
 #include <subevent/http.hpp>
 #include <subevent/ssl_socket.hpp>
 
@@ -643,7 +645,8 @@ bool HttpClient::ChunkedResponse::setChunkSize(IStringStream& iss)
 // HttpClient
 //----------------------------------------------------------------------------//
 
-HttpClient::HttpClient()
+HttpClient::HttpClient(NetWorker* netWorker)
+    : TcpClient(netWorker)
 {
 }
 
@@ -658,6 +661,14 @@ bool HttpClient::request(
     const HttpResponseHandler& responseHandler,
     const std::string& outputFileName)
 {
+    assert(NetWorker::getCurrent() != nullptr);
+
+    if (mNetWorker != NetWorker::getCurrent())
+    {
+        assert(false);
+        return false;
+    }
+
     mUrl.clear();
     mRequest.clear();
     mResponse.clear();

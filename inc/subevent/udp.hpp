@@ -9,6 +9,7 @@
 
 SEV_NS_BEGIN
 
+class NetWorker;
 class UdpReceiver;
 class UdpSender;
 
@@ -27,9 +28,9 @@ typedef std::function<void(const UdpReceiverPtr&)> UdpReceiveHandler;
 class UdpReceiver : public std::enable_shared_from_this<UdpReceiver>
 {
 public:
-    SEV_DECL static UdpReceiverPtr newInstance()
+    SEV_DECL static UdpReceiverPtr newInstance(NetWorker* netWorker)
     {
-        return UdpReceiverPtr(new UdpReceiver());
+        return UdpReceiverPtr(new UdpReceiver(netWorker));
     }
 
     SEV_DECL ~UdpReceiver();
@@ -57,13 +58,16 @@ public:
     }
 
 private:
-    SEV_DECL UdpReceiver();
+    SEV_DECL UdpReceiver(NetWorker* netWorker);
 
     SEV_DECL void onReceive();
     SEV_DECL void onClose();
 
+    UdpReceiver() = delete;
     UdpReceiver(const UdpReceiver&) = delete;
     UdpReceiver& operator=(const UdpReceiver&) = delete;
+
+    NetWorker* mNetWorker;
 
     Socket* mSocket;
     SocketOption mSockOption;
@@ -81,9 +85,9 @@ private:
 class UdpSender : public std::enable_shared_from_this<UdpSender>
 {
 public:
-    SEV_DECL static UdpSenderPtr newInstance()
+    SEV_DECL static UdpSenderPtr newInstance(NetWorker* netWorker)
     {
-        return UdpSenderPtr(new UdpSender());
+        return UdpSenderPtr(new UdpSender(netWorker));
     }
 
     SEV_DECL ~UdpSender();
@@ -108,10 +112,13 @@ public:
     }
 
 private:
-    SEV_DECL UdpSender();
+    SEV_DECL UdpSender(NetWorker* netWorker);
 
+    UdpSender() = delete;
     UdpSender(const UdpSender&) = delete;
     UdpSender& operator=(const UdpSender&) = delete;
+
+    NetWorker* mNetWorker;
 
     Socket* mSocket;
     SocketOption mSockOption;

@@ -4,7 +4,6 @@
 #include <subevent/std.hpp>
 #include <subevent/thread.hpp>
 #include <subevent/application.hpp>
-#include <subevent/socket.hpp>
 #include <subevent/socket_controller.hpp>
 #include <subevent/tcp.hpp>
 
@@ -30,81 +29,83 @@ private:
 // NetWorker
 //---------------------------------------------------------------------------//
 
-template <typename BaseClass>
-class NetWorker : public BaseClass
+class NetWorker
 {
 public:
-    using BaseClass::BaseClass;
-
-protected:
-    bool onInit() override
+    SEV_DECL SocketController* getSocketController() const
     {
-        if (!Network::init())
-        {
-            return false;
-        }
-
-        if (!BaseClass::onInit())
-        {
-            return false;
-        }
-
-        // async socket controller
-        SocketController* sockController = new SocketController();
-
-        if (!sockController->onInit())
-        {
-            delete sockController;
-            return false;
-        }
-
-        this->setEventController(sockController);
-
-        // tcp accept for multithreading
-        this->setEventHandler(
-            TcpEventId::Accept, [&](const Event* event) {
-
-            TcpChannelPtr channel = TcpServer::accept(event);
-
-            if (channel != nullptr)
-            {
-                onTcpAccept(channel);
-            }
-        });
-
-        return true;
+        return dynamic_cast<SocketController*>(
+            mThread->getEventController());
     }
 
-    virtual void onTcpAccept(const TcpChannelPtr& /* newChannel */)
+    SEV_DECL uint32_t getSocketCount() const
     {
-        // for multithreading
+        return getSocketController()->getSocketCount();
+    }
+
+    SEV_DECL bool isSocketFull() const
+    {
+        return getSocketController()->isFull();
+    }
+
+    SEV_DECL static NetWorker* getCurrent()
+    {
+        return dynamic_cast<NetWorker*>(
+            Thread::getCurrent());
     }
 
 public:
-    uint32_t getSocketCount() const
-    {
-        return dynamic_cast<const SocketController*>(
-            this->getEventController())->getSocketCount();
-    }
+    SEV_DECL bool requestTcpAccept(const TcpChannelPtr& newChannel);
 
-    bool isSocketFull() const
-    {
-        return dynamic_cast<const SocketController*>(
-            this->getEventController())->isFull();
-    }
+protected:
+    SEV_DECL NetWorker(Thread* thread);
+    SEV_DECL virtual ~NetWorker();
+
+    SEV_DECL virtual void onTcpAccept(const TcpChannelPtr& newChannel);
+
+private:
+    NetWorker() = delete;
+
+    Thread* mThread;
 };
 
 //---------------------------------------------------------------------------//
 // NetApplication
 //---------------------------------------------------------------------------//
 
-typedef NetWorker<Application> NetApplication;
+class NetApplication : public Application, public NetWorker
+{
+public:
+    SEV_DECL explicit NetApplication(const std::string& name = "")
+        : Application(name), NetWorker(this)
+    {
+    }
+
+    SEV_DECL NetApplication(
+        int32_t argc, char* argv[], const std::string& name = "")
+        : Application(argc, argv, name), NetWorker(this)
+    {
+    }
+};
 
 //---------------------------------------------------------------------------//
 // NetThread
 //---------------------------------------------------------------------------//
 
-typedef NetWorker<Thread> NetThread;
+class NetThread : public Thread, public NetWorker
+{
+public:
+    SEV_DECL explicit NetThread(Thread* parent = nullptr)
+        : Thread(parent), NetWorker(this)
+    {
+    }
+    
+    SEV_DECL explicit NetThread(
+        const std::string& name, Thread* parent = nullptr)
+        : Thread(name, parent), NetWorker(this)
+    {
+    }
+};
 
 SEV_NS_END
 

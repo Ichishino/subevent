@@ -40,10 +40,7 @@ Application::Application(int32_t argc, char* argv[], const std::string& name)
     mHandle = pthread_self();
 #endif
 
-    for (int index = 0; index < argc; ++index)
-    {
-        mArgs.push_back(argv[index]);
-    }
+    setArgs(argc, argv);
 }
 
 Application::~Application()
@@ -51,6 +48,14 @@ Application::~Application()
     if (gApp == this)
     {
         gApp = nullptr;
+    }
+}
+
+void Application::setArgs(int32_t argc, char* argv[])
+{
+    for (int index = 0; index < argc; ++index)
+    {
+        mArgs.push_back(argv[index]);
     }
 }
 

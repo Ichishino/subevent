@@ -2,6 +2,7 @@
 #define SUBEVENT_TCP_SERVER_APP_HPP
 
 #include <vector>
+#include <string>
 
 #include <subevent/std.hpp>
 #include <subevent/network.hpp>
@@ -18,36 +19,36 @@ class Thread;
 class TcpChannelWorker : public NetThread
 {
 public:
-    typedef std::function<
-        void(const TcpChannelPtr&, std::vector<char>&&)> ReceiveHandler;
-    typedef std::function<
-        void(const TcpChannelPtr&)> CloseHandler;
-
-#ifdef _WIN32
-    static const uint16_t MaxChannles = 50;
-#else
-    static const uint16_t MaxChannles = 100;
-#endif
-
-    TcpChannelWorker(Thread* parent);
+    SEV_DECL TcpChannelWorker(Thread* parent);
+    SEV_DECL virtual ~TcpChannelWorker();
 
 public:
-    void setReceiveHandler(const ReceiveHandler& handler)
+    SEV_DECL bool isChannelFull() const
     {
-        mReceiveHandler = handler;
-    }
-
-    void setCloseHandler(const CloseHandler& handler)
-    {
-        mCloseHandler = handler;
+        return (getSocketCount() >= getMaxChannels());
     }
 
 protected:
-    void onTcpAccept(const TcpChannelPtr& channel) override;
+    SEV_DECL virtual void onAccept(
+        const TcpChannelPtr& /* channel */) {}
+    SEV_DECL virtual void onReceive(
+        const TcpChannelPtr& /* channel */,
+        std::vector<char>&& /* message */) {}
+    SEV_DECL virtual void onClose(
+        const TcpChannelPtr& /* channel */) {}
+
+    SEV_DECL virtual uint16_t getMaxChannels() const
+    {
+#ifdef _WIN32
+        return 50;
+#else
+        return 100;
+#endif
+    }
 
 private:
-    ReceiveHandler mReceiveHandler;
-    CloseHandler mCloseHandler;
+    SEV_DECL void onTcpAccept(
+        const TcpChannelPtr& channel) override;
 };
 
 //----------------------------------------------------------------------------//
@@ -57,49 +58,61 @@ private:
 class TcpServerApp : public NetApplication
 {
 public:
-    typedef std::function<
-        bool(const TcpChannelPtr&)> AcceptHandler;
-
-    TcpServerApp(uint16_t threads = 1);
+    SEV_DECL explicit TcpServerApp(const std::string& name = "");
+    SEV_DECL TcpServerApp(
+        int32_t argc, char* argv[], const std::string& name = "");
+    SEV_DECL virtual ~TcpServerApp() override;
 
 public:
-    bool open(const IpEndPoint& localEndPoint);
-    void close();
+    SEV_DECL bool open(
+        const IpEndPoint& localEndPoint,
+        int32_t listenBacklog = SOMAXCONN);
 
-    void onAccept(const AcceptHandler& handler)
+    SEV_DECL void close();
+
+    template<typename ThreadType>
+    SEV_DECL bool createThread(size_t threads)
     {
-        mAcceptHandler = handler;
+        for (size_t index = 0;
+            index < threads; ++index)
+        {
+            // create thread
+
+            ThreadType* thread =
+                new ThreadType(this);
+
+            if (!thread->start())
+            {
+                delete thread;
+                break;
+            }
+
+            mThreadPool.push_back(thread);
+        }
+
+        if (mThreadPool.empty())
+        {
+            return false;
+        }
+
+        setCpuAffinity();
+
+        return true;
     }
 
-    void onReceive(
-        const TcpChannelWorker::ReceiveHandler& handler)
+    SEV_DECL const TcpServerPtr& getTcpServer() const
     {
-        mReceiveHandler = handler;
+        return mTcpServer;
     }
-
-    void onClose(
-        const TcpChannelWorker::CloseHandler& handler)
-    {
-        mCloseHandler = handler;
-    }
-
-protected:
-    bool onInit() override;
 
 private:
-    bool createThread();
-    NetThread* nextThread();
+    SEV_DECL void setCpuAffinity();
+    SEV_DECL NetThread* nextThread();
 
-private:
     TcpServerPtr mTcpServer;
 
-    AcceptHandler mAcceptHandler;
-    TcpChannelWorker::ReceiveHandler mReceiveHandler;
-    TcpChannelWorker::CloseHandler mCloseHandler;
-
     int32_t mThreadIndex;
-    uint16_t mThreads;
-    std::vector<NetThread*> mThreadPool;
+    std::vector<TcpChannelWorker*> mThreadPool;
 };
 
 SEV_NS_END

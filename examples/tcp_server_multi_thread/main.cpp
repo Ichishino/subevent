@@ -1,8 +1,35 @@
-#include <iostream>
-
 #include <subevent/subevent.hpp>
 
 SEV_USING_NS
+
+//---------------------------------------------------------------------------//
+// MyThread
+//---------------------------------------------------------------------------//
+
+class MyThread : public TcpChannelWorker
+{
+public:
+    MyThread(Thread* parent)
+        : TcpChannelWorker(parent) {}
+
+protected:
+    void onAccept(
+        const TcpChannelPtr& /* channel */) override
+    {
+    }
+
+    void onReceive(
+        const TcpChannelPtr& channel,
+        std::vector<char>&& message) override
+    {
+        channel->send(&message[0], message.size());
+    }
+
+    void onClose(
+        const TcpChannelPtr& /* channel */) override
+    {
+    }
+};
 
 //---------------------------------------------------------------------------//
 // Main
@@ -10,29 +37,16 @@ SEV_USING_NS
 
 SEV_IMPL_GLOBAL
 
-int main(int, char**)
+int main(int argc, char** argv)
 {
-    uint16_t port = 9000;
-    uint16_t threads = 100;
+    TcpServerApp app(argc, argv);
 
-    TcpServerApp app(threads);
+    app.createThread<MyThread>(10);
+
+    uint16_t port = 9000;
 
     // listen
     app.open(IpEndPoint(port));
-
-    // receive handler
-    app.onReceive([](
-        const TcpChannelPtr& channel,
-        std::vector<char>&& message) {
-
-        channel->send(
-            &message[0], message.size());
-    });
-
-    // close handler
-    app.onClose([](
-        const TcpChannelPtr& /*channel*/) {
-    });
 
     // app end timer
     Timer timer;

@@ -2,7 +2,6 @@
 #define SUBEVENT_TCP_SERVER_APP_INL
 
 #include <subevent/tcp_server_app.hpp>
-#include <subevent/event.hpp>
 #include <subevent/utility.hpp>
 
 SEV_NS_BEGIN
@@ -14,12 +13,10 @@ SEV_NS_BEGIN
 TcpChannelWorker::TcpChannelWorker(Thread* parent)
     : NetThread(parent)
 {
-    mReceiveHandler =
-        [](const TcpChannelPtr&, std::vector<char>&&) {
-    };
-    mCloseHandler =
-        [](const TcpChannelPtr&) {
-    };
+}
+
+TcpChannelWorker::~TcpChannelWorker()
+{
 }
 
 void TcpChannelWorker::onTcpAccept(const TcpChannelPtr& channel)
@@ -31,14 +28,14 @@ void TcpChannelWorker::onTcpAccept(const TcpChannelPtr& channel)
 
         if (!buffer.empty())
         {
-            mReceiveHandler(channel, std::move(buffer));
+            onReceive(channel, std::move(buffer));
         }
     });
 
     channel->setCloseHandler(
         [&](const TcpChannelPtr& channel) {
 
-        mCloseHandler(channel);
+        onClose(channel);
     });
 }
 
@@ -46,45 +43,24 @@ void TcpChannelWorker::onTcpAccept(const TcpChannelPtr& channel)
 // TcpServerApp
 //----------------------------------------------------------------------------//
 
-typedef UserEvent<1> StopListeningEvent;
-
-TcpServerApp::TcpServerApp(uint16_t threads)
-    : mThreadIndex(-1), mThreads(threads)
+TcpServerApp::TcpServerApp(const std::string& name)
+    : TcpServerApp(0, nullptr, name)
 {
-    mAcceptHandler =
-        [](const TcpChannelPtr&) {
-        return true;
-    };
-    mReceiveHandler =
-        [](const TcpChannelPtr&,
-            std::vector<char>&&) {
-    };
-    mCloseHandler =
-        [](const TcpChannelPtr&) {
-    };
-
-    setUserEventHandler<StopListeningEvent>(
-        [&](const StopListeningEvent*) {
-        if (mTcpServer != nullptr)
-        {
-            mTcpServer->close();
-        }
-    });
 }
 
-bool TcpServerApp::onInit()
+TcpServerApp::TcpServerApp(
+    int32_t argc, char* argv[], const std::string& name)
+    : NetApplication(argc, argv, name)
+    , mThreadIndex(-1)
 {
-    NetApplication::onInit();
-
-    if (!createThread())
-    {
-        return false;
-    }
-
-    return true;
 }
 
-bool TcpServerApp::open(const IpEndPoint& localEndPoint)
+TcpServerApp::~TcpServerApp()
+{
+}
+
+bool TcpServerApp::open(
+    const IpEndPoint& localEndPoint, int32_t backlog)
 {
     mTcpServer = TcpServer::newInstance(this);
     mTcpServer->getSocketOption().setReuseAddress(true);
@@ -104,61 +80,23 @@ bool TcpServerApp::open(const IpEndPoint& localEndPoint)
             return;
         }
 
-        if (!mAcceptHandler(channel))
-        {
-            channel->close();
-            return;
-        }
-
         mTcpServer->accept(thread, channel);
-    });
+
+    }, backlog);
 
     return result;
 }
 
 void TcpServerApp::close()
 {
-    if (mTcpServer == nullptr)
-    {
-        return;
-    }
-
-    if (this == Thread::getCurrent())
+    if (mTcpServer != nullptr)
     {
         mTcpServer->close();
     }
-    else
-    {
-        post(new StopListeningEvent());
-    }
 }
 
-bool TcpServerApp::createThread()
+void TcpServerApp::setCpuAffinity()
 {
-    // create thread
-    for (size_t index = 0;
-        index < mThreads; ++index)
-    {
-        TcpChannelWorker* thread =
-            new TcpChannelWorker(this);
-
-        thread->setReceiveHandler(mReceiveHandler);
-        thread->setCloseHandler(mCloseHandler);
-
-        if (!thread->start())
-        {
-            delete thread;
-            break;
-        }
-
-        mThreadPool.push_back(thread);
-    }
-
-    if (mThreadPool.empty())
-    {
-        return false;
-    }
-
     // CPU affinity
     Processor::bind(this, 0);
 
@@ -177,8 +115,6 @@ bool TcpServerApp::createThread()
             ++cpu;
         }
     }
-
-    return true;
 }
 
 NetThread* TcpServerApp::nextThread()
@@ -203,8 +139,8 @@ NetThread* TcpServerApp::nextThread()
 
         auto thread = mThreadPool[mThreadIndex];
 
-        if (thread->getSocketCount() <
-            TcpChannelWorker::MaxChannles)
+        if (!thread->isChannelFull() &&
+            !thread->isSocketFull())
         {
             // found
             return thread;

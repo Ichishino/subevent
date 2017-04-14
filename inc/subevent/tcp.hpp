@@ -58,7 +58,7 @@ public:
     SEV_DECL bool open(
         const IpEndPoint& localEndPoint,
         const TcpAcceptHandler& acceptHandler,
-        int32_t listenBacklog = 128);
+        int32_t listenBacklog = SOMAXCONN);
 
     SEV_DECL void close();
 

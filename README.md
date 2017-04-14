@@ -22,7 +22,28 @@ C++ Event Driven and Network Application Library
 * `-lssl` and `-lcrypt` (for OpenSSL)
 
 ### Example
-* A Simple Application
+* Simple Application
+```C++
+#include <subevent/subevent.hpp>
+
+SEV_USING_NS
+
+//---------------------------------------------------------------------------//
+// Main
+//---------------------------------------------------------------------------//
+
+SEV_IMPL_GLOBAL
+
+int main(int, char**)
+{
+    NetApplication app;
+
+    // your code here.
+
+    return app.run();
+}
+```
+* Custom Application Class
 ```C++
 #include <subevent/subevent.hpp>
 

@@ -828,43 +828,45 @@ int32_t HttpClient::request(
 
     if (!thread.start())
     {
-        return -2;
+        return -8601;
     }
 
     Semaphore sem;
-    HttpClientPtr http;
 
-    HttpResponseHandler responseHandler =
-        [&](const HttpClientPtr&, int32_t errorCode) {
+    HttpClientPtr http = newInstance(&thread);
 
-        // response
-        result = errorCode;
-        res = std::move(http->mResponse);
+    if (!http->mUrl.parse(url))
+    {
+        return -8602;
+    }
 
-        sem.post();
-    };
+    http->mRequest = std::move(req);
+    http->mOutputFileName = outputFileName;
+    http->mResponseHandler =
+        [&, http](const HttpClientPtr&, int32_t errorCode) {
+
+            // response
+            result = errorCode;
+            res = std::move(http->mResponse);
+
+            sem.post();
+        };
 
     // start
-    thread.post([&]() {
-
-        http = newInstance(&thread);
-
-        http->mUrl.parse(url);
-        http->mRequest = std::move(req);
-        http->mOutputFileName = outputFileName;
-        http->mResponseHandler = responseHandler;
-
+    thread.post([http]() {
         http->start();
     });
 
     // wait
     if (sem.wait(timeout) == WaitResult::Timeout)
     {
-        result = -3;
+        result = -8603;
     }
 
     thread.stop();
     thread.wait();
+
+    http->mResponseHandler = nullptr;
 
     return  result;
 }

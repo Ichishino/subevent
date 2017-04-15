@@ -146,6 +146,8 @@ class HttpHeader
 {
 public:
     SEV_DECL HttpHeader();
+    SEV_DECL HttpHeader(const HttpHeader& other);
+    SEV_DECL HttpHeader(HttpHeader&& other);
     SEV_DECL ~HttpHeader();
 
     struct Field
@@ -184,6 +186,9 @@ public:
     SEV_DECL void serialize(OStringStream& os) const;
     SEV_DECL bool deserialize(IStringStream& is);
 
+    HttpHeader& operator=(const HttpHeader& other);
+    HttpHeader& operator=(HttpHeader&& other);
+
 private:
     std::list<Field> mFields;
 };
@@ -196,6 +201,7 @@ class HttpRequest
 {
 public:
     SEV_DECL HttpRequest();
+    SEV_DECL HttpRequest(HttpRequest&& other);
     SEV_DECL ~HttpRequest();
 
 public:
@@ -287,6 +293,8 @@ public:
     SEV_DECL void serializeBody(OBufferStream& obs) const;
     SEV_DECL bool deserializeBody(IBufferStream& ibs);
 
+    SEV_DECL HttpRequest& operator=(HttpRequest&& other);
+
 private:
     std::string mMethod;
     std::string mPath;
@@ -303,6 +311,7 @@ class HttpResponse
 {
 public:
     SEV_DECL HttpResponse();
+    SEV_DECL HttpResponse(HttpResponse&& other);
     SEV_DECL ~HttpResponse();
 
 public:
@@ -394,6 +403,8 @@ public:
     SEV_DECL void serializeBody(OBufferStream& obs) const;
     SEV_DECL bool deserializeBody(IBufferStream& ibs);
 
+    SEV_DECL HttpResponse& operator=(HttpResponse&& other);
+
 private:
     std::string mProtocol;
     uint16_t mStatusCode;
@@ -417,6 +428,8 @@ public:
     SEV_DECL ~HttpClient() override;
 
 public:
+
+    // async request
 
     // GET
     SEV_DECL bool requestGet(
@@ -452,8 +465,6 @@ public:
         const std::string& url,
         const HttpResponseHandler& responseHandler);
 
-public:
-
     // Any
     SEV_DECL bool request(
         const std::string& method,
@@ -462,7 +473,65 @@ public:
         const HttpResponseHandler& responseHandler,
         const std::string& outputFileName = "");
 
-    SEV_DECL bool isResponseCompleted() const;
+public:
+
+    // sync request
+
+    static const uint32_t DefaultTimeout = 30 * 1000;
+
+    // GET
+    SEV_DECL static int32_t requestGet(
+        const std::string& url,
+        const HttpHeader& reqHeader,
+        HttpResponse& res,
+        const std::string& outputFileName = "",
+        uint32_t timeout = DefaultTimeout);
+
+    // POST
+    SEV_DECL static int32_t requestPost(
+        const std::string& url,
+        const std::string& body,
+        const HttpHeader& reqHeader,
+        HttpResponse& res,
+        uint32_t timeout = DefaultTimeout);
+
+    // PUT
+    SEV_DECL static int32_t requestPut(
+        const std::string& url,
+        const std::string& body,
+        const HttpHeader& reqHeader,
+        HttpResponse& res,
+        uint32_t timeout = DefaultTimeout);
+
+    // DELETE
+    SEV_DECL static int32_t requestDelete(
+        const std::string& url,
+        const HttpHeader& reqHeader,
+        HttpResponse& res,
+        uint32_t timeout = DefaultTimeout);
+
+    // PATCH
+    SEV_DECL static int32_t requestPatch(
+        const std::string& url,
+        const std::string& body,
+        const HttpHeader& reqHeader,
+        HttpResponse& res,
+        uint32_t timeout = DefaultTimeout);
+
+    // HEAD
+    SEV_DECL static int32_t requestHead(
+        const std::string& url,
+        const HttpHeader& reqHeader,
+        HttpResponse& res,
+        uint32_t timeout = DefaultTimeout);
+
+    // Any
+    SEV_DECL static int32_t request(
+        const std::string& url,
+        HttpRequest&& req,
+        HttpResponse& res,
+        const std::string& outputFileName = "",
+        uint32_t timeout = DefaultTimeout);
 
 public:
     SEV_DECL const HttpUrl& getUrl() const
@@ -483,8 +552,10 @@ public:
 private:
     SEV_DECL HttpClient(NetWorker* netWorker);
 
+    SEV_DECL void start();
     SEV_DECL void sendHttpRequest();
     SEV_DECL bool deserializeResponseBody(IBufferStream& ibs);
+    SEV_DECL bool isResponseCompleted() const;
     SEV_DECL void onHttpResponse(IStringStream& iss);
 
     SEV_DECL void onTcpConnect(const TcpClientPtr& client, int32_t errorCode);

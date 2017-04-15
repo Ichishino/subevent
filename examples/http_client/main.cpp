@@ -13,27 +13,21 @@ SEV_IMPL_GLOBAL
 
 int main(int, char**)
 {
-    NetApplication app;
-    HttpClientPtr http = HttpClient::newInstance(&app);
-
     std::string url = "http://example.com";
 
+    HttpHeader reqHeader;
+    HttpResponse res;
+
     // GET request
-    http->requestGet(url, [&](const HttpClientPtr&, int errorCode) {
+    int result = HttpClient::requestGet(url, reqHeader, res);
 
-        if (errorCode == 0)
+    if (result == 0)
+    {
+        if (res.getStatusCode() == 200)
         {
-            if (http->getResponse().getStatusCode() == 200)
-            {
-                std::string response =
-                    http->getResponse().getBodyAsString();
-
-                std::cout << response << std::endl;
-            }
+            std::cout << res.getBodyAsString() << std::endl;
         }
+    }
 
-        app.stop();
-    });
-
-    return app.run();
+    return 0;
 }

@@ -722,7 +722,6 @@ bool HttpClient::request(
     const std::string& outputFileName)
 {
     mUrl.clear();
-    mRequest.clear();
     mResponse.clear();
     mReceivedResponseBodySize = 0;
     mChunkedResponse.clear();

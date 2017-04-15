@@ -13,7 +13,6 @@ SEV_IMPL_GLOBAL
 int main(int, char**)
 {
     NetApplication app;
-
     TcpServerPtr server = TcpServer::newInstance(&app);
 
     server->getSocketOption().setReuseAddress(true);

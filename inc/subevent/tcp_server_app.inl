@@ -80,7 +80,11 @@ bool TcpServerApp::open(
             return;
         }
 
-        mTcpServer->accept(thread, channel);
+        if (!mTcpServer->accept(thread, channel))
+        {
+            channel->close();
+            return;
+        }
 
     }, backlog);
 
@@ -119,6 +123,11 @@ void TcpServerApp::setCpuAffinity()
 
 NetThread* TcpServerApp::nextThread()
 {
+    if (mThreadPool.empty())
+    {
+        return nullptr;
+    }
+
     int32_t startIndex = mThreadIndex;
 
     // round robin

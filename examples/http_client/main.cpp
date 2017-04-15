@@ -14,7 +14,6 @@ SEV_IMPL_GLOBAL
 int main(int, char**)
 {
     NetApplication app;
-
     HttpClientPtr http = HttpClient::newInstance(&app);
 
     std::string url = "http://example.com";

@@ -41,7 +41,9 @@ int main(int argc, char** argv)
 {
     TcpServerApp app(argc, argv);
 
-    app.createThread<MyThread>(10);
+    size_t numberOfThreads = 10;
+
+    app.createThread<MyThread>(numberOfThreads);
 
     uint16_t port = 9000;
 

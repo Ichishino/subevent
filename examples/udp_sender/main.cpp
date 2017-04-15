@@ -13,7 +13,6 @@ SEV_IMPL_GLOBAL
 int main(int, char**)
 {
     NetApplication app;
-
     UdpSenderPtr sender = UdpSender::newInstance(&app);
 
     IpEndPoint receiver("127.0.0.1", 9001);

@@ -290,7 +290,8 @@ void TcpChannel::close()
         return;
     }
 
-    if (mNetWorker != NetWorker::getCurrent())
+    if ((mNetWorker != nullptr) &&
+        (mNetWorker != NetWorker::getCurrent()))
     {
         assert(false);
         return;
@@ -302,8 +303,11 @@ void TcpChannel::close()
     mCloseCanceller.reset();
     mSendHandlers.clear();
 
-    mNetWorker->getSocketController()->
-        requestTcpChannelClose(shared_from_this());
+    if (mNetWorker != nullptr)
+    {
+        mNetWorker->getSocketController()->
+            requestTcpChannelClose(shared_from_this());
+    }
 
     delete mSocket;
     mSocket = nullptr;

@@ -13,12 +13,11 @@ SEV_IMPL_GLOBAL
 int main(int, char**)
 {
     NetApplication app;
-
-    IpEndPoint local(9001);
-
     UdpReceiverPtr receiver = UdpReceiver::newInstance(&app);
 
     receiver->getSocketOption().setReuseAddress(true);
+
+    IpEndPoint local(9001);
 
     // open
     receiver->open(local, [&](const UdpReceiverPtr&) {

@@ -13,10 +13,9 @@ SEV_IMPL_GLOBAL
 int main(int, char**)
 {
     NetApplication app;
+    TcpClientPtr client = TcpClient::newInstance(&app);
 
     IpEndPoint server("127.0.0.1", 9000);
-
-    TcpClientPtr client = TcpClient::newInstance(&app);
 
     // connect
     client->connect(server,

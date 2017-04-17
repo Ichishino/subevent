@@ -41,6 +41,16 @@ HttpUrl::HttpUrl()
     clear();
 }
 
+HttpUrl::HttpUrl(const HttpUrl& other)
+{
+    operator=(other);
+}
+
+HttpUrl::HttpUrl(HttpUrl&& other)
+{
+    operator=(std::move(other));
+}
+
 HttpUrl::~HttpUrl()
 {
 }
@@ -218,6 +228,36 @@ void HttpUrl::clear()
     mFragment.clear();
 }
 
+HttpUrl& HttpUrl::operator=(const HttpUrl& other)
+{
+    mScheme = other.mScheme;
+    mUser = other.mUser;
+    mPassword = other.mPassword;
+    mHost = other.mHost;
+    mPort = other.mPort;
+    mPath = other.mPath;
+    mQuery = other.mQuery;
+    mFragment = other.mFragment;
+
+    return *this;
+}
+
+HttpUrl& HttpUrl::operator=(HttpUrl&& other)
+{
+    mScheme = std::move(other.mScheme);
+    mUser = std::move(other.mUser);
+    mPassword = std::move(other.mPassword);
+    mHost = std::move(other.mHost);
+    mPort = std::move(other.mPort);
+    mPath = std::move(other.mPath);
+    mQuery = std::move(other.mQuery);
+    mFragment = std::move(other.mFragment);
+
+    other.clear();
+
+    return *this;
+}
+
 //----------------------------------------------------------------------------//
 // HttpHeader
 //----------------------------------------------------------------------------//
@@ -387,6 +427,7 @@ bool HttpHeader::deserialize(IStringStream& iss)
 void HttpHeader::setContentLength(size_t contentLength)
 {
     remove(HttpHeaderField::ContentLength);
+
     add(HttpHeaderField::ContentLength,
         std::to_string(contentLength));
 }
@@ -416,6 +457,7 @@ HttpHeader& HttpHeader::operator=(const HttpHeader& other)
 HttpHeader& HttpHeader::operator=(HttpHeader&& other)
 {
     mFields = std::move(other.mFields);
+
     other.clear();
 
     return *this;
@@ -427,6 +469,7 @@ HttpHeader& HttpHeader::operator=(HttpHeader&& other)
 
 HttpCookie::HttpCookie()
 {
+    clear();
 }
 
 HttpCookie::HttpCookie(const HttpCookie& other)
@@ -466,26 +509,6 @@ void HttpCookie::remove(const std::string& name)
     }
 
     mAttributes.erase(it, mAttributes.end());
-}
-
-std::list<HttpCookie::Attribute> HttpCookie::getAttributes() const
-{
-    std::list<Attribute> attrs;
-
-    for (const auto& attr : mAttributes)
-    {
-        if (!icompString(attr.name, HttpCookieName::Expires) &&
-            !icompString(attr.name, HttpCookieName::MaxAge) &&
-            !icompString(attr.name, HttpCookieName::Domain) &&
-            !icompString(attr.name, HttpCookieName::Path) &&
-            !icompString(attr.name, HttpCookieName::Secure) &&
-            !icompString(attr.name, HttpCookieName::HttpOnly))
-        {
-            attrs.push_back(attr);
-        }
-    }
-
-    return attrs;
 }
 
 bool HttpCookie::isExists(
@@ -583,7 +606,34 @@ bool HttpCookie::parse(const std::string& cookie)
             return false;
         }
 
-        add(name, value);
+        if (icompString(name, HttpCookieName::Expires))
+        {
+            mExpires = value;
+        }
+        else if (icompString(name, HttpCookieName::MaxAge))
+        {
+            mMaxAge = value;
+        }
+        else if (icompString(name, HttpCookieName::Domain))
+        {
+            mDomain = value;
+        }
+        else if (icompString(name, HttpCookieName::Path))
+        {
+            mPath = value;
+        }
+        else if (icompString(name, HttpCookieName::Secure))
+        {
+            mSecure = true;
+        }
+        else if (icompString(name, HttpCookieName::HttpOnly))
+        {
+            mHttpOnly = true;
+        }
+        else if (!value.empty())
+        {
+            add(name, value);
+        }
     }
 
     return true;
@@ -595,24 +645,44 @@ std::string HttpCookie::compose() const
 
     for (auto& attr : mAttributes)
     {
-        if (attr.value.empty())
-        {
-            continue;
-        }
-
-        cookie += attr.name;
-        cookie += "=";
-        cookie += attr.value;
+        cookie += attr.name + "=" + attr.value;
         cookie += "; ";
     }
 
-    for (auto& attr : mAttributes)
+    if (!mExpires.empty())
     {
-        if (attr.value.empty())
-        {
-            cookie += attr.name;
-            cookie += "; ";
-        }
+        cookie += HttpCookieName::Expires + "=" + mExpires;
+        cookie += "; ";
+    }
+
+    if (!mMaxAge.empty())
+    {
+        cookie += HttpCookieName::MaxAge + "=" + mMaxAge;
+        cookie += "; ";
+    }
+
+    if (!mDomain.empty())
+    {
+        cookie += HttpCookieName::Domain + "=" + mDomain;
+        cookie += "; ";
+    }
+
+    if (!mPath.empty())
+    {
+        cookie += HttpCookieName::Path + "=" + mPath;
+        cookie += "; ";
+    }
+
+    if (mSecure)
+    {
+        cookie += HttpCookieName::Secure;
+        cookie += "; ";
+    }
+
+    if (mHttpOnly)
+    {
+        cookie += HttpCookieName::HttpOnly;
+        cookie += "; ";
     }
 
     if (!cookie.empty())
@@ -626,89 +696,23 @@ std::string HttpCookie::compose() const
 void HttpCookie::clear()
 {
     mAttributes.clear();
-}
-
-void HttpCookie::setExipires(const std::string& expires)
-{
-    remove(HttpCookieName::Expires);
-    add(HttpCookieName::Expires, expires);
-}
-
-const std::string& HttpCookie::getExpires() const
-{
-    return findValue(HttpCookieName::Expires);
-}
-
-void HttpCookie::setMaxAge(const std::string& maxAge)
-{
-    remove(HttpCookieName::MaxAge);
-    add(HttpCookieName::MaxAge, maxAge);
-}
-
-const std::string& HttpCookie::getMaxAge() const
-{
-    return findValue(HttpCookieName::MaxAge);
-}
-
-void HttpCookie::setDomain(const std::string& domain)
-{
-    remove(HttpCookieName::Domain);
-    add(HttpCookieName::Domain, domain);
-}
-
-const std::string& HttpCookie::getDomain() const
-{
-    return findValue(HttpCookieName::Domain);
-}
-
-void HttpCookie::setPath(const std::string& path)
-{
-    remove(HttpCookieName::Path);
-    add(HttpCookieName::Path, path);
-}
-
-const std::string& HttpCookie::getPath() const
-{
-    return findValue(HttpCookieName::Path);
-}
-
-void HttpCookie::setSecure(bool secure)
-{
-    if (isExists(HttpCookieName::Secure) && !secure)
-    {
-        remove(HttpCookieName::Secure);
-    }
-    else if (!isExists(HttpCookieName::Secure) && secure)
-    {
-        add(HttpCookieName::Secure, "");
-    }
-}
-
-bool HttpCookie::isSecure() const
-{
-    return isExists(HttpCookieName::Secure);
-}
-
-void HttpCookie::setHttpOnly(bool httpOnly)
-{
-    if (isExists(HttpCookieName::HttpOnly) && !httpOnly)
-    {
-        remove(HttpCookieName::HttpOnly);
-    }
-    else if (!isExists(HttpCookieName::HttpOnly) && httpOnly)
-    {
-        add(HttpCookieName::HttpOnly, "");
-    }
-}
-
-bool HttpCookie::isHttpOnly() const
-{
-    return isExists(HttpCookieName::HttpOnly);
+    mExpires.clear();
+    mMaxAge.clear();
+    mDomain.clear();
+    mPath.clear();
+    mSecure = false;
+    mHttpOnly = false;
 }
 
 HttpCookie& HttpCookie::operator=(const HttpCookie& other)
 {
     mAttributes = other.mAttributes;
+    mExpires = other.mExpires;
+    mMaxAge = other.mMaxAge;
+    mDomain = other.mDomain;
+    mPath = other.mPath;
+    mSecure = other.mSecure;
+    mHttpOnly = other.mHttpOnly;
 
     return *this;
 }
@@ -716,6 +720,14 @@ HttpCookie& HttpCookie::operator=(const HttpCookie& other)
 HttpCookie& HttpCookie::operator=(HttpCookie&& other)
 {
     mAttributes = std::move(other.mAttributes);
+    mExpires = std::move(other.mExpires);
+    mMaxAge = std::move(other.mMaxAge);
+    mDomain = std::move(other.mDomain);
+    mPath = std::move(other.mPath);
+    mSecure = std::move(other.mSecure);
+    mHttpOnly = std::move(other.mHttpOnly);
+
+    other.clear();
 
     return *this;
 }
@@ -726,6 +738,7 @@ HttpCookie& HttpCookie::operator=(HttpCookie&& other)
 
 HttpMessage::HttpMessage()
 {
+    clear();
 }
 
 HttpMessage::HttpMessage(const HttpMessage& other)
@@ -1152,6 +1165,7 @@ bool HttpClient::ChunkedResponse::setChunkSize(IStringStream& iss)
 HttpClient::HttpClient(NetWorker* netWorker)
     : TcpClient(netWorker)
 {
+    mRunning = false;
     mReceivedResponseBodySize = 0;
 }
 
@@ -1161,11 +1175,10 @@ HttpClient::~HttpClient()
 
 bool HttpClient::request(
     const std::string& url,
-    const HttpRequest& req,
     const HttpResponseHandler& responseHandler,
     const RequestOption& option)
 {
-    if (!isResponseCompleted())
+    if (mRunning)
     {
         return false;
     }
@@ -1178,17 +1191,26 @@ bool HttpClient::request(
     mOption.clear();
     mRedirectHashes.clear();
 
-    if (req.getMethod().empty())
+    if (mRequest.getMethod().empty())
     {
         return false;
     }
 
-    if (!mUrl.parse(url))
+    HttpUrl httpUrl;
+
+    if (!httpUrl.parse(url))
     {
         return false;
     }
 
-    mRequest = req;
+    if ((httpUrl.getScheme() != mUrl.getScheme()) ||
+        (httpUrl.getHost() != mUrl.getHost()) ||
+        (httpUrl.getPort() != mUrl.getPort()))
+    {
+        close();
+    }
+
+    mUrl = std::move(httpUrl);
     mResponseHandler = responseHandler;
     mOption = option;
 
@@ -1261,6 +1283,8 @@ int32_t HttpClient::request(
 
 void HttpClient::start()
 {
+    mRunning = true;
+
     getSocketOption() = mOption.sockOption;
 
     if (isClosed())
@@ -1283,7 +1307,7 @@ void HttpClient::start()
 
 bool HttpClient::isResponseCompleted() const
 {
-    if (!mRequest.isEmpty() && mResponse.isEmpty())
+    if (mResponse.isEmpty())
     {
         return false;
     }
@@ -1514,6 +1538,7 @@ int32_t HttpClient::redirect()
     if (statusCode == 303)
     {
         mRequest.setMethod(HttpMethod::Get);
+        mRequest.getBody().clear();
     }
 
     mRequest.setPath("");
@@ -1555,6 +1580,8 @@ void HttpClient::onResponse(int32_t errorCode)
             }
         }
     }
+
+    mRunning = false;
 
     if (mResponseHandler != nullptr)
     {

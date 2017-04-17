@@ -18,11 +18,10 @@ int main(int, char**)
 
     std::string url = "http://example.com";
 
-    HttpRequest req;
-    req.setMethod("GET");
+    http->getRequest().setMethod("GET");
 
     // GET request
-    http->request(url, req, [&](const HttpClientPtr&, int errorCode) {
+    http->request(url, [&](const HttpClientPtr&, int errorCode) {
 
         if (errorCode == 0)
         {

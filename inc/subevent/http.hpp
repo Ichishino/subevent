@@ -48,6 +48,7 @@ namespace HttpHeaderField
     static const std::string Cookie = "Cookie";
     static const std::string SetCookie = "Set-Cookie";
     static const std::string Location = "Location";
+    static const std::string UserAgent = "User-Agent";
 };
 
 namespace HttpCookieName
@@ -73,6 +74,8 @@ class HttpUrl
 {
 public:
     SEV_DECL HttpUrl();
+    SEV_DECL HttpUrl(const HttpUrl& other);
+    SEV_DECL HttpUrl(HttpUrl&& other);
     SEV_DECL ~HttpUrl();
 
 public:
@@ -162,6 +165,9 @@ public:
     SEV_DECL std::string composePath() const;
     SEV_DECL void clear();
 
+    SEV_DECL HttpUrl& operator=(const HttpUrl& other);
+    SEV_DECL HttpUrl& operator=(HttpUrl&& other);
+
 private:
     std::string mScheme;
     std::string mUser;
@@ -197,25 +203,70 @@ public:
     };
 
 public:
-    SEV_DECL std::list<Attribute> getAttributes() const;
+    SEV_DECL const std::list<Attribute>& getAttributes() const
+    {
+        return mAttributes;
+    }
 
-    SEV_DECL void setExipires(const std::string& expires);
-    SEV_DECL const std::string& getExpires() const;
+    SEV_DECL void setExipires(const std::string& expires)
+    {
+        mExpires = expires;
+    }
 
-    SEV_DECL const std::string& getMaxAge() const;
-    SEV_DECL void setMaxAge(const std::string& maxAge);
+    SEV_DECL const std::string& getExpires() const
+    {
+        return mExpires;
+    }
 
-    SEV_DECL void setDomain(const std::string& domain);
-    SEV_DECL const std::string& getDomain() const;
+    SEV_DECL void setMaxAge(const std::string& maxAge)
+    {
+        mMaxAge = maxAge;
+    }
 
-    SEV_DECL void setPath(const std::string& path);
-    SEV_DECL const std::string& getPath() const;
+    SEV_DECL const std::string& getMaxAge() const
+    {
+        return mMaxAge;
+    }
 
-    SEV_DECL void setSecure(bool secure);
-    SEV_DECL bool isSecure() const;
+    SEV_DECL void setDomain(const std::string& domain)
+    {
+        mDomain = domain;
+    }
 
-    SEV_DECL void setHttpOnly(bool httpOnly);
-    SEV_DECL bool isHttpOnly() const;
+    SEV_DECL const std::string& getDomain() const
+    {
+        return mDomain;
+    }
+
+    SEV_DECL void setPath(const std::string& path)
+    {
+        mPath = path;
+    }
+
+    SEV_DECL const std::string& getPath() const
+    {
+        return mPath;
+    }
+
+    SEV_DECL void setSecure(bool secure)
+    {
+        mSecure = secure;
+    }
+
+    SEV_DECL bool isSecure() const
+    {
+        return mSecure;
+    }
+
+    SEV_DECL void setHttpOnly(bool httpOnly)
+    {
+        mHttpOnly = httpOnly;
+    }
+
+    SEV_DECL bool isHttpOnly() const
+    {
+        return mHttpOnly;
+    }
 
 public:
     SEV_DECL void add(
@@ -241,6 +292,12 @@ public:
 
 private:
     std::list<Attribute> mAttributes;
+    std::string mExpires;
+    std::string mMaxAge;
+    std::string mDomain;
+    std::string mPath;
+    bool mSecure;
+    bool mHttpOnly;
 };
 
 //----------------------------------------------------------------------------//
@@ -579,7 +636,6 @@ public:
 public:
     SEV_DECL bool request(
         const std::string& url,
-        const HttpRequest& req,
         const HttpResponseHandler& responseHandler,
         const RequestOption& option = RequestOption());
 
@@ -677,13 +733,16 @@ private:
         size_t mChunkSize;
         size_t mReceivedSize;
     };
-    
+
+    bool mRunning;
+
     HttpUrl mUrl;
-    HttpRequest mRequest;
     HttpResponseHandler mResponseHandler;
     RequestOption mOption;
 
+    HttpRequest mRequest;
     HttpResponse mResponse;
+
     size_t mReceivedResponseBodySize;
     ChunkedResponse mChunkedResponse;
     std::vector<char> mResponseTempBuffer;

@@ -15,11 +15,13 @@ int main(int, char**)
 {
     std::string url = "http://example.com";
 
-    HttpHeader reqHeader;
+    HttpRequest req;
+    req.setMethod("GET");
+
     HttpResponse res;
 
     // GET request
-    int result = HttpClient::requestGet(url, reqHeader, res);
+    int result = HttpClient::request(url, req, res);
 
     if (result == 0)
     {

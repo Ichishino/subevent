@@ -20,13 +20,47 @@ class HttpClient;
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-typedef std::shared_ptr<HttpClient> HttpClientPtr;
+namespace HttpMethod
+{
+    static const std::string Get = "GET";
+    static const std::string Post = "POST";
+    static const std::string Put = "PUT";
+    static const std::string Delete = "DELETE";
+    static const std::string Patch = "PATCH";
+    static const std::string Head = "HEAD";
+};
 
 namespace HttpProtocol
 {
     static const std::string v1_0 = "HTTP/1.0";
     static const std::string v1_1 = "HTTP/1.1";
 }
+
+namespace HttpHeaderField
+{
+    static const std::string Accept = "Accept";
+    static const std::string AcceptEncoding = "Accept-Encoding";
+    static const std::string Connection = "Connection";
+    static const std::string ContentLength = "Content-Length";
+    static const std::string ContentType = "Content-Type";
+    static const std::string Host = "Host";
+    static const std::string TransferEncoding = "Transfer-Encoding";
+    static const std::string Cookie = "Cookie";
+    static const std::string SetCookie = "Set-Cookie";
+    static const std::string Location = "Location";
+};
+
+namespace HttpCookieName
+{
+    static const std::string Expires = "Expires";
+    static const std::string MaxAge = "Max-Age";
+    static const std::string Domain = "Domain";
+    static const std::string Path = "Path";
+    static const std::string Secure = "Secure";
+    static const std::string HttpOnly = "HttpOnly";
+}
+
+typedef std::shared_ptr<HttpClient> HttpClientPtr;
 
 typedef std::function<
     void(const HttpClientPtr&, int32_t)> HttpResponseHandler;
@@ -125,6 +159,7 @@ public:
 public:
     SEV_DECL bool parse(const std::string& url);
     SEV_DECL std::string compose() const;
+    SEV_DECL std::string composePath() const;
     SEV_DECL void clear();
 
 private:
@@ -136,6 +171,76 @@ private:
     std::string mPath;
     std::string mQuery;
     std::string mFragment;
+};
+
+//----------------------------------------------------------------------------//
+// HttpCookie
+//----------------------------------------------------------------------------//
+
+class HttpCookie
+{
+public:
+    SEV_DECL HttpCookie();
+    SEV_DECL HttpCookie(const HttpCookie& other);
+    SEV_DECL HttpCookie(HttpCookie&& other);
+    SEV_DECL ~HttpCookie();
+
+    struct Attribute
+    {
+        std::string name;
+        std::string value;
+
+        std::string compose() const
+        {
+            return (name + "=" + value);
+        }
+    };
+
+public:
+    SEV_DECL std::list<Attribute> getAttributes() const;
+
+    SEV_DECL void setExipires(const std::string& expires);
+    SEV_DECL const std::string& getExpires() const;
+
+    SEV_DECL const std::string& getMaxAge() const;
+    SEV_DECL void setMaxAge(const std::string& maxAge);
+
+    SEV_DECL void setDomain(const std::string& domain);
+    SEV_DECL const std::string& getDomain() const;
+
+    SEV_DECL void setPath(const std::string& path);
+    SEV_DECL const std::string& getPath() const;
+
+    SEV_DECL void setSecure(bool secure);
+    SEV_DECL bool isSecure() const;
+
+    SEV_DECL void setHttpOnly(bool httpOnly);
+    SEV_DECL bool isHttpOnly() const;
+
+public:
+    SEV_DECL void add(
+        const std::string& name, const std::string& value);
+    SEV_DECL void remove(
+        const std::string& name);
+
+    SEV_DECL bool isExists(
+        const std::string& name) const;
+    SEV_DECL const std::string& findValue(
+        const std::string& name) const;
+    SEV_DECL std::list<std::string> findValues(
+        const std::string& name) const;
+
+    SEV_DECL void clear();
+
+public:
+    SEV_DECL bool parse(const std::string& url);
+    SEV_DECL std::string compose() const;
+
+    SEV_DECL HttpCookie& operator=(const HttpCookie& other);
+    SEV_DECL HttpCookie& operator=(HttpCookie&& other);
+
+private:
+    std::list<Attribute> mAttributes;
 };
 
 //----------------------------------------------------------------------------//
@@ -164,10 +269,9 @@ public:
 
     SEV_DECL bool isExists(
         const std::string& name) const;
-
-    SEV_DECL const std::string& findOne(
+    SEV_DECL const std::string& findValue(
         const std::string& name) const;
-    SEV_DECL std::list<std::string> find(
+    SEV_DECL std::list<std::string> findValues(
         const std::string& name) const;
 
     SEV_DECL const std::list<Field>& getFields() const
@@ -183,24 +287,113 @@ public:
     SEV_DECL size_t getContentLength() const;
 
 public:
-    SEV_DECL void serialize(OStringStream& os) const;
-    SEV_DECL bool deserialize(IStringStream& is);
+    SEV_DECL void serialize(OStringStream& oss) const;
+    SEV_DECL bool deserialize(IStringStream& iss);
 
-    HttpHeader& operator=(const HttpHeader& other);
-    HttpHeader& operator=(HttpHeader&& other);
+    SEV_DECL HttpHeader& operator=(const HttpHeader& other);
+    SEV_DECL HttpHeader& operator=(HttpHeader&& other);
 
 private:
     std::list<Field> mFields;
 };
 
 //----------------------------------------------------------------------------//
+// HttpMessage
+//----------------------------------------------------------------------------//
+
+class HttpMessage
+{
+public:
+    SEV_DECL virtual ~HttpMessage();
+
+public:
+    SEV_DECL HttpHeader& getHeader()
+    {
+        return mHeader;
+    }
+
+    SEV_DECL const HttpHeader& getHeader() const
+    {
+        return mHeader;
+    }
+
+public:
+    SEV_DECL void setBody(std::vector<char>&& body)
+    {
+        mBody = std::move(body);
+    }
+
+    SEV_DECL void setBody(const std::string& body)
+    {
+        mBody.clear();
+
+        if (!body.empty())
+        {
+            std::copy(
+                body.begin(), body.end(),
+                std::back_inserter(mBody));
+        }
+    }
+
+    SEV_DECL std::vector<char>& getBody()
+    {
+        return mBody;
+    }
+
+    SEV_DECL const std::vector<char>& getBody() const
+    {
+        return mBody;
+    }
+
+    SEV_DECL std::vector<char>&& moveBody()
+    {
+        return std::move(mBody);
+    }
+
+    SEV_DECL std::string getBodyAsString() const
+    {
+        return std::string(mBody.begin(), mBody.end());
+    }
+
+    SEV_DECL virtual bool isEmpty() const;
+    SEV_DECL virtual void clear();
+
+public:
+    SEV_DECL virtual void serializeMessage(OStringStream& oss) const;
+    SEV_DECL virtual bool deserializeMessage(IStringStream& iss);
+
+    SEV_DECL virtual void serializeBody(OBufferStream& obs) const;
+    SEV_DECL virtual bool deserializeBody(IBufferStream& ibs);
+
+protected:
+    SEV_DECL HttpMessage();
+    SEV_DECL HttpMessage(const HttpMessage& other);
+    SEV_DECL HttpMessage(HttpMessage&& other);
+
+    SEV_DECL void addCookie(
+        const std::string& headerName, const HttpCookie& cookie);
+    SEV_DECL std::list<HttpCookie> getCookies(
+        const std::string& headerName) const;
+    SEV_DECL void removeCookies(
+        const std::string& headerName);
+
+    SEV_DECL HttpMessage& operator=(const HttpMessage& other);
+    SEV_DECL HttpMessage& operator=(HttpMessage&& other);
+
+private:
+    HttpHeader mHeader;
+    std::vector<char> mBody;
+};
+
+//----------------------------------------------------------------------------//
 // HttpRequest
 //----------------------------------------------------------------------------//
 
-class HttpRequest
+class HttpRequest : public HttpMessage
 {
 public:
     SEV_DECL HttpRequest();
+    SEV_DECL HttpRequest(const HttpRequest& other);
     SEV_DECL HttpRequest(HttpRequest&& other);
     SEV_DECL ~HttpRequest();
 
@@ -235,82 +428,50 @@ public:
         return mProtocol;
     }
 
-    SEV_DECL HttpHeader& getHeader()
+    SEV_DECL bool isEmpty() const override;
+    SEV_DECL void clear() override;
+
+public:
+    SEV_DECL void addCookie(const HttpCookie& cookie)
     {
-        return mHeader;
+        return HttpMessage::addCookie(
+            HttpHeaderField::Cookie, cookie);
     }
 
-    SEV_DECL const HttpHeader& getHeader() const
+    SEV_DECL std::list<HttpCookie> getCookies() const
     {
-        return mHeader;
+        return HttpMessage::getCookies(
+            HttpHeaderField::Cookie);
+    }
+
+    SEV_DECL void removeCookies()
+    {
+        return HttpMessage::removeCookies(
+            HttpHeaderField::Cookie);
     }
 
 public:
-    SEV_DECL void setBody(std::vector<char>&& body)
-    {
-        mBody = std::move(body);
-    }
+    SEV_DECL void serializeMessage(OStringStream& oss) const override;
+    SEV_DECL bool deserializeMessage(IStringStream& iss) override;
 
-    SEV_DECL void setBody(const std::string& body)
-    {
-        mBody.clear();
-
-        if (!body.empty())
-        {
-            std::copy(
-                body.begin(), body.end(),
-                std::back_inserter(mBody));
-        }
-    }
-
-    SEV_DECL std::vector<char>& getBody()
-    {
-        return mBody;
-    }
-
-    SEV_DECL const std::vector<char>& getBody() const
-    {
-        return mBody;
-    }
-
-    SEV_DECL std::vector<char>&& moveBody()
-    {
-        return std::move(mBody);
-    }
-
-    SEV_DECL std::string getBodyAsString() const
-    {
-        return std::string(mBody.begin(), mBody.end());
-    }
-
-public:
-    SEV_DECL bool isEmpty() const;
-    SEV_DECL void clear();
-
-    SEV_DECL void serializeMessage(OStringStream& oss) const;
-    SEV_DECL bool deserializeMessage(IStringStream& iss);
-
-    SEV_DECL void serializeBody(OBufferStream& obs) const;
-    SEV_DECL bool deserializeBody(IBufferStream& ibs);
-
+    SEV_DECL HttpRequest& operator=(const HttpRequest& other);
     SEV_DECL HttpRequest& operator=(HttpRequest&& other);
 
 private:
     std::string mMethod;
     std::string mPath;
     std::string mProtocol;
-    HttpHeader mHeader;
-    std::vector<char> mBody;
 };
 
 //----------------------------------------------------------------------------//
 // HttpResponse
 //----------------------------------------------------------------------------//
 
-class HttpResponse
+class HttpResponse : public HttpMessage
 {
 public:
     SEV_DECL HttpResponse();
+    SEV_DECL HttpResponse(const HttpResponse& other);
     SEV_DECL HttpResponse(HttpResponse&& other);
     SEV_DECL ~HttpResponse();
 
@@ -345,72 +506,39 @@ public:
         return mMessage;
     }
 
-    SEV_DECL HttpHeader& getHeader()
-    {
-        return mHeader;
-    }
-
-    SEV_DECL const HttpHeader& getHeader() const
-    {
-        return mHeader;
-    }
-
-public:
-    SEV_DECL void setBody(std::vector<char>&& body)
-    {
-        mBody = std::move(body);
-    }
-
-    SEV_DECL void setBody(const std::string& body)
-    {
-        mBody.clear();
-
-        if (!body.empty())
-        {
-            std::copy(
-                body.begin(), body.end(),
-                std::back_inserter(mBody));
-        }
-    }
-
-    SEV_DECL std::vector<char>& getBody()
-    {
-        return mBody;
-    }
-
-    SEV_DECL const std::vector<char>& getBody() const
-    {
-        return mBody;
-    }
-
-    SEV_DECL std::vector<char>&& moveBody()
-    {
-        return std::move(mBody);
-    }
-
-    SEV_DECL std::string getBodyAsString() const
-    {
-        return std::string(mBody.begin(), mBody.end());
-    }
-
-public:
     SEV_DECL void clear();
     SEV_DECL bool isEmpty() const;
 
+public:
+    SEV_DECL void addCookie(const HttpCookie& cookie)
+    {
+        return HttpMessage::addCookie(
+            HttpHeaderField::SetCookie, cookie);
+    }
+
+    SEV_DECL std::list<HttpCookie> getCookies() const
+    {
+        return HttpMessage::getCookies(
+            HttpHeaderField::SetCookie);
+    }
+
+    SEV_DECL void removeCookies()
+    {
+        return HttpMessage::removeCookies(
+            HttpHeaderField::SetCookie);
+    }
+
+public:
     SEV_DECL void serializeMessage(OStringStream& oss) const;
     SEV_DECL bool deserializeMessage(IStringStream& iss);
 
-    SEV_DECL void serializeBody(OBufferStream& obs) const;
-    SEV_DECL bool deserializeBody(IBufferStream& ibs);
-
+    SEV_DECL HttpResponse& operator=(const HttpResponse& other);
     SEV_DECL HttpResponse& operator=(HttpResponse&& other);
 
 private:
     std::string mProtocol;
     uint16_t mStatusCode;
     std::string mMessage;
-    HttpHeader mHeader;
-    std::vector<char> mBody;
 };
 
 //----------------------------------------------------------------------------//
@@ -427,111 +555,39 @@ public:
 
     SEV_DECL ~HttpClient() override;
 
+    struct RequestOption
+    {
+        RequestOption()
+        {
+            clear();
+        }
+
+        void clear()
+        {
+            allowRedirect = true;
+            timeout = 60 * 1000;
+            outputFileName.clear();
+            sockOption.clear();
+        }
+
+        bool allowRedirect;
+        std::string outputFileName;
+        uint32_t timeout;
+        SocketOption sockOption;
+    };
+
 public:
-
-    // async request
-
-    // GET
-    SEV_DECL bool requestGet(
-        const std::string& url,
-        const HttpResponseHandler& responseHandler,
-        const std::string& outputFileName = "");
-
-    // POST
-    SEV_DECL bool requestPost(
-        const std::string& url,
-        const std::string& body,
-        const HttpResponseHandler& responseHandler);
-
-    // PUT
-    SEV_DECL bool requestPut(
-        const std::string& url,
-        const std::string& body,
-        const HttpResponseHandler& responseHandler);
-
-    // DELETE
-    SEV_DECL bool requestDelete(
-        const std::string& url,
-        const HttpResponseHandler& responseHandler);
-
-    // PATCH
-    SEV_DECL bool requestPatch(
-        const std::string& url,
-        const std::string& body,
-        const HttpResponseHandler& responseHandler);
-
-    // HEAD
-    SEV_DECL bool requestHead(
-        const std::string& url,
-        const HttpResponseHandler& responseHandler);
-
-    // Any
     SEV_DECL bool request(
-        const std::string& method,
         const std::string& url,
-        const std::string& body,
+        const HttpRequest& req,
         const HttpResponseHandler& responseHandler,
-        const std::string& outputFileName = "");
+        const RequestOption& option = RequestOption());
 
-public:
-
-    // sync request
-
-    static const uint32_t DefaultTimeout = 30 * 1000;
-
-    // GET
-    SEV_DECL static int32_t requestGet(
-        const std::string& url,
-        const HttpHeader& reqHeader,
-        HttpResponse& res,
-        const std::string& outputFileName = "",
-        uint32_t timeout = DefaultTimeout);
-
-    // POST
-    SEV_DECL static int32_t requestPost(
-        const std::string& url,
-        const std::string& body,
-        const HttpHeader& reqHeader,
-        HttpResponse& res,
-        uint32_t timeout = DefaultTimeout);
-
-    // PUT
-    SEV_DECL static int32_t requestPut(
-        const std::string& url,
-        const std::string& body,
-        const HttpHeader& reqHeader,
-        HttpResponse& res,
-        uint32_t timeout = DefaultTimeout);
-
-    // DELETE
-    SEV_DECL static int32_t requestDelete(
-        const std::string& url,
-        const HttpHeader& reqHeader,
-        HttpResponse& res,
-        uint32_t timeout = DefaultTimeout);
-
-    // PATCH
-    SEV_DECL static int32_t requestPatch(
-        const std::string& url,
-        const std::string& body,
-        const HttpHeader& reqHeader,
-        HttpResponse& res,
-        uint32_t timeout = DefaultTimeout);
-
-    // HEAD
-    SEV_DECL static int32_t requestHead(
-        const std::string& url,
-        const HttpHeader& reqHeader,
-        HttpResponse& res,
-        uint32_t timeout = DefaultTimeout);
-
-    // Any
     SEV_DECL static int32_t request(
         const std::string& url,
-        HttpRequest&& req,
+        const HttpRequest& req,
         HttpResponse& res,
-        const std::string& outputFileName = "",
-        uint32_t timeout = DefaultTimeout);
+        const RequestOption& option = RequestOption());
 
 public:
     SEV_DECL const HttpUrl& getUrl() const
@@ -557,6 +613,7 @@ private:
     SEV_DECL bool deserializeResponseBody(IBufferStream& ibs);
     SEV_DECL bool isResponseCompleted() const;
     SEV_DECL void onHttpResponse(IStringStream& iss);
+    SEV_DECL int32_t redirect();
 
     SEV_DECL void onTcpConnect(const TcpClientPtr& client, int32_t errorCode);
     SEV_DECL void onTcpSend(const TcpChannelPtr& channel, int32_t errorCode);
@@ -622,17 +679,15 @@ private:
     };
     
     HttpUrl mUrl;
-
     HttpRequest mRequest;
-    HttpResponse mResponse;
     HttpResponseHandler mResponseHandler;
+    RequestOption mOption;
 
+    HttpResponse mResponse;
     size_t mReceivedResponseBodySize;
     ChunkedResponse mChunkedResponse;
-
     std::vector<char> mResponseTempBuffer;
-
-    std::string mOutputFileName;
+    std::list<std::string> mRedirectHashes;
 };
 
 SEV_NS_END

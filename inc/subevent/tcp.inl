@@ -165,7 +165,7 @@ TcpChannelPtr TcpServer::accept(const Event* event)
     if (channel->mNetWorker != NetWorker::getCurrent())
     {
         assert(false);
-        return false;
+        return nullptr;
     }
 
     if (!channel->mNetWorker->

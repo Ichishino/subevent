@@ -6,12 +6,31 @@
 #include <cassert>
 #include <iterator>
 #include <algorithm>
+#include <cctype>
 
 #include <subevent/network.hpp>
 #include <subevent/http.hpp>
 #include <subevent/ssl_socket.hpp>
 
 SEV_NS_BEGIN
+
+//----------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
+
+inline void trimString(std::string& str)
+{
+    str.erase(0, str.find_first_not_of(" "));
+    str.erase(str.find_last_not_of(" ") + 1);
+}
+
+inline bool icompString(const std::string& left, const std::string& right)
+{
+    return ((left.size() == right.size()) &&
+        std::equal(left.begin(), left.end(), right.begin(),
+            [](char l, char r) ->bool {
+                return (std::tolower(l) == std::tolower(r));
+            }));
+}
 
 //----------------------------------------------------------------------------//
 // HttpUrl
@@ -28,6 +47,8 @@ HttpUrl::~HttpUrl()
 
 bool HttpUrl::parse(const std::string& url)
 {
+    clear();
+
     std::string src = url;
     size_t pos;
 
@@ -161,19 +182,28 @@ std::string HttpUrl::compose() const
         url += ":" + std::to_string(mPort);
     }
 
-    url += mPath;
-    
+    url += composePath();
+
+    return url;
+}
+
+std::string HttpUrl::composePath() const
+{
+    std::string path;
+
+    path += mPath;
+
     if (!mQuery.empty())
     {
-        url += "?" + mQuery;
+        path += "?" + mQuery;
     }
 
     if (!mFragment.empty())
     {
-        url += "#" + mFragment;
+        path += "#" + mFragment;
     }
 
-    return url;
+    return path;
 }
 
 void HttpUrl::clear()
@@ -213,14 +243,18 @@ HttpHeader::~HttpHeader()
 void HttpHeader::add(
     const std::string& name, const std::string& value)
 {
-    mFields.push_back({ name, value });
+    if (!value.empty())
+    {
+        mFields.push_back({ name, value });
+    }
 }
 
 void HttpHeader::remove(const std::string& name)
 {
     auto it = std::remove_if(
-        mFields.begin(), mFields.end(), [&](const Field& field) {
-            return (field.name == name);
+        mFields.begin(), mFields.end(),
+        [&](const Field& field) {
+            return icompString(field.name, name);
         });
 
     if (it == mFields.end())
@@ -241,11 +275,12 @@ bool HttpHeader::isEmpty() const
     return mFields.empty();
 }
 
-bool HttpHeader::isExists(const std::string& name) const
+bool HttpHeader::isExists(
+    const std::string& name) const
 {
     for (const auto& field : mFields)
     {
-        if (field.name == name)
+        if (icompString(field.name, name))
         {
             return true;
         }
@@ -254,11 +289,12 @@ bool HttpHeader::isExists(const std::string& name) const
     return false;
 }
 
-const std::string& HttpHeader::findOne(const std::string& name) const
+const std::string& HttpHeader::findValue(
+    const std::string& name) const
 {
     for (const auto& field : mFields)
     {
-        if (field.name == name)
+        if (icompString(field.name, name))
         {
             return field.value;
         }
@@ -269,13 +305,14 @@ const std::string& HttpHeader::findOne(const std::string& name) const
     return emptyString;
 }
 
-std::list<std::string> HttpHeader::find(const std::string& name) const
+std::list<std::string> HttpHeader::findValues(
+    const std::string& name) const
 {
     std::list<std::string> values;
 
     for (const auto& field : mFields)
     {
-        if (field.name == name)
+        if (icompString(field.name, name))
         {
             values.push_back(field.value);
         }
@@ -321,20 +358,20 @@ bool HttpHeader::deserialize(IStringStream& iss)
             return false;
         }
 
+        // name
         std::string name = line.substr(0, pos);
 
-        name.erase(0, name.find_first_not_of(" "));
-        name.erase(name.find_last_not_of(" ") + 1);
+        trimString(name);
 
         if (name.empty())
         {
             return false;
         }
 
+        // value
         std::string value = line.substr(pos + 1);
 
-        value.erase(0, value.find_first_not_of(" "));
-        value.erase(value.find_last_not_of(" ") + 1);
+        trimString(value);
 
         if (value.empty())
         {
@@ -349,15 +386,17 @@ bool HttpHeader::deserialize(IStringStream& iss)
 
 void HttpHeader::setContentLength(size_t contentLength)
 {
-    remove("Content-Length");
-    add("Content-Length", std::to_string(contentLength));
+    remove(HttpHeaderField::ContentLength);
+    add(HttpHeaderField::ContentLength,
+        std::to_string(contentLength));
 }
 
 size_t HttpHeader::getContentLength() const
 {
     size_t contentLength = 0;
 
-    std::string contentLengthStr = findOne("Content-Length");
+    std::string contentLengthStr =
+        findValue(HttpHeaderField::ContentLength);
 
     if (!contentLengthStr.empty())
     {
@@ -383,12 +422,437 @@ HttpHeader& HttpHeader::operator=(HttpHeader&& other)
 }
 
 //----------------------------------------------------------------------------//
+// HttpCookie
+//----------------------------------------------------------------------------//
+
+HttpCookie::HttpCookie()
+{
+}
+
+HttpCookie::HttpCookie(const HttpCookie& other)
+{
+    operator=(other);
+}
+
+HttpCookie::HttpCookie(HttpCookie&& other)
+{
+    operator=(std::move(other));
+}
+
+HttpCookie::~HttpCookie()
+{
+}
+
+void HttpCookie::add(
+    const std::string& name, const std::string& value)
+{
+    if (!value.empty())
+    {
+        mAttributes.push_back({ name, value });
+    }
+}
+
+void HttpCookie::remove(const std::string& name)
+{
+    auto it = std::remove_if(
+        mAttributes.begin(), mAttributes.end(),
+        [&](const Attribute& attr) {
+            return icompString(attr.name, name);
+        });
+
+    if (it == mAttributes.end())
+    {
+        return;
+    }
+
+    mAttributes.erase(it, mAttributes.end());
+}
+
+std::list<HttpCookie::Attribute> HttpCookie::getAttributes() const
+{
+    std::list<Attribute> attrs;
+
+    for (const auto& attr : mAttributes)
+    {
+        if (!icompString(attr.name, HttpCookieName::Expires) &&
+            !icompString(attr.name, HttpCookieName::MaxAge) &&
+            !icompString(attr.name, HttpCookieName::Domain) &&
+            !icompString(attr.name, HttpCookieName::Path) &&
+            !icompString(attr.name, HttpCookieName::Secure) &&
+            !icompString(attr.name, HttpCookieName::HttpOnly))
+        {
+            attrs.push_back(attr);
+        }
+    }
+
+    return attrs;
+}
+
+bool HttpCookie::isExists(
+    const std::string& name) const
+{
+    for (const auto& attr : mAttributes)
+    {
+        if (icompString(attr.name, name))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+const std::string& HttpCookie::findValue(
+    const std::string& name) const
+{
+    for (const auto& attr : mAttributes)
+    {
+        if (icompString(attr.name, name))
+        {
+            return attr.value;
+        }
+    }
+
+    static const std::string emptyString;
+
+    return emptyString;
+}
+
+std::list<std::string> HttpCookie::findValues(
+    const std::string& name) const
+{
+    std::list<std::string> results;
+
+    for (const auto& attr : mAttributes)
+    {
+        if (icompString(attr.name, name))
+        {
+            results.push_back(attr.name);
+        }
+    }
+
+    return results;
+}
+
+bool HttpCookie::parse(const std::string& cookie)
+{
+    std::string src = cookie;
+
+    while (!src.empty())
+    {
+        std::string nameAndValue;
+        size_t pos;
+
+        pos = src.find_first_of(';');
+
+        if (pos == std::string::npos)
+        {
+            nameAndValue = src;
+            src.clear();
+        }
+        else
+        {
+            nameAndValue = src.substr(0, pos);
+            src = src.substr(pos + 1);
+        }
+
+        std::string name;
+        std::string value;
+
+        // name
+        pos = nameAndValue.find_first_of('=');
+
+        if (pos != std::string::npos)
+        {
+            name = nameAndValue.substr(0, pos);
+            trimString(name);
+
+            // value
+            value = nameAndValue.substr(pos + 1);
+            trimString(value);
+        }
+        else
+        {
+            // name only
+            name = nameAndValue;
+            trimString(name);
+        }
+
+        if (name.empty())
+        {
+            return false;
+        }
+
+        add(name, value);
+    }
+
+    return true;
+}
+
+std::string HttpCookie::compose() const
+{
+    std::string cookie;
+
+    for (auto& attr : mAttributes)
+    {
+        if (attr.value.empty())
+        {
+            continue;
+        }
+
+        cookie += attr.name;
+        cookie += "=";
+        cookie += attr.value;
+        cookie += "; ";
+    }
+
+    for (auto& attr : mAttributes)
+    {
+        if (attr.value.empty())
+        {
+            cookie += attr.name;
+            cookie += "; ";
+        }
+    }
+
+    if (!cookie.empty())
+    {
+        cookie.resize(cookie.size() - 2);
+    }
+
+    return cookie;
+}
+
+void HttpCookie::clear()
+{
+    mAttributes.clear();
+}
+
+void HttpCookie::setExipires(const std::string& expires)
+{
+    remove(HttpCookieName::Expires);
+    add(HttpCookieName::Expires, expires);
+}
+
+const std::string& HttpCookie::getExpires() const
+{
+    return findValue(HttpCookieName::Expires);
+}
+
+void HttpCookie::setMaxAge(const std::string& maxAge)
+{
+    remove(HttpCookieName::MaxAge);
+    add(HttpCookieName::MaxAge, maxAge);
+}
+
+const std::string& HttpCookie::getMaxAge() const
+{
+    return findValue(HttpCookieName::MaxAge);
+}
+
+void HttpCookie::setDomain(const std::string& domain)
+{
+    remove(HttpCookieName::Domain);
+    add(HttpCookieName::Domain, domain);
+}
+
+const std::string& HttpCookie::getDomain() const
+{
+    return findValue(HttpCookieName::Domain);
+}
+
+void HttpCookie::setPath(const std::string& path)
+{
+    remove(HttpCookieName::Path);
+    add(HttpCookieName::Path, path);
+}
+
+const std::string& HttpCookie::getPath() const
+{
+    return findValue(HttpCookieName::Path);
+}
+
+void HttpCookie::setSecure(bool secure)
+{
+    if (isExists(HttpCookieName::Secure) && !secure)
+    {
+        remove(HttpCookieName::Secure);
+    }
+    else if (!isExists(HttpCookieName::Secure) && secure)
+    {
+        add(HttpCookieName::Secure, "");
+    }
+}
+
+bool HttpCookie::isSecure() const
+{
+    return isExists(HttpCookieName::Secure);
+}
+
+void HttpCookie::setHttpOnly(bool httpOnly)
+{
+    if (isExists(HttpCookieName::HttpOnly) && !httpOnly)
+    {
+        remove(HttpCookieName::HttpOnly);
+    }
+    else if (!isExists(HttpCookieName::HttpOnly) && httpOnly)
+    {
+        add(HttpCookieName::HttpOnly, "");
+    }
+}
+
+bool HttpCookie::isHttpOnly() const
+{
+    return isExists(HttpCookieName::HttpOnly);
+}
+
+HttpCookie& HttpCookie::operator=(const HttpCookie& other)
+{
+    mAttributes = other.mAttributes;
+
+    return *this;
+}
+
+HttpCookie& HttpCookie::operator=(HttpCookie&& other)
+{
+    mAttributes = std::move(other.mAttributes);
+
+    return *this;
+}
+
+//----------------------------------------------------------------------------//
+// HttpMessage
+//----------------------------------------------------------------------------//
+
+HttpMessage::HttpMessage()
+{
+}
+
+HttpMessage::HttpMessage(const HttpMessage& other)
+{
+    operator=(other);
+}
+
+HttpMessage::HttpMessage(HttpMessage&& other)
+{
+    operator=(std::move(other));
+}
+
+HttpMessage::~HttpMessage()
+{
+}
+
+void HttpMessage::clear()
+{
+    mHeader.clear();
+    mBody.clear();
+}
+
+bool HttpMessage::isEmpty() const
+{
+    return (mHeader.isEmpty() && mBody.empty());
+}
+
+void HttpMessage::addCookie(
+    const std::string& headerName, const HttpCookie& cookie)
+{
+    mHeader.add(headerName, cookie.compose());
+}
+
+std::list<HttpCookie> HttpMessage::getCookies(
+    const std::string& headerName) const
+{
+    std::list<HttpCookie> results;
+
+    for (auto& field : mHeader.findValues(headerName))
+    {
+        HttpCookie cookie;
+
+        if (cookie.parse(field))
+        {
+            results.push_back(std::move(cookie));
+        }
+    }
+
+    return results;
+}
+
+void HttpMessage::removeCookies(
+    const std::string& headerName)
+{
+    mHeader.remove(headerName);
+}
+
+void HttpMessage::serializeMessage(OStringStream& oss) const
+{
+    // header
+    mHeader.serialize(oss);
+}
+
+bool HttpMessage::deserializeMessage(IStringStream& iss)
+{
+    // header
+    if (!mHeader.deserialize(iss))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void HttpMessage::serializeBody(OBufferStream& obs) const
+{
+    // body
+    if (!mBody.empty())
+    {
+        obs.writeBytes(&mBody[0], mBody.size());
+    }
+}
+
+bool HttpMessage::deserializeBody(IBufferStream& ibs)
+{
+    // body
+    if (!ibs.isEnd())
+    {
+        mBody.resize(ibs.getReadableSize());
+
+        if (!ibs.readBytes(&mBody, mBody.size()))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+HttpMessage& HttpMessage::operator=(const HttpMessage& other)
+{
+    mHeader = other.mHeader;
+    mBody = other.mBody;
+
+    return *this;
+}
+
+HttpMessage& HttpMessage::operator=(HttpMessage&& other)
+{
+    mHeader = std::move(other.mHeader);
+    mBody = std::move(other.mBody);
+
+    return *this;
+}
+
+//----------------------------------------------------------------------------//
 // HttpRequest
 //----------------------------------------------------------------------------//
 
 HttpRequest::HttpRequest()
 {
     clear();
+}
+
+HttpRequest::HttpRequest(const HttpRequest& other)
+{
+    operator=(other);
 }
 
 HttpRequest::HttpRequest(HttpRequest&& other)
@@ -402,18 +866,21 @@ HttpRequest::~HttpRequest()
 
 void HttpRequest::clear()
 {
+    HttpMessage::clear();
+
     mMethod.clear();
     mPath = "/";
     mProtocol = HttpProtocol::v1_1;
-    mHeader.clear();
-    mBody.clear();
 }
 
 bool HttpRequest::isEmpty() const
 {
-    return (mMethod.empty() &&
-        mHeader.isEmpty() &&
-        mBody.empty());
+    if (!HttpMessage::isEmpty())
+    {
+        return false;
+    }
+
+    return mMethod.empty();
 }
 
 void HttpRequest::serializeMessage(OStringStream& oss) const
@@ -423,8 +890,7 @@ void HttpRequest::serializeMessage(OStringStream& oss) const
         << mPath << " "
         << mProtocol << "\r\n";
 
-    // header
-    mHeader.serialize(oss);
+    HttpMessage::serializeMessage(oss);
 }
 
 bool HttpRequest::deserializeMessage(IStringStream& iss)
@@ -475,8 +941,7 @@ bool HttpRequest::deserializeMessage(IStringStream& iss)
         return false;
     }
 
-    // header
-    if (!mHeader.deserialize(iss))
+    if (!HttpMessage::deserializeMessage(iss))
     {
         return false;
     }
@@ -484,38 +949,25 @@ bool HttpRequest::deserializeMessage(IStringStream& iss)
     return true;
 }
 
-void HttpRequest::serializeBody(OBufferStream& obs) const
+HttpRequest& HttpRequest::operator=(const HttpRequest& other)
 {
-    // body
-    if (!mBody.empty())
-    {
-        obs.writeBytes(&mBody[0], mBody.size());
-    }
-}
+    HttpMessage::operator=(other);
 
-bool HttpRequest::deserializeBody(IBufferStream& ibs)
-{
-    // body
-    if (!ibs.isEnd())
-    {
-        mBody.resize(ibs.getReadableSize());
+    mMethod = other.mMethod;
+    mPath = other.mPath;
+    mProtocol = other.mProtocol;
 
-        if (!ibs.readBytes(&mBody, mBody.size()))
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return *this;
 }
 
 HttpRequest& HttpRequest::operator=(HttpRequest&& other)
 {
+    HttpMessage::operator=(std::move(other));
+
     mMethod = std::move(other.mMethod);
     mPath = std::move(other.mPath);
     mProtocol = std::move(other.mProtocol);
-    mHeader = std::move(other.mHeader);
-    mBody = std::move(other.mBody);
+
     other.clear();
 
     return *this;
@@ -530,6 +982,11 @@ HttpResponse::HttpResponse()
     clear();
 }
 
+HttpResponse::HttpResponse(const HttpResponse& other)
+{
+    operator=(other);
+}
+
 HttpResponse::HttpResponse(HttpResponse&& other)
 {
     operator=(std::move(other));
@@ -541,18 +998,21 @@ HttpResponse::~HttpResponse()
 
 void HttpResponse::clear()
 {
+    HttpMessage::clear();
+
     mProtocol = HttpProtocol::v1_1;
     mStatusCode = 0;
     mMessage.clear();
-    mHeader.clear();
-    mBody.clear();
 }
 
 bool HttpResponse::isEmpty() const
 {
-    return ((mStatusCode == 0) &&
-        mHeader.isEmpty() &&
-        mBody.empty());
+    if (!HttpMessage::isEmpty())
+    {
+        return false;
+    }
+
+    return (mStatusCode == 0);
 }
 
 void HttpResponse::serializeMessage(OStringStream& oss) const
@@ -562,8 +1022,7 @@ void HttpResponse::serializeMessage(OStringStream& oss) const
         << mStatusCode << " "
         << mMessage << "\r\n";
 
-    // header
-    mHeader.serialize(oss);
+    HttpMessage::serializeMessage(oss);
 }
 
 bool HttpResponse::deserializeMessage(IStringStream& iss)
@@ -613,8 +1072,7 @@ bool HttpResponse::deserializeMessage(IStringStream& iss)
     // message
     mMessage = line.substr(pos2 + 1);
 
-    // header
-    if (!mHeader.deserialize(iss))
+    if (!HttpMessage::deserializeMessage(iss))
     {
         return false;
     }
@@ -622,38 +1080,25 @@ bool HttpResponse::deserializeMessage(IStringStream& iss)
     return true;
 }
 
-void HttpResponse::serializeBody(OBufferStream& obs) const
+HttpResponse& HttpResponse::operator=(const HttpResponse& other)
 {
-    // body
-    if (!mBody.empty())
-    {
-        obs.writeBytes(&mBody[0], mBody.size());
-    }
-}
+    HttpMessage::operator=(other);
 
-bool HttpResponse::deserializeBody(IBufferStream& ibs)
-{
-    // body
-    if (!ibs.isEnd())
-    {
-        mBody.resize(ibs.getReadableSize());
+    mProtocol = other.mProtocol;
+    mStatusCode = other.mStatusCode;
+    mMessage = other.mMessage;
 
-        if (!ibs.readBytes(&mBody[0], mBody.size()))
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return *this;
 }
 
 HttpResponse& HttpResponse::operator=(HttpResponse&& other)
 {
+    HttpMessage::operator=(std::move(other));
+
     mProtocol = std::move(other.mProtocol);
     mStatusCode = other.mStatusCode;
     mMessage = std::move(other.mMessage);
-    mHeader = std::move(other.mHeader);
-    mBody = std::move(other.mBody);
+
     other.clear();
 
     return *this;
@@ -715,87 +1160,109 @@ HttpClient::~HttpClient()
 }
 
 bool HttpClient::request(
-    const std::string& method,
     const std::string& url,
-    const std::string& body,
+    const HttpRequest& req,
     const HttpResponseHandler& responseHandler,
-    const std::string& outputFileName)
+    const RequestOption& option)
 {
+    if (!isResponseCompleted())
+    {
+        return false;
+    }
+
     mUrl.clear();
     mResponse.clear();
     mReceivedResponseBodySize = 0;
     mChunkedResponse.clear();
     mResponseTempBuffer.clear();
-    mOutputFileName.empty();
+    mOption.clear();
+    mRedirectHashes.clear();
+
+    if (req.getMethod().empty())
+    {
+        return false;
+    }
 
     if (!mUrl.parse(url))
     {
         return false;
     }
 
-    mRequest.setMethod(method);
-
-    if (!body.empty())
-    {
-        mRequest.setBody(body);
-    }
-
+    mRequest = req;
     mResponseHandler = responseHandler;
-    mOutputFileName = outputFileName;
+    mOption = option;
 
     start();
 
     return true;
 }
 
-bool HttpClient::requestGet(
+int32_t HttpClient::request(
     const std::string& url,
-    const HttpResponseHandler& responseHandler,
-    const std::string& outputFileName)
+    const HttpRequest& req,
+    HttpResponse& res,
+    const RequestOption& option)
 {
-    return request("GET", url, "", responseHandler, outputFileName);
-}
+    res.clear();
 
-bool HttpClient::requestPost(
-    const std::string& url,
-    const std::string& body,
-    const HttpResponseHandler& responseHandler)
-{
-    return request("POST", url, body, responseHandler);
-}
+    int32_t result = -1;
 
-bool HttpClient::requestPut(
-    const std::string& url,
-    const std::string& body,
-    const HttpResponseHandler& responseHandler)
-{
-    return request("PUT", url, body, responseHandler);
-}
+    NetThread thread;
 
-bool HttpClient::requestDelete(
-    const std::string& url,
-    const HttpResponseHandler& responseHandler)
-{
-    return request("DELETE", url, "", responseHandler);
-}
+    if (!thread.start())
+    {
+        return -8601;
+    }
 
-bool HttpClient::requestPatch(
-    const std::string& url,
-    const std::string& body,
-    const HttpResponseHandler& responseHandler)
-{
-    return request("PATCH", url, body, responseHandler);
-}
+    Semaphore sem;
 
-bool HttpClient::requestHead(
-    const std::string& url,
-    const HttpResponseHandler& responseHandler)
-{
-    return request("HEAD", url, "", responseHandler);
+    HttpClientPtr http = newInstance(&thread);
+
+    if (req.getMethod().empty())
+    {
+        return -8602;
+    }
+
+    if (!http->mUrl.parse(url))
+    {
+        return -8603;
+    }
+
+    http->mRequest = req;
+    http->mOption = option;
+    http->mResponseHandler =
+        [&, http](const HttpClientPtr&, int32_t errorCode) {
+
+        // response
+        result = errorCode;
+        res = std::move(http->mResponse);
+
+        sem.post();
+    };
+
+    // start
+    thread.post([http]() {
+        http->start();
+    });
+
+    // wait
+    if (sem.wait(option.timeout) == WaitResult::Timeout)
+    {
+        result = -8604;
+    }
+
+    thread.stop();
+    thread.wait();
+
+    http->mResponseHandler = nullptr;
+
+    return  result;
 }
 
 void HttpClient::start()
 {
+    getSocketOption() = mOption.sockOption;
+
     if (isClosed())
     {
         // connect
@@ -814,156 +1281,9 @@ void HttpClient::start()
     }
 }
 
-int32_t HttpClient::request(
-    const std::string& url,
-    HttpRequest&& req,
-    HttpResponse& res,
-    const std::string& outputFileName,
-    uint32_t timeout)
-{
-    int32_t result = -1;
-
-    NetThread thread;
-
-    if (!thread.start())
-    {
-        return -8601;
-    }
-
-    Semaphore sem;
-
-    HttpClientPtr http = newInstance(&thread);
-
-    if (!http->mUrl.parse(url))
-    {
-        return -8602;
-    }
-
-    http->mRequest = std::move(req);
-    http->mOutputFileName = outputFileName;
-    http->mResponseHandler =
-        [&, http](const HttpClientPtr&, int32_t errorCode) {
-
-            // response
-            result = errorCode;
-            res = std::move(http->mResponse);
-
-            sem.post();
-        };
-
-    // start
-    thread.post([http]() {
-        http->start();
-    });
-
-    // wait
-    if (sem.wait(timeout) == WaitResult::Timeout)
-    {
-        result = -8603;
-    }
-
-    thread.stop();
-    thread.wait();
-
-    http->mResponseHandler = nullptr;
-
-    return  result;
-}
-
-int32_t HttpClient::requestGet(
-    const std::string& url,
-    const HttpHeader& reqHeader,
-    HttpResponse& res,
-    const std::string& outputFileName,
-    uint32_t timeout)
-{
-    HttpRequest req;
-    req.setMethod("GET");
-    req.getHeader() = reqHeader;
-
-    return HttpClient::request(
-        url, std::move(req), res, outputFileName, timeout);
-}
-
-int32_t HttpClient::requestPost(
-    const std::string& url,
-    const std::string& body,
-    const HttpHeader& reqHeader,
-    HttpResponse& res,
-    uint32_t timeout)
-{
-    HttpRequest req;
-    req.setMethod("POST");
-    req.setBody(body);
-    req.getHeader() = reqHeader;
-
-    return HttpClient::request(
-        url, std::move(req), res, "", timeout);
-}
-
-int32_t HttpClient::requestPut(
-    const std::string& url,
-    const std::string& body,
-    const HttpHeader& reqHeader,
-    HttpResponse& res,
-    uint32_t timeout)
-{
-    HttpRequest req;
-    req.setMethod("PUT");
-    req.setBody(body);
-    req.getHeader() = reqHeader;
-
-    return HttpClient::request(
-        url, std::move(req), res, "", timeout);
-}
-
-int32_t HttpClient::requestDelete(
-    const std::string& url,
-    const HttpHeader& reqHeader,
-    HttpResponse& res,
-    uint32_t timeout)
-{
-    HttpRequest req;
-    req.setMethod("DELETE");
-    req.getHeader() = reqHeader;
-
-    return HttpClient::request(
-        url, std::move(req), res, "", timeout);
-}
-
-int32_t HttpClient::requestPatch(
-    const std::string& url,
-    const std::string& body,
-    const HttpHeader& reqHeader,
-    HttpResponse& res,
-    uint32_t timeout)
-{
-    HttpRequest req;
-    req.setMethod("PATCH");
-    req.setBody(body);
-    req.getHeader() = reqHeader;
-
-    return HttpClient::request(
-        url, std::move(req), res, "", timeout);
-}
-
-int32_t HttpClient::requestHead(
-    const std::string& url,
-    const HttpHeader& reqHeader,
-    HttpResponse& res,
-    uint32_t timeout)
-{
-    HttpRequest req;
-    req.setMethod("HEAD");
-    req.getHeader() = reqHeader;
-
-    return HttpClient::request(
-        url, std::move(req), res, "", timeout);
-}
-
 bool HttpClient::isResponseCompleted() const
 {
-    if (mResponse.isEmpty())
+    if (!mRequest.isEmpty() && mResponse.isEmpty())
     {
         return false;
     }
@@ -976,7 +1296,7 @@ bool HttpClient::isResponseCompleted() const
     if (mReceivedResponseBodySize <
         mResponse.getHeader().getContentLength())
     {
-        if (mRequest.getMethod() != "HEAD")
+        if (mRequest.getMethod() != HttpMethod::Head)
         {
             return false;
         }
@@ -987,15 +1307,17 @@ bool HttpClient::isResponseCompleted() const
 
 void HttpClient::sendHttpRequest()
 {
-    mRequest.setPath(mUrl.getPath());
+    // path
+    mRequest.setPath(mUrl.composePath());
 
     // Host
-    if (!mRequest.getHeader().isExists("Host"))
+    if (!mRequest.getHeader().isExists(HttpHeaderField::Host))
     {
-        mRequest.getHeader().add("Host", mUrl.getHost());
+        mRequest.getHeader().add(
+            HttpHeaderField::Host, mUrl.getHost());
     }
 
-    // Content Length
+    // Content-Length
     if (!mRequest.getBody().empty())
     {
         mRequest.getHeader().setContentLength(
@@ -1069,14 +1391,14 @@ bool HttpClient::deserializeResponseBody(IBufferStream& ibs)
         return true;
     }
 
-    if (!mOutputFileName.empty())
+    if (!mOption.outputFileName.empty())
     {
         // output to file
 
         bool result = false;
 
         std::ofstream ofs(
-            mOutputFileName,
+            mOption.outputFileName,
             (std::ios::out | std::ios::app | std::ios::binary));
 
         if (ofs.is_open())
@@ -1089,7 +1411,7 @@ bool HttpClient::deserializeResponseBody(IBufferStream& ibs)
 
         if (!result)
         {
-            std::remove(mOutputFileName.c_str());
+            std::remove(mOption.outputFileName.c_str());
             onResponse(-8011);
             return false;
         }
@@ -1160,11 +1482,78 @@ Socket* HttpClient::createSocket(
     return socket;
 }
 
+int32_t HttpClient::redirect()
+{
+    std::string redirctHash =
+        mUrl.getScheme() +
+        mUrl.getHost() +
+        std::to_string(mUrl.getPort()) +
+        mUrl.getPath();
+
+    if (std::find(
+        mRedirectHashes.begin(),
+        mRedirectHashes.end(),
+        redirctHash) != mRedirectHashes.end())
+    {
+        // loop
+        return -8801;
+    }
+
+    mRedirectHashes.push_back(redirctHash);
+
+    const std::string& location =
+        mResponse.getHeader().findValue(HttpHeaderField::Location);
+
+    if (!mUrl.parse(location))
+    {
+        return -8802;
+    }
+
+    uint16_t statusCode = mResponse.getStatusCode();
+
+    if (statusCode == 303)
+    {
+        mRequest.setMethod(HttpMethod::Get);
+    }
+
+    mRequest.setPath("");
+    mRequest.getHeader().remove(HttpHeaderField::Host);
+
+    mResponse.clear();
+    mReceivedResponseBodySize = 0;
+    mChunkedResponse.clear();
+    mResponseTempBuffer.clear();
+
+    close();
+    start();
+
+    return 0;
+}
+
 void HttpClient::onResponse(int32_t errorCode)
 {
     if (errorCode != 0)
     {
         close();
+    }
+    else if ((errorCode == 0) && mOption.allowRedirect)
+    {
+        uint16_t statusCode = mResponse.getStatusCode();
+
+        if ((statusCode == 301) ||
+            (statusCode == 302) ||
+            (statusCode == 303) ||
+            (statusCode == 307) ||
+            (statusCode == 308))
+        {
+            // redirect
+            errorCode = redirect();
+
+            if (errorCode == 0)
+            {
+                return;
+            }
+        }
     }
 
     if (mResponseHandler != nullptr)
@@ -1262,8 +1651,9 @@ void HttpClient::onHttpResponse(IStringStream& iss)
         mResponseTempBuffer.clear();
 
         std::string transferEncoding =
-            mResponse.getHeader().findOne("Transfer-Encoding");
-        if (transferEncoding == "chunked")
+            mResponse.getHeader().findValue(
+                HttpHeaderField::TransferEncoding);
+        if (icompString(transferEncoding, "chunked"))
         {
             mChunkedResponse.start();
         }

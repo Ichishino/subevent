@@ -305,14 +305,43 @@ void HttpHeader::remove(const std::string& name)
     mFields.erase(it, mFields.end());
 }
 
-void HttpHeader::clear()
+void HttpHeader::set(
+    const std::string& name, const std::string& value)
 {
-    mFields.clear();
+    remove(name);
+    add(name, value);
 }
 
-bool HttpHeader::isEmpty() const
+const std::string& HttpHeader::get(
+    const std::string& name) const
 {
-    return mFields.empty();
+    for (const auto& field : mFields)
+    {
+        if (icompString(field.name, name))
+        {
+            return field.value;
+        }
+    }
+
+    static const std::string emptyString;
+
+    return emptyString;
+}
+
+std::list<std::string> HttpHeader::find(
+    const std::string& name) const
+{
+    std::list<std::string> values;
+
+    for (const auto& field : mFields)
+    {
+        if (icompString(field.name, name))
+        {
+            values.push_back(field.value);
+        }
+    }
+
+    return values;
 }
 
 bool HttpHeader::isExists(
@@ -329,36 +358,14 @@ bool HttpHeader::isExists(
     return false;
 }
 
-const std::string& HttpHeader::findValue(
-    const std::string& name) const
+bool HttpHeader::isEmpty() const
 {
-    for (const auto& field : mFields)
-    {
-        if (icompString(field.name, name))
-        {
-            return field.value;
-        }
-    }
-
-    static const std::string emptyString;
-
-    return emptyString;
+    return mFields.empty();
 }
 
-std::list<std::string> HttpHeader::findValues(
-    const std::string& name) const
+void HttpHeader::clear()
 {
-    std::list<std::string> values;
-
-    for (const auto& field : mFields)
-    {
-        if (icompString(field.name, name))
-        {
-            values.push_back(field.value);
-        }
-    }
-
-    return values;
+    mFields.clear();
 }
 
 void HttpHeader::serialize(OStringStream& oss) const
@@ -426,9 +433,7 @@ bool HttpHeader::deserialize(IStringStream& iss)
 
 void HttpHeader::setContentLength(size_t contentLength)
 {
-    remove(HttpHeaderField::ContentLength);
-
-    add(HttpHeaderField::ContentLength,
+    set(HttpHeaderField::ContentLength,
         std::to_string(contentLength));
 }
 
@@ -437,7 +442,7 @@ size_t HttpHeader::getContentLength() const
     size_t contentLength = 0;
 
     std::string contentLengthStr =
-        findValue(HttpHeaderField::ContentLength);
+        get(HttpHeaderField::ContentLength);
 
     if (!contentLengthStr.empty())
     {
@@ -511,21 +516,14 @@ void HttpCookie::remove(const std::string& name)
     mAttributes.erase(it, mAttributes.end());
 }
 
-bool HttpCookie::isExists(
-    const std::string& name) const
+void HttpCookie::set(
+    const std::string& name, const std::string& value)
 {
-    for (const auto& attr : mAttributes)
-    {
-        if (icompString(attr.name, name))
-        {
-            return true;
-        }
-    }
-
-    return false;
+    remove(name);
+    add(name, value);
 }
 
-const std::string& HttpCookie::findValue(
+const std::string& HttpCookie::get(
     const std::string& name) const
 {
     for (const auto& attr : mAttributes)
@@ -541,7 +539,7 @@ const std::string& HttpCookie::findValue(
     return emptyString;
 }
 
-std::list<std::string> HttpCookie::findValues(
+std::list<std::string> HttpCookie::find(
     const std::string& name) const
 {
     std::list<std::string> results;
@@ -555,6 +553,36 @@ std::list<std::string> HttpCookie::findValues(
     }
 
     return results;
+}
+
+bool HttpCookie::isExists(
+    const std::string& name) const
+{
+    for (const auto& attr : mAttributes)
+    {
+        if (icompString(attr.name, name))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool HttpCookie::isEmpty() const
+{
+    return mAttributes.empty();
+}
+
+void HttpCookie::clear()
+{
+    mAttributes.clear();
+    mExpires.clear();
+    mMaxAge.clear();
+    mDomain.clear();
+    mPath.clear();
+    mSecure = false;
+    mHttpOnly = false;
 }
 
 bool HttpCookie::parse(const std::string& cookie)
@@ -606,27 +634,27 @@ bool HttpCookie::parse(const std::string& cookie)
             return false;
         }
 
-        if (icompString(name, HttpCookieName::Expires))
+        if (icompString(name, HttpCookieAttr::Expires))
         {
             mExpires = value;
         }
-        else if (icompString(name, HttpCookieName::MaxAge))
+        else if (icompString(name, HttpCookieAttr::MaxAge))
         {
             mMaxAge = value;
         }
-        else if (icompString(name, HttpCookieName::Domain))
+        else if (icompString(name, HttpCookieAttr::Domain))
         {
             mDomain = value;
         }
-        else if (icompString(name, HttpCookieName::Path))
+        else if (icompString(name, HttpCookieAttr::Path))
         {
             mPath = value;
         }
-        else if (icompString(name, HttpCookieName::Secure))
+        else if (icompString(name, HttpCookieAttr::Secure))
         {
             mSecure = true;
         }
-        else if (icompString(name, HttpCookieName::HttpOnly))
+        else if (icompString(name, HttpCookieAttr::HttpOnly))
         {
             mHttpOnly = true;
         }
@@ -651,37 +679,37 @@ std::string HttpCookie::compose() const
 
     if (!mExpires.empty())
     {
-        cookie += HttpCookieName::Expires + "=" + mExpires;
+        cookie += HttpCookieAttr::Expires + "=" + mExpires;
         cookie += "; ";
     }
 
     if (!mMaxAge.empty())
     {
-        cookie += HttpCookieName::MaxAge + "=" + mMaxAge;
+        cookie += HttpCookieAttr::MaxAge + "=" + mMaxAge;
         cookie += "; ";
     }
 
     if (!mDomain.empty())
     {
-        cookie += HttpCookieName::Domain + "=" + mDomain;
+        cookie += HttpCookieAttr::Domain + "=" + mDomain;
         cookie += "; ";
     }
 
     if (!mPath.empty())
     {
-        cookie += HttpCookieName::Path + "=" + mPath;
+        cookie += HttpCookieAttr::Path + "=" + mPath;
         cookie += "; ";
     }
 
     if (mSecure)
     {
-        cookie += HttpCookieName::Secure;
+        cookie += HttpCookieAttr::Secure;
         cookie += "; ";
     }
 
     if (mHttpOnly)
     {
-        cookie += HttpCookieName::HttpOnly;
+        cookie += HttpCookieAttr::HttpOnly;
         cookie += "; ";
     }
 
@@ -691,17 +719,6 @@ std::string HttpCookie::compose() const
     }
 
     return cookie;
-}
-
-void HttpCookie::clear()
-{
-    mAttributes.clear();
-    mExpires.clear();
-    mMaxAge.clear();
-    mDomain.clear();
-    mPath.clear();
-    mSecure = false;
-    mHttpOnly = false;
 }
 
 HttpCookie& HttpCookie::operator=(const HttpCookie& other)
@@ -738,7 +755,6 @@ HttpCookie& HttpCookie::operator=(HttpCookie&& other)
 
 HttpMessage::HttpMessage()
 {
-    clear();
 }
 
 HttpMessage::HttpMessage(const HttpMessage& other)
@@ -777,7 +793,7 @@ std::list<HttpCookie> HttpMessage::getCookies(
 {
     std::list<HttpCookie> results;
 
-    for (auto& field : mHeader.findValues(headerName))
+    for (auto& field : mHeader.find(headerName))
     {
         HttpCookie cookie;
 
@@ -1225,30 +1241,29 @@ int32_t HttpClient::request(
     HttpResponse& res,
     const RequestOption& option)
 {
-    res.clear();
-
-    int32_t result = -1;
-
-    NetThread thread;
-
-    if (!thread.start())
+    if (req.getMethod().empty())
     {
         return -8601;
     }
 
-    Semaphore sem;
+    int32_t result = -1;
 
+    NetThread thread;
     HttpClientPtr http = newInstance(&thread);
 
-    if (req.getMethod().empty())
+    if (!http->mUrl.parse(url))
     {
         return -8602;
     }
 
-    if (!http->mUrl.parse(url))
+    if (!thread.start())
     {
         return -8603;
     }
+
+    res.clear();
+
+    Semaphore sem;
 
     http->mRequest = req;
     http->mOption = option;
@@ -1526,7 +1541,7 @@ int32_t HttpClient::redirect()
     mRedirectHashes.push_back(redirctHash);
 
     const std::string& location =
-        mResponse.getHeader().findValue(HttpHeaderField::Location);
+        mResponse.getHeader().get(HttpHeaderField::Location);
 
     if (!mUrl.parse(location))
     {
@@ -1678,7 +1693,7 @@ void HttpClient::onHttpResponse(IStringStream& iss)
         mResponseTempBuffer.clear();
 
         std::string transferEncoding =
-            mResponse.getHeader().findValue(
+            mResponse.getHeader().get(
                 HttpHeaderField::TransferEncoding);
         if (icompString(transferEncoding, "chunked"))
         {

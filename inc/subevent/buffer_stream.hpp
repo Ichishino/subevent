@@ -83,25 +83,23 @@ public:
 
     template <typename BuffType>
     SEV_DECL bool readBytes(
-        BuffType& buff, const void* delim, size_t delimSize)
+        BuffType& buff, const void* delim, size_t delimSize,
+        size_t maxSize = SIZE_MAX)
     {
         size_t readableSize = getReadableSize();
 
-        for (size_t index = 0; index < readableSize; ++index)
+        for (size_t index = 0;
+            (index < readableSize) && (index < maxSize); ++index)
         {
-            const char* ptr = &getPtr()[index];
-
-            if (memcmp(ptr, delim, delimSize) != 0)
+            if (memcmp(&getPtr()[index], delim, delimSize) != 0)
             {
                 continue;
             }
 
-            size_t size = ptr - getPtr();
+            buff.resize(index);
 
-            if (size > 0)
+            if (index > 0)
             {
-                buff.resize(size);
-
                 memcpy(&buff[0], getPtr(), buff.size());
                 seekCur(static_cast<int32_t>(buff.size()));
             }

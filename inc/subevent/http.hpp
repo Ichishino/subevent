@@ -49,9 +49,9 @@ namespace HttpHeaderField
     static const std::string SetCookie = "Set-Cookie";
     static const std::string Location = "Location";
     static const std::string UserAgent = "User-Agent";
-};
+}
 
-namespace HttpCookieName
+namespace HttpCookieAttr
 {
     static const std::string Expires = "Expires";
     static const std::string MaxAge = "Max-Age";
@@ -203,11 +203,30 @@ public:
     };
 
 public:
-    SEV_DECL const std::list<Attribute>& getAttributes() const
+    SEV_DECL void set(
+        const std::string& name,
+        const std::string& value);
+    SEV_DECL const std::string& get(
+        const std::string& name) const;
+
+    SEV_DECL const std::list<Attribute>& getAll() const
     {
         return mAttributes;
     }
 
+    SEV_DECL void add(
+        const std::string& name, const std::string& value);
+    SEV_DECL void remove(
+        const std::string& name);
+    SEV_DECL std::list<std::string> find(
+        const std::string& name) const;
+
+    SEV_DECL bool isExists(
+        const std::string& name) const;
+    SEV_DECL bool isEmpty() const;
+    SEV_DECL void clear();
+
+public:
     SEV_DECL void setExipires(const std::string& expires)
     {
         mExpires = expires;
@@ -269,21 +288,6 @@ public:
     }
 
 public:
-    SEV_DECL void add(
-        const std::string& name, const std::string& value);
-    SEV_DECL void remove(
-        const std::string& name);
-
-    SEV_DECL bool isExists(
-        const std::string& name) const;
-    SEV_DECL const std::string& findValue(
-        const std::string& name) const;
-    SEV_DECL std::list<std::string> findValues(
-        const std::string& name) const;
-
-    SEV_DECL void clear();
-
-public:
     SEV_DECL bool parse(const std::string& url);
     SEV_DECL std::string compose() const;
 
@@ -319,25 +323,28 @@ public:
     };
 
 public:
-    SEV_DECL void add(
-        const std::string& name, const std::string& value);
-    SEV_DECL void remove(
-        const std::string& name);
-
-    SEV_DECL bool isExists(
-        const std::string& name) const;
-    SEV_DECL const std::string& findValue(
-        const std::string& name) const;
-    SEV_DECL std::list<std::string> findValues(
+    SEV_DECL void set(
+        const std::string& name,
+        const std::string& value);
+    SEV_DECL const std::string& get(
         const std::string& name) const;
 
-    SEV_DECL const std::list<Field>& getFields() const
+    SEV_DECL const std::list<Field>& getAll() const
     {
         return mFields;
     }
 
-    SEV_DECL void clear();
+    SEV_DECL void add(
+        const std::string& name, const std::string& value);
+    SEV_DECL void remove(
+        const std::string& name);
+    SEV_DECL std::list<std::string> find(
+        const std::string& name) const;
+
+    SEV_DECL bool isExists(
+        const std::string& name) const;
     SEV_DECL bool isEmpty() const;
+    SEV_DECL void clear();
 
 public:
     SEV_DECL void setContentLength(size_t contentLength);

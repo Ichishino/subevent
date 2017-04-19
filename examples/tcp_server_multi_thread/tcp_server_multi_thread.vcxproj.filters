@@ -88,7 +88,7 @@
     <ClInclude Include="..\..\inc\subevent\utility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\subevent\tcp_server_app.hpp">
+    <ClInclude Include="..\..\inc\subevent\tcp_server_worker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -144,10 +144,10 @@
     <None Include="..\..\inc\subevent\utility.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="..\..\inc\subevent\tcp_server_app.inl">
+    <None Include="..\..\inc\subevent\network.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="..\..\inc\subevent\network.inl">
+    <None Include="..\..\inc\subevent\tcp_server_worker.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

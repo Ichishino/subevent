@@ -1,7 +1,7 @@
-#ifndef SUBEVENT_TCP_SERVER_APP_INL
-#define SUBEVENT_TCP_SERVER_APP_INL
+#ifndef SUBEVENT_TCP_SERVER_WORKER_INL
+#define SUBEVENT_TCP_SERVER_WORKER_INL
 
-#include <subevent/tcp_server_app.hpp>
+#include <subevent/tcp_server_worker.hpp>
 #include <subevent/utility.hpp>
 
 SEV_NS_BEGIN
@@ -155,4 +155,4 @@ TcpChannelThread* TcpServerWorker::nextThread()
 
 SEV_NS_END
 
-#endif // SUBEVENT_TCP_SERVER_APP_INL
+#endif // SUBEVENT_TCP_SERVER_WORKER_INL

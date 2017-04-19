@@ -172,7 +172,7 @@
     <ClInclude Include="..\..\inc\subevent\subevent_http.hpp" />
     <ClInclude Include="..\..\inc\subevent\subevent_net.hpp" />
     <ClInclude Include="..\..\inc\subevent\tcp.hpp" />
-    <ClInclude Include="..\..\inc\subevent\tcp_server_app.hpp" />
+    <ClInclude Include="..\..\inc\subevent\tcp_server_worker.hpp" />
     <ClInclude Include="..\..\inc\subevent\thread.hpp" />
     <ClInclude Include="..\..\inc\subevent\timer.hpp" />
     <ClInclude Include="..\..\inc\subevent\timer_manager.hpp" />
@@ -193,7 +193,7 @@
     <None Include="..\..\inc\subevent\socket_selector_win.inl" />
     <None Include="..\..\inc\subevent\ssl_socket.inl" />
     <None Include="..\..\inc\subevent\tcp.inl" />
-    <None Include="..\..\inc\subevent\tcp_server_app.inl" />
+    <None Include="..\..\inc\subevent\tcp_server_worker.inl" />
     <None Include="..\..\inc\subevent\thread.inl" />
     <None Include="..\..\inc\subevent\timer.inl" />
     <None Include="..\..\inc\subevent\timer_manager.inl" />

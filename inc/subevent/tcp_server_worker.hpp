@@ -1,5 +1,5 @@
-#ifndef SUBEVENT_TCP_SERVER_APP_HPP
-#define SUBEVENT_TCP_SERVER_APP_HPP
+#ifndef SUBEVENT_TCP_SERVER_WORKER_HPP
+#define SUBEVENT_TCP_SERVER_WORKER_HPP
 
 #include <vector>
 
@@ -138,4 +138,4 @@ typedef NetWorkerThread<TcpServerWorker> TcpServerThread;
 
 SEV_NS_END
 
-#endif // SUBEVENT_TCP_SERVER_APP_HPP
+#endif // SUBEVENT_TCP_SERVER_WORKER_HPP

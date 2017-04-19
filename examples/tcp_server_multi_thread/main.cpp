@@ -6,11 +6,11 @@ SEV_USING_NS
 // MyThread
 //---------------------------------------------------------------------------//
 
-class MyThread : public TcpChannelWorker
+class MyThread : public TcpChannelThread
 {
 public:
     MyThread(Thread* parent)
-        : TcpChannelWorker(parent) {}
+        : TcpChannelThread(parent) {}
 
 protected:
     void onAccept(

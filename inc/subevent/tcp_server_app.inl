@@ -10,8 +10,8 @@ SEV_NS_BEGIN
 // TcpChannelWorker
 //----------------------------------------------------------------------------//
 
-TcpChannelWorker::TcpChannelWorker(Thread* parent)
-    : NetThread(parent)
+TcpChannelWorker::TcpChannelWorker(Thread* thread)
+    : NetWorker(thread)
 {
 }
 
@@ -40,26 +40,20 @@ void TcpChannelWorker::onTcpAccept(const TcpChannelPtr& channel)
 }
 
 //----------------------------------------------------------------------------//
-// TcpServerApp
+// TcpServerWorker
 //----------------------------------------------------------------------------//
 
-TcpServerApp::TcpServerApp(const std::string& name)
-    : TcpServerApp(0, nullptr, name)
-{
-}
-
-TcpServerApp::TcpServerApp(
-    int32_t argc, char* argv[], const std::string& name)
-    : NetApplication(argc, argv, name)
+TcpServerWorker::TcpServerWorker(Thread* thread)
+    : NetWorker(thread)
     , mThreadIndex(-1)
 {
 }
 
-TcpServerApp::~TcpServerApp()
+TcpServerWorker::~TcpServerWorker()
 {
 }
 
-bool TcpServerApp::open(
+bool TcpServerWorker::open(
     const IpEndPoint& localEndPoint, int32_t backlog)
 {
     mTcpServer = TcpServer::newInstance(this);
@@ -72,7 +66,7 @@ bool TcpServerApp::open(
 
         // accept
 
-        NetThread* thread = nextThread();
+        TcpChannelThread* thread = nextThread();
 
         if (thread == nullptr)
         {
@@ -91,7 +85,7 @@ bool TcpServerApp::open(
     return result;
 }
 
-void TcpServerApp::close()
+void TcpServerWorker::close()
 {
     if (mTcpServer != nullptr)
     {
@@ -99,10 +93,10 @@ void TcpServerApp::close()
     }
 }
 
-void TcpServerApp::setCpuAffinity()
+void TcpServerWorker::setCpuAffinity()
 {
     // CPU affinity
-    Processor::bind(this, 0);
+    Processor::bind(mThread, 0);
 
     uint16_t cpuCount = Processor::getCount();
     if (cpuCount > 1)
@@ -121,7 +115,7 @@ void TcpServerApp::setCpuAffinity()
     }
 }
 
-NetThread* TcpServerApp::nextThread()
+TcpChannelThread* TcpServerWorker::nextThread()
 {
     if (mThreadPool.empty())
     {

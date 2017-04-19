@@ -63,49 +63,55 @@ protected:
 
     SEV_DECL virtual void onTcpAccept(const TcpChannelPtr& newChannel);
 
+    Thread* mThread;
+
 private:
     NetWorker() = delete;
+};
 
-    Thread* mThread;
+template<typename NetWorkerType>
+class NetWorkerApp : public Application, public NetWorkerType
+{
+public:
+    SEV_DECL explicit NetWorkerApp(const std::string& name = "")
+        : Application(name), NetWorkerType(this)
+    {
+    }
+
+    SEV_DECL NetWorkerApp(
+        int32_t argc, char* argv[], const std::string& name = "")
+        : Application(argc, argv, name), NetWorkerType(this)
+    {
+    }
+};
+
+template<typename NetWorkerType>
+class NetWorkerThread : public Thread, public NetWorkerType
+{
+public:
+    SEV_DECL explicit NetWorkerThread(Thread* parent = nullptr)
+        : Thread(parent), NetWorkerType(this)
+    {
+    }
+
+    SEV_DECL explicit NetWorkerThread(
+        const std::string& name, Thread* parent = nullptr)
+        : Thread(name, parent), NetWorkerType(this)
+    {
+    }
 };
 
 //---------------------------------------------------------------------------//
 // NetApplication
 //---------------------------------------------------------------------------//
 
-class NetApplication : public Application, public NetWorker
-{
-public:
-    SEV_DECL explicit NetApplication(const std::string& name = "")
-        : Application(name), NetWorker(this)
-    {
-    }
-
-    SEV_DECL NetApplication(
-        int32_t argc, char* argv[], const std::string& name = "")
-        : Application(argc, argv, name), NetWorker(this)
-    {
-    }
-};
+typedef NetWorkerApp<NetWorker> NetApplication;
 
 //---------------------------------------------------------------------------//
 // NetThread
 //---------------------------------------------------------------------------//
 
-class NetThread : public Thread, public NetWorker
-{
-public:
-    SEV_DECL explicit NetThread(Thread* parent = nullptr)
-        : Thread(parent), NetWorker(this)
-    {
-    }
-    
-    SEV_DECL explicit NetThread(
-        const std::string& name, Thread* parent = nullptr)
-        : Thread(name, parent), NetWorker(this)
-    {
-    }
-};
+typedef NetWorkerThread<NetWorker> NetThread;
 
 SEV_NS_END
 

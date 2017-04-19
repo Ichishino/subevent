@@ -2,25 +2,22 @@
 #define SUBEVENT_TCP_SERVER_APP_HPP
 
 #include <vector>
-#include <string>
 
 #include <subevent/std.hpp>
+#include <subevent/thread.hpp>
 #include <subevent/network.hpp>
 #include <subevent/tcp.hpp>
 
 SEV_NS_BEGIN
 
-class Thread;
-
 //----------------------------------------------------------------------------//
 // TcpChannelWorker
 //----------------------------------------------------------------------------//
 
-class TcpChannelWorker : public NetThread
+class TcpChannelWorker : public NetWorker
 {
 public:
-    SEV_DECL TcpChannelWorker(Thread* parent);
-    SEV_DECL virtual ~TcpChannelWorker();
+    SEV_DECL virtual ~TcpChannelWorker() override;
 
 public:
     SEV_DECL bool isChannelFull() const
@@ -29,6 +26,8 @@ public:
     }
 
 protected:
+    SEV_DECL TcpChannelWorker(Thread* thread);
+
     SEV_DECL virtual void onAccept(
         const TcpChannelPtr& /* channel */) {}
     SEV_DECL virtual void onReceive(
@@ -47,21 +46,26 @@ protected:
     }
 
 private:
+    TcpChannelWorker() = delete;
+
     SEV_DECL void onTcpAccept(
         const TcpChannelPtr& channel) override;
 };
 
+//---------------------------------------------------------------------------//
+// TcpChannelThread
+//---------------------------------------------------------------------------//
+
+typedef NetWorkerThread<TcpChannelWorker> TcpChannelThread;
+
 //----------------------------------------------------------------------------//
-// TcpServerApp
+// TcpServerWorker
 //----------------------------------------------------------------------------//
 
-class TcpServerApp : public NetApplication
+class TcpServerWorker : public NetWorker
 {
 public:
-    SEV_DECL explicit TcpServerApp(const std::string& name = "");
-    SEV_DECL TcpServerApp(
-        int32_t argc, char* argv[], const std::string& name = "");
-    SEV_DECL virtual ~TcpServerApp() override;
+    SEV_DECL virtual ~TcpServerWorker() override;
 
 public:
     SEV_DECL bool open(
@@ -79,7 +83,7 @@ public:
             // create thread
 
             ThreadType* thread =
-                new ThreadType(this);
+                new ThreadType(mThread);
 
             if (!thread->start())
             {
@@ -105,15 +109,32 @@ public:
         return mTcpServer;
     }
 
+protected:
+    SEV_DECL TcpServerWorker(Thread* thread);
+
 private:
+    TcpServerWorker() = delete;
+
     SEV_DECL void setCpuAffinity();
-    SEV_DECL NetThread* nextThread();
+    SEV_DECL TcpChannelThread* nextThread();
 
     TcpServerPtr mTcpServer;
 
     int32_t mThreadIndex;
-    std::vector<TcpChannelWorker*> mThreadPool;
+    std::vector<TcpChannelThread*> mThreadPool;
 };
+
+//---------------------------------------------------------------------------//
+// TcpServerApp
+//---------------------------------------------------------------------------//
+
+typedef NetWorkerApp<TcpServerWorker> TcpServerApp;
+
+//---------------------------------------------------------------------------//
+// TcpServerThread
+//---------------------------------------------------------------------------//
+
+typedef NetWorkerThread<TcpServerWorker> TcpServerThread;
 
 SEV_NS_END
 

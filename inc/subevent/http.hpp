@@ -675,7 +675,7 @@ private:
     SEV_DECL void sendHttpRequest();
     SEV_DECL bool deserializeResponseBody(IBufferStream& ibs);
     SEV_DECL bool isResponseCompleted() const;
-    SEV_DECL void onHttpResponse(IStringStream& iss);
+    SEV_DECL bool onHttpResponse(IStringStream& iss);
     SEV_DECL int32_t redirect();
 
     SEV_DECL void onTcpConnect(const TcpClientPtr& client, int32_t errorCode);

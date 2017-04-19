@@ -1644,24 +1644,19 @@ void HttpClient::onTcpReceive(const TcpChannelPtr& channel)
 
     if (!mResponseTempBuffer.empty())
     {
-        std::vector<char> temp;
-
-        std::copy(
-            mResponseTempBuffer.begin(),
-            mResponseTempBuffer.end(),
-            std::back_inserter(temp));
         std::copy(
             response.begin(),
             response.end(),
-            std::back_inserter(temp));
+            std::back_inserter(mResponseTempBuffer));
 
-        IStringStream iss(temp);
-        onHttpResponse(iss);
+        response = std::move(mResponseTempBuffer);
     }
-    else
+
+    IStringStream iss(response);
+
+    if (!onHttpResponse(iss))
     {
-        IStringStream iss(response);
-        onHttpResponse(iss);
+        mResponseTempBuffer = std::move(response);
     }
 }
 
@@ -1673,7 +1668,7 @@ void HttpClient::onTcpClose(const TcpChannelPtr& /* channel */)
     }
 }
 
-void HttpClient::onHttpResponse(IStringStream& iss)
+bool HttpClient::onHttpResponse(IStringStream& iss)
 {
     if (mResponse.isEmpty())
     {
@@ -1681,16 +1676,8 @@ void HttpClient::onHttpResponse(IStringStream& iss)
         {
             // parse error
             mResponse.clear();
-
-            // keep
-            const auto& buff = iss.getBuffer();
-            std::copy(buff.begin(), buff.end(),
-                std::back_inserter(mResponseTempBuffer));
-
-            return;
+            return false;
         }
-
-        mResponseTempBuffer.clear();
 
         std::string transferEncoding =
             mResponse.getHeader().get(
@@ -1711,7 +1698,7 @@ void HttpClient::onHttpResponse(IStringStream& iss)
                 if (!mChunkedResponse.setChunkSize(iss))
                 {
                     onResponse(-8502);
-                    return;
+                    return true;
                 }
 
                 if (mChunkedResponse.getChunkSize() == 0)
@@ -1730,7 +1717,7 @@ void HttpClient::onHttpResponse(IStringStream& iss)
 
         if (!deserializeResponseBody(iss))
         {
-            return;
+            return true;
         }
     }
 
@@ -1739,6 +1726,8 @@ void HttpClient::onHttpResponse(IStringStream& iss)
         // success
         onResponse(0);
     }
+
+    return true;
 }
 
 SEV_NS_END

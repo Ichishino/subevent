@@ -62,32 +62,10 @@ NetWorker::NetWorker(Thread* thread)
 
     // async socket controller
     mThread->setEventController(new SocketController());
-
-    // tcp accept for multithreading
-    mThread->setEventHandler(
-        TcpEventId::Accept, [&](const Event* event) {
-
-        TcpChannelPtr channel = TcpServer::accept(event);
-
-        if (channel != nullptr)
-        {
-            onTcpAccept(channel);
-        }
-    });
 }
 
 NetWorker::~NetWorker()
 {
-}
-
-bool NetWorker::requestTcpAccept(const TcpChannelPtr& newChannel)
-{
-    return mThread->post(new TcpAcceptEvent(newChannel));
-}
-
-void NetWorker::onTcpAccept(const TcpChannelPtr& /* newChannel */)
-{
-    // for multithreading
 }
 
 SEV_NS_END

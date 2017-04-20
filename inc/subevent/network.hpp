@@ -48,20 +48,16 @@ public:
         return getSocketController()->isFull();
     }
 
+public:
     SEV_DECL static NetWorker* getCurrent()
     {
         return dynamic_cast<NetWorker*>(
             Thread::getCurrent());
     }
 
-public:
-    SEV_DECL bool requestTcpAccept(const TcpChannelPtr& newChannel);
-
 protected:
     SEV_DECL NetWorker(Thread* thread);
     SEV_DECL virtual ~NetWorker();
-
-    SEV_DECL virtual void onTcpAccept(const TcpChannelPtr& newChannel);
 
     Thread* mThread;
 

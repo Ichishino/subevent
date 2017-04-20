@@ -47,9 +47,6 @@ protected:
 
 private:
     TcpChannelWorker() = delete;
-
-    SEV_DECL void onTcpAccept(
-        const TcpChannelPtr& channel) override;
 };
 
 //---------------------------------------------------------------------------//

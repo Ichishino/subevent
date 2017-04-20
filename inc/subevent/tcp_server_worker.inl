@@ -13,30 +13,35 @@ SEV_NS_BEGIN
 TcpChannelWorker::TcpChannelWorker(Thread* thread)
     : NetWorker(thread)
 {
+    mThread->setEventHandler(
+        TcpEventId::Accept, [&](const Event* event) {
+
+        TcpChannelPtr newChannel = TcpServer::accept(event);
+
+        if (newChannel != nullptr)
+        {
+            newChannel->setReceiveHandler(
+                [&](const TcpChannelPtr& channel) {
+
+                auto buffer = channel->receiveAll();
+
+                if (!buffer.empty())
+                {
+                    onReceive(channel, std::move(buffer));
+                }
+            });
+
+            newChannel->setCloseHandler(
+                [&](const TcpChannelPtr& channel) {
+
+                onClose(channel);
+            });
+        }
+    });
 }
 
 TcpChannelWorker::~TcpChannelWorker()
 {
-}
-
-void TcpChannelWorker::onTcpAccept(const TcpChannelPtr& channel)
-{
-    channel->setReceiveHandler(
-        [&](const TcpChannelPtr& channel) {
-
-        auto buffer = channel->receiveAll();
-
-        if (!buffer.empty())
-        {
-            onReceive(channel, std::move(buffer));
-        }
-    });
-
-    channel->setCloseHandler(
-        [&](const TcpChannelPtr& channel) {
-
-        onClose(channel);
-    });
 }
 
 //----------------------------------------------------------------------------//

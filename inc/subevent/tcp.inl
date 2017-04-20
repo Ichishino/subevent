@@ -142,7 +142,10 @@ bool TcpServer::accept(
     }
     else
     {
-        if (!netWorker->requestTcpAccept(channel))
+        Thread* thread = dynamic_cast<Thread*>(netWorker);
+        assert(thread != nullptr);
+
+        if (!thread->post(new TcpAcceptEvent(channel)))
         {
             channel->mNetWorker = NetWorker::getCurrent();
             return false;

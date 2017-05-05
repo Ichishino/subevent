@@ -49,7 +49,18 @@ public:
     }
 
 public:
-    SEV_DECL static NetWorker* getCurrent()
+    SEV_DECL bool postEvent(Event* event)
+    {
+        return mThread->post(event);
+    }
+
+    SEV_DECL bool postTask(const std::function<void()>& task)
+    {
+        return mThread->post(task);
+    }
+
+public:
+    static NetWorker* getCurrent()
     {
         return dynamic_cast<NetWorker*>(
             Thread::getCurrent());

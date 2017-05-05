@@ -1604,7 +1604,7 @@ void HttpClient::onResponse(int32_t errorCode)
             std::static_pointer_cast<HttpClient>(shared_from_this()));
         HttpResponseHandler handler = mResponseHandler;
 
-        Thread::getCurrent()->post([self, handler, errorCode]() {
+        mNetWorker->postTask([self, handler, errorCode]() {
             handler(self, errorCode);
         });
     }

@@ -97,8 +97,6 @@ private:
 class Socket
 {
 public:
-    SEV_DECL Socket();
-    SEV_DECL virtual ~Socket();
 
 #ifdef _WIN32
     typedef SOCKET Handle;
@@ -113,7 +111,9 @@ public:
     static const int32_t ShutdownBoth = SHUT_RDWR;
     static const int32_t SendFlags = MSG_NOSIGNAL;
 #endif
-    SEV_DECL Socket(Handle handle);
+
+    SEV_DECL Socket(Handle handle = InvalidHandle);
+    SEV_DECL virtual ~Socket();
 
     enum class Type : uint16_t
     {
@@ -135,7 +135,6 @@ public:
     SEV_DECL bool bind(const IpEndPoint& endPoint);
 
     SEV_DECL bool listen(int32_t backlog);
-    SEV_DECL Socket* accept();
     SEV_DECL bool connect(const IpEndPoint& peerEndPoint);
 
     SEV_DECL void shutdown(int32_t how);
@@ -145,6 +144,7 @@ public:
     SEV_DECL int32_t receiveFrom(IpEndPoint& senderEndPoint,
         void* buff, uint32_t size, int32_t flags = 0);
 
+    SEV_DECL virtual Socket* accept();
     SEV_DECL virtual int32_t send(
         const void* data, uint32_t size, int32_t flags = 0);
     SEV_DECL virtual int32_t receive(
@@ -176,6 +176,7 @@ public:
     SEV_DECL bool isBlockingError() const;
 
 public:
+    SEV_DECL virtual bool onAccept();
     SEV_DECL virtual bool onConnect();
     SEV_DECL static int getLastError();
 

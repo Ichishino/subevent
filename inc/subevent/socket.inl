@@ -539,12 +539,6 @@ std::list<IpEndPoint> IpEndPoint::resolveService(
 // Socket
 //---------------------------------------------------------------------------//
 
-Socket::Socket()
-{
-    mHandle = InvalidHandle;
-    mErrorCode = 0;
-}
-
 Socket::Socket(Handle handle)
 {
     mHandle = handle;
@@ -756,9 +750,13 @@ bool Socket::isBlockingError() const
 #endif
 }
 
+bool Socket::onAccept()
+{
+    return true;
+}
+
 bool Socket::onConnect()
 {
-    // for OpenSSL
     return true;
 }
 

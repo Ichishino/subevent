@@ -15,10 +15,12 @@ SEV_NS_BEGIN
 class SecureSocket : public Socket
 {
 public:
-    SEV_DECL SecureSocket();
+    SEV_DECL SecureSocket(Handle handle = InvalidHandle);
     SEV_DECL ~SecureSocket() override;
 
 public:
+    SEV_DECL Socket* accept() override;
+
     SEV_DECL int32_t send(
         const void* data, uint32_t size, int32_t flags = 0) override;
     SEV_DECL int32_t receive(
@@ -27,6 +29,7 @@ public:
     SEV_DECL void close() override;
 
 public:
+    SEV_DECL bool onAccept() override;
     SEV_DECL bool onConnect() override;
 
 private:

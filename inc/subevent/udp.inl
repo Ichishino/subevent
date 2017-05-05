@@ -131,7 +131,7 @@ void UdpReceiver::onReceive()
     UdpReceiverPtr self(shared_from_this());
     UdpReceiveHandler handler = mReceiveHandler;
 
-    Thread::getCurrent()->post([self, handler]() {
+    mNetWorker->postTask([self, handler]() {
         handler(self);
     });
 }

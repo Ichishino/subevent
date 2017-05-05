@@ -28,6 +28,30 @@ TcpServer::~TcpServer()
     delete mSocket;
 }
 
+Socket* TcpServer::createSocket(
+    const IpEndPoint& localEndPoint, int32_t& errorCode)
+{
+    Socket* socket = new Socket();
+
+    // create
+    if (!socket->create(
+        localEndPoint.getFamily(),
+        Socket::Type::Tcp,
+        Socket::Protocol::Tcp))
+    {
+        errorCode = socket->getErrorCode();
+        delete socket;
+        return nullptr;
+    }
+
+    // option
+    socket->setOption(getSocketOption());
+
+    errorCode = 0;
+
+    return socket;
+}
+
 bool TcpServer::open(
     const IpEndPoint& localEndPoint,
     const TcpAcceptHandler& acceptHandler,
@@ -46,22 +70,17 @@ bool TcpServer::open(
         return false;
     }
 
-    Socket* socket = new Socket();
+    int32_t errorCode = 0;
 
     // create
-    if (!socket->create(
-        localEndPoint.getFamily(),
-        Socket::Type::Tcp,
-        Socket::Protocol::Tcp))
+    Socket* socket =
+        createSocket(localEndPoint, errorCode);
+    if (socket == nullptr)
     {
         assert(false);
-        delete socket;
 
         return false;
     }
-
-    // option
-    socket->setOption(mSockOption);
 
     // bind
     if (!socket->bind(localEndPoint))
@@ -142,10 +161,7 @@ bool TcpServer::accept(
     }
     else
     {
-        Thread* thread = dynamic_cast<Thread*>(netWorker);
-        assert(thread != nullptr);
-
-        if (!thread->post(new TcpAcceptEvent(channel)))
+        if (!netWorker->postEvent(new TcpAcceptEvent(channel)))
         {
             channel->mNetWorker = NetWorker::getCurrent();
             return false;
@@ -190,6 +206,11 @@ SocketOption& TcpServer::getSocketOption()
     return mSockOption;
 }
 
+TcpChannelPtr TcpServer::createChannel(Socket* socket)
+{
+    return TcpChannelPtr(new TcpChannel(socket));
+}
+
 void TcpServer::onAccept()
 {
     if (mAcceptHandler == nullptr)
@@ -209,8 +230,14 @@ void TcpServer::onAccept()
             break;
         }
 
+        if (!socket->onAccept())
+        {
+            delete socket;
+            break;
+        }
+
         channels.push_back(
-            TcpChannelPtr(new TcpChannel(socket)));
+            createChannel(socket));
     }
 
     if (channels.empty())
@@ -221,7 +248,7 @@ void TcpServer::onAccept()
     TcpServerPtr self(shared_from_this());
     TcpAcceptHandler handler = mAcceptHandler;
 
-    Thread::getCurrent()->post([self, handler, channels]() {
+    mNetWorker->postTask([self, handler, channels]() {
 
         for (auto& channel : channels)
         {
@@ -525,7 +552,7 @@ void TcpChannel::onReceive()
     TcpChannelPtr self(shared_from_this());
     TcpReceiveHandler handler = mReceiveHandler;
 
-    Thread::getCurrent()->post([self, handler]() {
+    mNetWorker->postTask([self, handler]() {
 
         handler(self);
 
@@ -556,7 +583,7 @@ void TcpChannel::onSend(int32_t errorCode)
     TcpSendHandler handler = mSendHandlers.front();
     mSendHandlers.pop_front();
 
-    Thread::getCurrent()->post(
+    mNetWorker->postTask(
         [self, handler, errorCode]() {
             handler(self, errorCode);
         });
@@ -581,7 +608,8 @@ void TcpChannel::onClose()
     mCloseHandler = nullptr;
 
     mCloseCanceller = postCancelableTask(
-        Thread::getCurrent(), [self, handler]() {
+        dynamic_cast<Thread*>(mNetWorker),
+        [self, handler]() {
             handler(self);
         });
 }
@@ -738,14 +766,19 @@ void TcpClient::onConnect(Socket* socket, int32_t errorCode)
     {
         create(socket);
 
-        mSocket->onConnect();
-
-        if (!mNetWorker->getSocketController()->
+        if (!mSocket->onConnect())
+        {
+            // error
+            create(nullptr);
+            errorCode = -5121;
+        }
+        else if (
+            !mNetWorker->getSocketController()->
             registerTcpChannel(self))
         {
             // error
             create(nullptr);
-            errorCode = -5120;
+            errorCode = -5122;
         }
     }
 
@@ -757,7 +790,7 @@ void TcpClient::onConnect(Socket* socket, int32_t errorCode)
     TcpConnectHandler handler = mConnectHandler;
     mConnectHandler = nullptr;
 
-    Thread::getCurrent()->post(
+    mNetWorker->postTask(
         [self, handler, errorCode]() {
             handler(self, errorCode);
         });

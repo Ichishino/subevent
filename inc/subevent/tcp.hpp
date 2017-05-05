@@ -52,7 +52,7 @@ public:
         return TcpServerPtr(new TcpServer(netWorker));
     }
 
-    SEV_DECL ~TcpServer();
+    SEV_DECL virtual ~TcpServer();
 
 public:
     SEV_DECL bool open(
@@ -80,8 +80,15 @@ public:
         return mLocalEndPoint;
     }
 
-private:
+protected:
     SEV_DECL TcpServer(NetWorker* netWorker);
+
+    NetWorker* mNetWorker;
+
+private:
+    SEV_DECL virtual Socket* createSocket(
+        const IpEndPoint& localEndPoint, int32_t& errorCode);
+    SEV_DECL virtual TcpChannelPtr createChannel(Socket* socket);
 
     SEV_DECL void onAccept();
     SEV_DECL void onClose();
@@ -89,8 +96,6 @@ private:
     TcpServer() = delete;
     TcpServer(const TcpServer&) = delete;
     TcpServer& operator=(const TcpServer&) = delete;
-
-    NetWorker* mNetWorker;
 
     Socket* mSocket;
     SocketOption mSockOption;
@@ -148,13 +153,12 @@ public:
     }
 
 protected:
+    SEV_DECL TcpChannel(Socket* socket);
     SEV_DECL TcpChannel(NetWorker* netWorker);
 
     NetWorker* mNetWorker;
 
 private:
-    SEV_DECL TcpChannel(Socket* socket);
-
     SEV_DECL void create(Socket* socket);
     SEV_DECL void onReceive();
     SEV_DECL void onSend(int32_t errorCode);
@@ -213,6 +217,7 @@ protected:
 private:
     SEV_DECL virtual Socket* createSocket(
         const IpEndPoint& peerEndPoint, int32_t& errorCode);
+
     SEV_DECL void onConnect(Socket* socket, int32_t errorCode);
 
     TcpClient() = delete;

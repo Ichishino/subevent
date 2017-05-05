@@ -11,17 +11,34 @@ SEV_NS_BEGIN
 // SecureSocket
 //----------------------------------------------------------------------------//
 
-SecureSocket::SecureSocket()
+SecureSocket::SecureSocket(Handle handle)
+    : Socket(handle)
 {
     OpenSsl::init();
 
+    mSslCtx = nullptr;
     mSsl = nullptr;
-    mSslCtx = SSL_CTX_new(SSLv23_client_method());
 }
 
 SecureSocket::~SecureSocket()
 {
     SSL_CTX_free(mSslCtx);
+}
+
+Socket* SecureSocket::accept()
+{
+    Socket* socket = nullptr;
+
+    Handle handle = ::accept(
+        getHandle(), nullptr, nullptr);
+    if (handle != InvalidHandle)
+    {
+        socket = new SecureSocket(handle);
+    }
+
+    mErrorCode = Socket::getLastError();
+
+    return socket;
 }
 
 int32_t SecureSocket::send(
@@ -76,8 +93,32 @@ void SecureSocket::close()
     Socket::close();
 }
 
+bool SecureSocket::onAccept()
+{
+    mSslCtx = SSL_CTX_new(SSLv23_server_method());
+    mSsl = SSL_new(mSslCtx);
+
+    if (SSL_set_fd(mSsl,
+        static_cast<int>(getHandle())) != 1)
+    {
+        return false;
+    }
+
+    int32_t result = SSL_accept(mSsl);
+
+    mErrorCode = SSL_get_error(mSsl, result);
+
+    if (result != 1)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 bool SecureSocket::onConnect()
 {
+    mSslCtx = SSL_CTX_new(SSLv23_client_method());
     mSsl = SSL_new(mSslCtx);
     
     if (SSL_set_fd(mSsl,

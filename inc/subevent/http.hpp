@@ -168,6 +168,12 @@ public:
     SEV_DECL HttpUrl& operator=(const HttpUrl& other);
     SEV_DECL HttpUrl& operator=(HttpUrl&& other);
 
+public:
+    SEV_DECL static std::string encode(
+        const std::string& src, const std::string& ignoreChars = "");
+    SEV_DECL static std::string decode(
+        const std::string& src);
+
 private:
     std::string mScheme;
     std::string mUser;

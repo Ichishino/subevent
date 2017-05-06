@@ -258,6 +258,85 @@ HttpUrl& HttpUrl::operator=(HttpUrl&& other)
     return *this;
 }
 
+std::string HttpUrl::encode(
+    const std::string& src, const std::string& ignoreChars)
+{
+    const std::string unencode =
+        "abcdefghijklmnopqrstuvwxyz" \
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+        "0123456789" \
+        "-_.~" + ignoreChars;
+
+    std::string dest;
+    size_t start = 0;
+
+    for (;;)
+    {
+        size_t pos = src.find_first_not_of(unencode, start);
+
+        dest += src.substr(start, pos - start);
+
+        if (pos == std::string::npos)
+        {
+            break;
+        }
+
+        char encoded[4];
+#ifdef _WIN32
+        sprintf_s(encoded, "%%%02X", (unsigned char)src[pos]);
+#else
+        std::sprintf(encoded, "%%%02X", (unsigned char)src[pos]);
+#endif
+        dest += encoded;
+        start = pos + 1;
+    }
+
+    return dest;
+}
+
+std::string HttpUrl::decode(const std::string& src)
+{
+    std::string dest;
+    size_t start = 0;
+
+    for (;;)
+    {
+        size_t pos = src.find_first_of('%', start);
+
+        dest += src.substr(start, pos - start);
+
+        if (pos == std::string::npos)
+        {
+            break;
+        }
+
+        if ((pos + 2) >= src.length())
+        {
+            // error
+            dest.clear();
+            break;
+        }
+
+        int ch;
+#ifdef _WIN32
+        int result = sscanf_s(&src[pos + 1], "%02X", &ch);
+#else
+        int result = std::sscanf(&src[pos + 1], "%02X", &ch);
+#endif
+        if ((result == EOF) || (result == 0))
+        {
+            // error
+            dest.clear();
+            break;
+        }
+
+        dest += static_cast<char>(ch);
+        start = pos + 3;
+    }
+
+    return dest;
+}
+
 //----------------------------------------------------------------------------//
 // HttpHeader
 //----------------------------------------------------------------------------//

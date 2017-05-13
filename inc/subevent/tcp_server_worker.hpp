@@ -28,14 +28,6 @@ public:
 protected:
     SEV_DECL TcpChannelWorker(Thread* thread);
 
-    SEV_DECL virtual void onAccept(
-        const TcpChannelPtr& /* channel */) {}
-    SEV_DECL virtual void onReceive(
-        const TcpChannelPtr& /* channel */,
-        std::vector<char>&& /* message */) {}
-    SEV_DECL virtual void onClose(
-        const TcpChannelPtr& /* channel */) {}
-
     SEV_DECL virtual uint16_t getMaxChannels() const
     {
 #ifdef _WIN32
@@ -44,6 +36,14 @@ protected:
         return 100;
 #endif
     }
+
+    SEV_DECL virtual void onAccept(
+        const TcpChannelPtr& /* channel */) {}
+    SEV_DECL virtual void onReceive(
+        const TcpChannelPtr& /* channel */,
+        std::vector<char>&& /* message */) {}
+    SEV_DECL virtual void onClose(
+        const TcpChannelPtr& /* channel */) {}
 
 private:
     TcpChannelWorker() = delete;

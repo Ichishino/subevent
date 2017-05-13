@@ -13,6 +13,15 @@ public:
         : TcpChannelThread(parent) {}
 
 protected:
+    uint16_t getMaxChannels() const override
+    {
+#ifdef _WIN32
+        return 50;
+#else
+        return 100;
+#endif
+    }
+
     void onAccept(
         const TcpChannelPtr& /* channel */) override
     {

@@ -1372,7 +1372,7 @@ int32_t HttpClient::request(
 
     http->mResponseHandler = nullptr;
 
-    return  result;
+    return result;
 }
 
 void HttpClient::start()

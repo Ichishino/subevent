@@ -194,6 +194,11 @@ std::string HttpUrl::compose() const
 
     url += composePath();
 
+    if (!mFragment.empty())
+    {
+        url += "#" + mFragment;
+    }
+
     return url;
 }
 
@@ -206,11 +211,6 @@ std::string HttpUrl::composePath() const
     if (!mQuery.empty())
     {
         path += "?" + mQuery;
-    }
-
-    if (!mFragment.empty())
-    {
-        path += "#" + mFragment;
     }
 
     return path;

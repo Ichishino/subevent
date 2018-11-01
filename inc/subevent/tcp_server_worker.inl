@@ -36,6 +36,8 @@ TcpChannelWorker::TcpChannelWorker(Thread* thread)
 
                 onClose(channel);
             });
+
+            onAccept(newChannel);
         }
     });
 }
@@ -56,38 +58,6 @@ TcpServerWorker::TcpServerWorker(Thread* thread)
 
 TcpServerWorker::~TcpServerWorker()
 {
-}
-
-bool TcpServerWorker::open(
-    const IpEndPoint& localEndPoint, int32_t backlog)
-{
-    mTcpServer = TcpServer::newInstance(this);
-    mTcpServer->getSocketOption().setReuseAddress(true);
-
-    // listen
-    bool result = mTcpServer->open(localEndPoint,
-        [&](const TcpServerPtr&,
-            const TcpChannelPtr& channel) {
-
-        // accept
-
-        TcpChannelThread* thread = nextThread();
-
-        if (thread == nullptr)
-        {
-            channel->close();
-            return;
-        }
-
-        if (!mTcpServer->accept(thread, channel))
-        {
-            channel->close();
-            return;
-        }
-
-    }, backlog);
-
-    return result;
 }
 
 void TcpServerWorker::close()

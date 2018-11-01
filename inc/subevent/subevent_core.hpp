@@ -12,6 +12,7 @@
 #include <subevent/timer.hpp>
 #include <subevent/buffer_stream.hpp>
 #include <subevent/utility.hpp>
+#include <subevent/variadic.hpp>
 
 #ifdef SEV_HEADER_ONLY
 #include <subevent/application.inl>

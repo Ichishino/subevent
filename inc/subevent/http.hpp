@@ -1,16 +1,16 @@
 #ifndef SUBEVENT_HTTP_HPP
 #define SUBEVENT_HTTP_HPP
 
+#include <cstdio>
+#include <cctype>
 #include <list>
 #include <vector>
 #include <string>
-#include <memory>
 #include <iterator>
-#include <functional>
+#include <algorithm>
 
 #include <subevent/std.hpp>
 #include <subevent/buffer_stream.hpp>
-#include <subevent/tcp.hpp>
 
 SEV_NS_BEGIN
 
@@ -49,6 +49,12 @@ namespace HttpHeaderField
     static const std::string SetCookie = "Set-Cookie";
     static const std::string Location = "Location";
     static const std::string UserAgent = "User-Agent";
+    static const std::string Upgrade = "Upgrade";
+
+    static const std::string SecWebSocketKey = "Sec-Websocket-Key";
+    static const std::string SecWebSocketAccept = "Sec-WebSocket-Accept";
+    static const std::string SecWebSocketProtocol = "Sec-WebSocket-Protocol";
+    static const std::string SecWebSocketVersion = "Sec-WebSocket-Version";
 }
 
 namespace HttpCookieAttr
@@ -61,10 +67,23 @@ namespace HttpCookieAttr
     static const std::string HttpOnly = "HttpOnly";
 }
 
-typedef std::shared_ptr<HttpClient> HttpClientPtr;
+//----------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
 
-typedef std::function<
-    void(const HttpClientPtr&, int32_t)> HttpResponseHandler;
+inline void trimString(std::string& str)
+{
+    str.erase(0, str.find_first_not_of(" "));
+    str.erase(str.find_last_not_of(" ") + 1);
+}
+
+inline bool icompString(const std::string& left, const std::string& right)
+{
+    return ((left.size() == right.size()) &&
+        std::equal(left.begin(), left.end(), right.begin(),
+            [](char l, char r) ->bool {
+        return (std::tolower(l) == std::tolower(r));
+    }));
+}
 
 //----------------------------------------------------------------------------//
 // HttpUrl
@@ -609,157 +628,6 @@ private:
     std::string mProtocol;
     uint16_t mStatusCode;
     std::string mMessage;
-};
-
-//----------------------------------------------------------------------------//
-// HttpClient
-//----------------------------------------------------------------------------//
-
-class HttpClient : public TcpClient
-{
-public:
-    SEV_DECL static HttpClientPtr newInstance(NetWorker* netWorker)
-    {
-        return HttpClientPtr(new HttpClient(netWorker));
-    }
-
-    SEV_DECL ~HttpClient() override;
-
-    struct RequestOption
-    {
-        RequestOption()
-        {
-            clear();
-        }
-
-        void clear()
-        {
-            allowRedirect = true;
-            timeout = 60 * 1000;
-            outputFileName.clear();
-            sockOption.clear();
-        }
-
-        bool allowRedirect;
-        std::string outputFileName;
-        uint32_t timeout;
-        SocketOption sockOption;
-    };
-
-public:
-    SEV_DECL bool request(
-        const std::string& url,
-        const HttpResponseHandler& responseHandler,
-        const RequestOption& option = RequestOption());
-
-    SEV_DECL static int32_t request(
-        const std::string& url,
-        const HttpRequest& req,
-        HttpResponse& res,
-        const RequestOption& option = RequestOption());
-
-public:
-    SEV_DECL const HttpUrl& getUrl() const
-    {
-        return mUrl;
-    }
-
-    SEV_DECL HttpRequest& getRequest()
-    {
-        return mRequest;
-    }
-
-    SEV_DECL HttpResponse& getResponse()
-    {
-        return mResponse;
-    }
-
-private:
-    SEV_DECL HttpClient(NetWorker* netWorker);
-
-    SEV_DECL void start();
-    SEV_DECL void sendHttpRequest();
-    SEV_DECL bool deserializeResponseBody(IBufferStream& ibs);
-    SEV_DECL bool isResponseCompleted() const;
-    SEV_DECL bool onHttpResponse(IStringStream& iss);
-    SEV_DECL int32_t redirect();
-
-    SEV_DECL void onTcpConnect(const TcpClientPtr& client, int32_t errorCode);
-    SEV_DECL void onTcpSend(const TcpChannelPtr& channel, int32_t errorCode);
-    SEV_DECL void onTcpReceive(const TcpChannelPtr& channel);
-    SEV_DECL void onTcpClose(const TcpChannelPtr& channel);
-    SEV_DECL void onResponse(int32_t errorCode);
-
-    SEV_DECL Socket* createSocket(
-        const IpEndPoint& peerEndPoint, int32_t& errorCode) override;
-
-    HttpClient() = delete;
-    HttpClient(const HttpClient&) = delete;
-    HttpClient& operator=(const HttpClient&) = delete;
-
-private:
-
-    class ChunkedResponse
-    {
-    public:
-        SEV_DECL ChunkedResponse();
-
-    public:
-        SEV_DECL void start()
-        {
-            mRunning = true;
-        }
-
-        SEV_DECL void clear();
- 
-        SEV_DECL bool setChunkSize(IStringStream& iss);
-        
-        SEV_DECL size_t getChunkSize() const
-        {
-            return mChunkSize;
-        }
-
-        SEV_DECL bool isRunning() const
-        {
-            return mRunning;
-        }
-
-        SEV_DECL size_t getRemaining() const
-        {
-            return ((mChunkSize <= mReceivedSize) ?
-                0 : (mChunkSize - mReceivedSize));
-        }
-
-        SEV_DECL void received(size_t size)
-        {
-            mReceivedSize += size;
-
-            if (getRemaining() == 0)
-            {
-                mChunkSize = 0;
-                mReceivedSize = 0;
-            }
-        }
-
-    private:
-        bool mRunning;
-        size_t mChunkSize;
-        size_t mReceivedSize;
-    };
-
-    bool mRunning;
-
-    HttpUrl mUrl;
-    HttpResponseHandler mResponseHandler;
-    RequestOption mOption;
-
-    HttpRequest mRequest;
-    HttpResponse mResponse;
-
-    size_t mReceivedResponseBodySize;
-    ChunkedResponse mChunkedResponse;
-    std::vector<char> mResponseTempBuffer;
-    std::list<std::string> mRedirectHashes;
 };
 
 SEV_NS_END

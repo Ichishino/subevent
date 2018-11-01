@@ -84,12 +84,14 @@ public:
     template <typename BuffType>
     SEV_DECL bool readBytes(
         BuffType& buff, const void* delim, size_t delimSize,
-        size_t maxSize = SIZE_MAX)
+        size_t maxSize = SIZE_MAX, bool* reachedMax = nullptr)
     {
-        size_t readableSize = getReadableSize();
+        bool result = false;
+        size_t lastIndex =
+            (getReadableSize() < maxSize) ? getReadableSize() : maxSize;
 
-        for (size_t index = 0;
-            (index < readableSize) && (index < maxSize); ++index)
+        size_t index = 0;
+        for (; index < lastIndex; ++index)
         {
             if (memcmp(&getPtr()[index], delim, delimSize) != 0)
             {
@@ -104,80 +106,86 @@ public:
                 seekCur(static_cast<int32_t>(buff.size()));
             }
 
-            return true;
+            result = true;
+            break;
         }
 
-        return false;
+        if (reachedMax != nullptr)
+        {
+            *reachedMax = (index >= maxSize);
+        }
+
+        return result;
     }
 
 public:
-    SEV_DECL IBufferStream& operator>>(bool& data)
+    virtual SEV_DECL IBufferStream& operator>>(bool& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(int8_t& data)
+    virtual SEV_DECL IBufferStream& operator>>(int8_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(int16_t& data)
+    virtual SEV_DECL IBufferStream& operator>>(int16_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(int32_t& data)
+    virtual SEV_DECL IBufferStream& operator>>(int32_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(int64_t& data)
+    virtual SEV_DECL IBufferStream& operator>>(int64_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(uint8_t& data)
+    virtual SEV_DECL IBufferStream& operator>>(uint8_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(uint16_t& data)
+    virtual SEV_DECL IBufferStream& operator>>(uint16_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(uint32_t& data)
+    virtual SEV_DECL IBufferStream& operator>>(uint32_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(uint64_t& data)
+    virtual SEV_DECL IBufferStream& operator>>(uint64_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(double& data)
+    virtual SEV_DECL IBufferStream& operator>>(double& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(float& data)
+    virtual SEV_DECL IBufferStream& operator>>(float& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL IBufferStream& operator>>(std::string& data)
+    virtual SEV_DECL IBufferStream& operator>>(std::string& data)
     {
         if (readBytes(data, "\0", 1))
         {
@@ -264,80 +272,80 @@ public:
     }
 
 public:
-    SEV_DECL OBufferStream& operator<<(bool data)
+    virtual SEV_DECL OBufferStream& operator<<(bool data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(int8_t data)
+    virtual SEV_DECL OBufferStream& operator<<(int8_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(int16_t data)
+    virtual SEV_DECL OBufferStream& operator<<(int16_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(int32_t data)
+    virtual SEV_DECL OBufferStream& operator<<(int32_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(int64_t data)
+    virtual SEV_DECL OBufferStream& operator<<(int64_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(uint8_t data)
+    virtual SEV_DECL OBufferStream& operator<<(uint8_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(uint16_t data)
+    virtual SEV_DECL OBufferStream& operator<<(uint16_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(uint32_t data)
+    virtual SEV_DECL OBufferStream& operator<<(uint32_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(uint64_t data)
+    virtual SEV_DECL OBufferStream& operator<<(uint64_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(double data)
+    virtual SEV_DECL OBufferStream& operator<<(double data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(float data)
+    virtual SEV_DECL OBufferStream& operator<<(float data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(const std::string& data)
+    virtual SEV_DECL OBufferStream& operator<<(const std::string& data)
     {
         writeBytes(data.c_str(),
             (data.size() + 1) * sizeof(std::string::value_type));
         return *this;
     }
 
-    SEV_DECL OBufferStream& operator<<(const char* data)
+    virtual SEV_DECL OBufferStream& operator<<(const char* data)
     {
         writeBytes(data, (strlen(data) + 1) * sizeof(char));
         return *this;
@@ -359,9 +367,10 @@ public:
 
 public:
     SEV_DECL bool readString(
-        std::string& str, const char* delim)
+        std::string& str, const char* delim,
+        size_t maxSize = SIZE_MAX, bool* reachedMax = nullptr)
     {
-        return readBytes(str, delim, strlen(delim));
+        return readBytes(str, delim, strlen(delim), maxSize, reachedMax);
     }
 
     SEV_DECL std::string readString(size_t size = SIZE_MAX)

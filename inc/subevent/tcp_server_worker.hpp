@@ -65,9 +65,40 @@ public:
     SEV_DECL virtual ~TcpServerWorker() override;
 
 public:
+
+    template <typename TcpServerType = TcpServer>
     SEV_DECL bool open(
         const IpEndPoint& localEndPoint,
-        int32_t listenBacklog = SOMAXCONN);
+        int32_t listenBacklog = SOMAXCONN)
+    {
+        mTcpServer = TcpServerType::newInstance(this);
+        mTcpServer->getSocketOption().setReuseAddress(true);
+
+        // listen
+        bool result = mTcpServer->open(localEndPoint,
+            [&](const TcpServerPtr&,
+                const TcpChannelPtr& channel) {
+
+            // accept
+
+            TcpChannelThread* thread = nextThread();
+
+            if (thread == nullptr)
+            {
+                channel->close();
+                return;
+            }
+
+            if (!mTcpServer->accept(thread, channel))
+            {
+                channel->close();
+                return;
+            }
+
+        }, listenBacklog);
+
+        return result;
+    }
 
     SEV_DECL void close();
 

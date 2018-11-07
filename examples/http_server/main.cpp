@@ -69,9 +69,14 @@ int main(int, char**)
         channel->close();
     });
 
-    // app end timer
-    Timer timer;
-    timer.start(60 * 1000, false, [&](Timer*) {
+    // server stop handler
+    server->setRequestHandler(
+        "/stop", [&](const HttpChannelPtr& channel) {
+
+        channel->sendHttpResponse(
+            200, "OK", "<html><body>OK</body></html>");
+
+        // stop server
         app.stop();
     });
 

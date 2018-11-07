@@ -236,6 +236,20 @@ int32_t HttpChannel::sendHttpResponse(
     return result;
 }
 
+int32_t HttpChannel::sendHttpResponse(
+    uint16_t statusCode,
+    const std::string& message,
+    const std::string& body,
+    const TcpSendHandler& sendHandler)
+{
+    HttpResponse res;
+    res.setStatusCode(statusCode);
+    res.setMessage(message);
+    res.setBody(body);
+
+    return sendHttpResponse(res, sendHandler);
+}
+
 void HttpChannel::onTcpSend(
     const TcpChannelPtr& /* channel */, int32_t /* errorCode */)
 {

@@ -29,6 +29,7 @@ public:
         // http://127.0.0.1:9000/ccc1/ccc2/ccc3 -> default handler
 
         setRequestHandler("/", SEV_BIND_1(this, MyThread::onMyHandler));
+        setRequestHandler("/stop", SEV_BIND_1(this, MyThread::onMyServerStop));
     }
 
 protected:
@@ -40,6 +41,14 @@ protected:
         return 100;
 #endif
     }
+
+    void onHttpRequest(const HttpChannelPtr& channel) override
+    {
+        // default handler
+        HttpChannelThread::onHttpRequest(channel);
+    }
+
+protected:
 
     void onMyHandler(const HttpChannelPtr& channel)
     {
@@ -73,10 +82,13 @@ protected:
         channel->close();
     }
 
-    void onHttpRequest(const HttpChannelPtr& channel) override
+    void onMyServerStop(const HttpChannelPtr& channel)
     {
-        // default handler
-        HttpChannelThread::onHttpRequest(channel);
+        channel->sendHttpResponse(
+            200, "OK", "<html><body>OK</body></html>");
+
+        // stop server
+        Application::getCurrent()->stop();
     }
 };
 
@@ -99,12 +111,6 @@ int main(int, char**)
 
     // start
     app.open(IpEndPoint(port));
-
-    // app end timer
-    Timer timer;
-    timer.start(60 * 1000, false, [&](Timer*) {
-        app.stop();
-    });
 
     return app.run();
 }

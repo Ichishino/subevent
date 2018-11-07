@@ -85,6 +85,12 @@ public:
         HttpResponse& response,
         const TcpSendHandler& sendHandler = nullptr);
 
+    SEV_DECL int32_t sendHttpResponse(
+        uint16_t statusCode,
+        const std::string& message,
+        const std::string& body = "",
+        const TcpSendHandler& sendHandler = nullptr);
+
     SEV_DECL HttpRequest& getRequest()
     {
         return mRequest;

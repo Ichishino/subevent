@@ -19,9 +19,6 @@
     <ClInclude Include="..\..\inc\subevent\application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\subevent\buffer_stream.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\subevent\common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -101,6 +98,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\subevent\variadic.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\string_io.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\byte_io.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

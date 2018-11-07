@@ -119,7 +119,7 @@ private:
     SEV_DECL HttpChannel(Socket* socket);
 
     SEV_DECL bool isRequestCompleted() const;
-    SEV_DECL bool onHttpRequest(IStringStream& iss);
+    SEV_DECL bool onHttpRequest(StringReader& reader);
     SEV_DECL void onRequestCompleted();
     SEV_DECL void onError(int32_t errorCode);
 

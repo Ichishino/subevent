@@ -10,7 +10,8 @@
 #include <algorithm>
 
 #include <subevent/std.hpp>
-#include <subevent/buffer_stream.hpp>
+#include <subevent/byte_io.hpp>
+#include <subevent/string_io.hpp>
 
 SEV_NS_BEGIN
 
@@ -436,8 +437,8 @@ public:
     SEV_DECL size_t getContentLength() const;
 
 public:
-    SEV_DECL void serialize(OStringStream& oss) const;
-    SEV_DECL bool deserialize(IStringStream& iss);
+    SEV_DECL void serialize(StringWriter& writer) const;
+    SEV_DECL bool deserialize(StringReader& reader);
 
     SEV_DECL HttpHeader& operator=(const HttpHeader& other);
     SEV_DECL HttpHeader& operator=(HttpHeader&& other);
@@ -513,11 +514,11 @@ public:
     SEV_DECL virtual void clear();
 
 public:
-    SEV_DECL virtual void serializeMessage(OStringStream& oss) const;
-    SEV_DECL virtual bool deserializeMessage(IStringStream& iss);
+    SEV_DECL virtual void serializeMessage(StringWriter& writer) const;
+    SEV_DECL virtual bool deserializeMessage(StringReader& reader);
 
-    SEV_DECL virtual void serializeBody(OBufferStream& obs) const;
-    SEV_DECL virtual bool deserializeBody(IBufferStream& ibs);
+    SEV_DECL virtual void serializeBody(ByteWriter& writer) const;
+    SEV_DECL virtual bool deserializeBody(ByteReader& reader);
 
 protected:
     SEV_DECL HttpMessage();
@@ -605,8 +606,8 @@ public:
     }
 
 public:
-    SEV_DECL void serializeMessage(OStringStream& oss) const override;
-    SEV_DECL bool deserializeMessage(IStringStream& iss) override;
+    SEV_DECL void serializeMessage(StringWriter& writer) const override;
+    SEV_DECL bool deserializeMessage(StringReader& reader) override;
 
     SEV_DECL HttpRequest& operator=(const HttpRequest& other);
     SEV_DECL HttpRequest& operator=(HttpRequest&& other);
@@ -683,8 +684,8 @@ public:
     }
 
 public:
-    SEV_DECL void serializeMessage(OStringStream& oss) const;
-    SEV_DECL bool deserializeMessage(IStringStream& iss);
+    SEV_DECL void serializeMessage(StringWriter& writer) const;
+    SEV_DECL bool deserializeMessage(StringReader& reader);
 
     SEV_DECL HttpResponse& operator=(const HttpResponse& other);
     SEV_DECL HttpResponse& operator=(HttpResponse&& other);
@@ -725,7 +726,7 @@ private:
             mReceiveSize = 0;
         }
 
-        SEV_DECL bool setChunkSize(IStringStream& iss);
+        SEV_DECL bool setChunkSize(StringReader& reader);
 
         SEV_DECL size_t getChunkSize() const
         {
@@ -768,7 +769,7 @@ public:
         mFileName = fileName;
     }
 
-    SEV_DECL bool onReceive(IStringStream& iss);
+    SEV_DECL bool onReceive(StringReader& reader);
 
     SEV_DECL void startChunk()
     {
@@ -805,7 +806,7 @@ public:
     }
 
 private:
-    SEV_DECL bool deserialize(IBufferStream& ibs);
+    SEV_DECL bool deserialize(ByteReader& reader);
 
     size_t mSize;
     size_t mReceiveSize;

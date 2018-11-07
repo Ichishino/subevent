@@ -201,12 +201,12 @@ void HttpClient::sendHttpRequest()
     std::vector<char> requestData;
 
     // serialize
-    OStringStream oss(requestData);
-    mRequest.serializeMessage(oss);
+    StringWriter writer(requestData);
+    mRequest.serializeMessage(writer);
 
     if (!mRequest.getBody().empty())
     {
-        mRequest.serializeBody(oss);
+        mRequest.serializeBody(writer);
     }
     else
     {
@@ -402,9 +402,9 @@ void HttpClient::onTcpReceive(const TcpChannelPtr& channel)
         response = std::move(mResponseTempBuffer);
     }
 
-    IStringStream iss(response);
+    StringReader reader(response);
 
-    if (!onHttpResponse(iss))
+    if (!onHttpResponse(reader))
     {
         mResponseTempBuffer = std::move(response);
     }
@@ -418,14 +418,14 @@ void HttpClient::onTcpClose(const TcpChannelPtr& /* channel */)
     }
 }
 
-bool HttpClient::onHttpResponse(IStringStream& iss)
+bool HttpClient::onHttpResponse(StringReader& reader)
 {
     // header
     if (mResponse.isEmpty())
     {
         try
         {
-            if (!mResponse.deserializeMessage(iss))
+            if (!mResponse.deserializeMessage(reader))
             {
                 // not completed
                 mResponse.clear();
@@ -443,7 +443,7 @@ bool HttpClient::onHttpResponse(IStringStream& iss)
     }
 
     // body
-    if (!mContentReceiver.onReceive(iss))
+    if (!mContentReceiver.onReceive(reader))
     {
         onResponse(-8502);
         return true;

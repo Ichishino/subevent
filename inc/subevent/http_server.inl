@@ -138,23 +138,23 @@ void HttpChannel::onTcpReceive(std::vector<char>&& message)
         request = std::move(mRequestTempBuffer);
     }
 
-    IStringStream iss(request);
+    StringReader reader(request);
 
-    if (!onHttpRequest(iss))
+    if (!onHttpRequest(reader))
     {
         // header is not completed
         mRequestTempBuffer = std::move(request);
     }
 }
 
-bool HttpChannel::onHttpRequest(IStringStream& iss)
+bool HttpChannel::onHttpRequest(StringReader& reader)
 {
     // header
     if (mRequest.isEmpty())
     {
         try
         {
-            if (!mRequest.deserializeMessage(iss))
+            if (!mRequest.deserializeMessage(reader))
             {
                 // not completed
                 mRequest.clear();
@@ -172,7 +172,7 @@ bool HttpChannel::onHttpRequest(IStringStream& iss)
     }
 
     // body
-    if (!mContentReceiver.onReceive(iss))
+    if (!mContentReceiver.onReceive(reader))
     {
         onError(-9002);
         return true;
@@ -213,12 +213,12 @@ int32_t HttpChannel::sendHttpResponse(
         response.getBody().size());
 
     // serialize
-    OStringStream oss(responseData);
-    response.serializeMessage(oss);
+    StringWriter writer(responseData);
+    response.serializeMessage(writer);
 
     if (!response.getBody().empty())
     {
-        response.serializeBody(oss);
+        response.serializeBody(writer);
     }
     else
     {

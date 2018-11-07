@@ -154,7 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\subevent\application.hpp" />
-    <ClInclude Include="..\..\inc\subevent\buffer_stream.hpp" />
+    <ClInclude Include="..\..\inc\subevent\byte_io.hpp" />
     <ClInclude Include="..\..\inc\subevent\common.hpp" />
     <ClInclude Include="..\..\inc\subevent\event.hpp" />
     <ClInclude Include="..\..\inc\subevent\event_controller.hpp" />
@@ -170,6 +170,7 @@
     <ClInclude Include="..\..\inc\subevent\socket_selector.hpp" />
     <ClInclude Include="..\..\inc\subevent\ssl_socket.hpp" />
     <ClInclude Include="..\..\inc\subevent\std.hpp" />
+    <ClInclude Include="..\..\inc\subevent\string_io.hpp" />
     <ClInclude Include="..\..\inc\subevent\subevent.hpp" />
     <ClInclude Include="..\..\inc\subevent\subevent_core.hpp" />
     <ClInclude Include="..\..\inc\subevent\subevent_http.hpp" />

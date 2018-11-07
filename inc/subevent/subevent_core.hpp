@@ -10,7 +10,8 @@
 #include <subevent/application.hpp>
 #include <subevent/event.hpp>
 #include <subevent/timer.hpp>
-#include <subevent/buffer_stream.hpp>
+#include <subevent/byte_io.hpp>
+#include <subevent/string_io.hpp>
 #include <subevent/utility.hpp>
 #include <subevent/variadic.hpp>
 

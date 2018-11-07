@@ -8,6 +8,7 @@
 #include <functional>
 
 #include <subevent/std.hpp>
+#include <subevent/string_io.hpp>
 #include <subevent/tcp.hpp>
 #include <subevent/http.hpp>
 
@@ -92,7 +93,7 @@ private:
     SEV_DECL void start();
     SEV_DECL void sendHttpRequest();
     SEV_DECL bool isResponseCompleted() const;
-    SEV_DECL bool onHttpResponse(IStringStream& iss);
+    SEV_DECL bool onHttpResponse(StringReader& reader);
     SEV_DECL int32_t redirect();
 
     SEV_DECL void onTcpConnect(const TcpClientPtr& client, int32_t errorCode);

@@ -1,5 +1,5 @@
-#ifndef SUBEVENT_BUFFER_STREAM_HPP
-#define SUBEVENT_BUFFER_STREAM_HPP
+#ifndef SUBEVENT_BYTE_IO_HPP
+#define SUBEVENT_BYTE_IO_HPP
 
 #include <vector>
 #include <string>
@@ -10,19 +10,19 @@
 SEV_NS_BEGIN
 
 //----------------------------------------------------------------------------//
-// IBufferStream
+// ByteReader
 //----------------------------------------------------------------------------//
 
-class IBufferStream
+class ByteReader
 {
 public:
-    SEV_DECL IBufferStream(const std::vector<char>& buff)
+    SEV_DECL ByteReader(const std::vector<char>& buff)
         : mBuff(buff)
     {
         mCur = 0;
     }
 
-    SEV_DECL virtual ~IBufferStream()
+    SEV_DECL virtual ~ByteReader()
     {
     }
 
@@ -119,73 +119,73 @@ public:
     }
 
 public:
-    virtual SEV_DECL IBufferStream& operator>>(bool& data)
+    virtual SEV_DECL ByteReader& operator>>(bool& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(int8_t& data)
+    virtual SEV_DECL ByteReader& operator>>(int8_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(int16_t& data)
+    virtual SEV_DECL ByteReader& operator>>(int16_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(int32_t& data)
+    virtual SEV_DECL ByteReader& operator>>(int32_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(int64_t& data)
+    virtual SEV_DECL ByteReader& operator>>(int64_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(uint8_t& data)
+    virtual SEV_DECL ByteReader& operator>>(uint8_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(uint16_t& data)
+    virtual SEV_DECL ByteReader& operator>>(uint16_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(uint32_t& data)
+    virtual SEV_DECL ByteReader& operator>>(uint32_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(uint64_t& data)
+    virtual SEV_DECL ByteReader& operator>>(uint64_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(double& data)
+    virtual SEV_DECL ByteReader& operator>>(double& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(float& data)
+    virtual SEV_DECL ByteReader& operator>>(float& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL IBufferStream& operator>>(std::string& data)
+    virtual SEV_DECL ByteReader& operator>>(std::string& data)
     {
         if (readBytes(data, "\0", 1))
         {
@@ -201,19 +201,19 @@ private:
 };
 
 //----------------------------------------------------------------------------//
-// OBufferStream
+// ByteWriter
 //----------------------------------------------------------------------------//
 
-class OBufferStream
+class ByteWriter
 {
 public:
-    SEV_DECL OBufferStream(std::vector<char>& buff)
+    SEV_DECL ByteWriter(std::vector<char>& buff)
         : mBuff(buff)
     {
         mCur = 0;
     }
 
-    SEV_DECL virtual ~OBufferStream()
+    SEV_DECL virtual ~ByteWriter()
     {
     }
 
@@ -272,80 +272,80 @@ public:
     }
 
 public:
-    virtual SEV_DECL OBufferStream& operator<<(bool data)
+    virtual SEV_DECL ByteWriter& operator<<(bool data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(int8_t data)
+    virtual SEV_DECL ByteWriter& operator<<(int8_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(int16_t data)
+    virtual SEV_DECL ByteWriter& operator<<(int16_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(int32_t data)
+    virtual SEV_DECL ByteWriter& operator<<(int32_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(int64_t data)
+    virtual SEV_DECL ByteWriter& operator<<(int64_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(uint8_t data)
+    virtual SEV_DECL ByteWriter& operator<<(uint8_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(uint16_t data)
+    virtual SEV_DECL ByteWriter& operator<<(uint16_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(uint32_t data)
+    virtual SEV_DECL ByteWriter& operator<<(uint32_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(uint64_t data)
+    virtual SEV_DECL ByteWriter& operator<<(uint64_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(double data)
+    virtual SEV_DECL ByteWriter& operator<<(double data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(float data)
+    virtual SEV_DECL ByteWriter& operator<<(float data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(const std::string& data)
+    virtual SEV_DECL ByteWriter& operator<<(const std::string& data)
     {
         writeBytes(data.c_str(),
             (data.size() + 1) * sizeof(std::string::value_type));
         return *this;
     }
 
-    virtual SEV_DECL OBufferStream& operator<<(const char* data)
+    virtual SEV_DECL ByteWriter& operator<<(const char* data)
     {
         writeBytes(data, (strlen(data) + 1) * sizeof(char));
         return *this;
@@ -356,145 +356,6 @@ private:
     size_t mCur;
 };
 
-//----------------------------------------------------------------------------//
-// IStringStream
-//----------------------------------------------------------------------------//
-
-class IStringStream : public IBufferStream
-{
-public:
-    using IBufferStream::IBufferStream;
-
-public:
-    SEV_DECL bool readString(
-        std::string& str, const char* delim,
-        size_t maxSize = SIZE_MAX, bool* reachedMax = nullptr)
-    {
-        return readBytes(str, delim, strlen(delim), maxSize, reachedMax);
-    }
-
-    SEV_DECL std::string readString(size_t size = SIZE_MAX)
-    {
-        std::string str;
-
-        size_t readableSize = getReadableSize();
-
-        if (size > readableSize)
-        {
-            size = readableSize;
-        }
-
-        if (size > 0)
-        {
-            str.resize(size);
-            readBytes(&str[0], size);
-        }
-
-        return str;
-    }
-};
-
-//----------------------------------------------------------------------------//
-// OStringStream
-//----------------------------------------------------------------------------//
-
-class OStringStream : public OBufferStream
-{
-public:
-    using OBufferStream::OBufferStream;
-
-public:
-    SEV_DECL void writeString(const std::string& str)
-    {
-        size_t charSize =
-            sizeof(std::string::value_type);
-
-        writeBytes(
-            str.c_str(), ((str.size() + 1) * charSize));
-
-        seekCur(-static_cast<int32_t>(charSize));
-    }
-
-public:
-    SEV_DECL OStringStream& operator<<(bool data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(int8_t data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(int16_t data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(int32_t data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(int64_t data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(uint8_t data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(uint16_t data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(uint32_t data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(uint64_t data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(double data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(float data)
-    {
-        writeString(std::to_string(data));
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(const std::string& data)
-    {
-        writeString(data);
-        return *this;
-    }
-
-    SEV_DECL OStringStream& operator<<(const char* data)
-    {
-        writeString(data);
-        return *this;
-    }
-};
-
 SEV_NS_END
 
-#endif // SUBEVENT_BUFFER_STREAM_HPP
+#endif // SUBEVENT_BYTE_IO_HPP

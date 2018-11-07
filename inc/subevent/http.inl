@@ -640,17 +640,17 @@ void HttpHeader::clear()
     mFields.clear();
 }
 
-void HttpHeader::serialize(OStringStream& oss) const
+void HttpHeader::serialize(StringWriter& writer) const
 {
     for (const auto& field : mFields)
     {
-        oss << field.name << ":" << field.value << "\r\n";
+        writer << field.name << ":" << field.value << "\r\n";
     }
 
-    oss << "\r\n";
+    writer << "\r\n";
 }
 
-bool HttpHeader::deserialize(IStringStream& iss)
+bool HttpHeader::deserialize(StringReader& reader)
 {
     clear();
 
@@ -659,7 +659,7 @@ bool HttpHeader::deserialize(IStringStream& iss)
         std::string line;
         bool readError = false;
         
-        if (!iss.readString(line, "\r\n", 10240, &readError))
+        if (!reader.readString(line, "\r\n", 10240, &readError))
         {
             if (readError)
             {
@@ -668,7 +668,7 @@ bool HttpHeader::deserialize(IStringStream& iss)
 
             return false;
         }
-        iss.seekCur(+2);
+        reader.seekCur(+2);
 
         if (line.empty())
         {
@@ -1090,16 +1090,16 @@ void HttpMessage::removeCookies(
     mHeader.remove(headerName);
 }
 
-void HttpMessage::serializeMessage(OStringStream& oss) const
+void HttpMessage::serializeMessage(StringWriter& writer) const
 {
     // header
-    mHeader.serialize(oss);
+    mHeader.serialize(writer);
 }
 
-bool HttpMessage::deserializeMessage(IStringStream& iss)
+bool HttpMessage::deserializeMessage(StringReader& reader)
 {
     // header
-    if (!mHeader.deserialize(iss))
+    if (!mHeader.deserialize(reader))
     {
         return false;
     }
@@ -1107,23 +1107,23 @@ bool HttpMessage::deserializeMessage(IStringStream& iss)
     return true;
 }
 
-void HttpMessage::serializeBody(OBufferStream& obs) const
+void HttpMessage::serializeBody(ByteWriter& writer) const
 {
     // body
     if (!mBody.empty())
     {
-        obs.writeBytes(&mBody[0], mBody.size());
+        writer.writeBytes(&mBody[0], mBody.size());
     }
 }
 
-bool HttpMessage::deserializeBody(IBufferStream& ibs)
+bool HttpMessage::deserializeBody(ByteReader& reader)
 {
     // body
-    if (!ibs.isEnd())
+    if (!reader.isEnd())
     {
-        mBody.resize(ibs.getReadableSize());
+        mBody.resize(reader.getReadableSize());
 
-        if (!ibs.readBytes(&mBody, mBody.size()))
+        if (!reader.readBytes(&mBody, mBody.size()))
         {
             return false;
         }
@@ -1190,22 +1190,22 @@ bool HttpRequest::isEmpty() const
     return mMethod.empty();
 }
 
-void HttpRequest::serializeMessage(OStringStream& oss) const
+void HttpRequest::serializeMessage(StringWriter& writer) const
 {
     // method + path + protocol
-    oss << mMethod << " "
+    writer << mMethod << " "
         << mPath << " "
         << mProtocol << "\r\n";
 
-    HttpMessage::serializeMessage(oss);
+    HttpMessage::serializeMessage(writer);
 }
 
-bool HttpRequest::deserializeMessage(IStringStream& iss)
+bool HttpRequest::deserializeMessage(StringReader& reader)
 {
     std::string line;
     bool readError = false;
 
-    if (!iss.readString(line, "\r\n", 10240, &readError))
+    if (!reader.readString(line, "\r\n", 10240, &readError))
     {
         if (readError)
         {
@@ -1214,7 +1214,7 @@ bool HttpRequest::deserializeMessage(IStringStream& iss)
 
         return false;
     }
-    iss.seekCur(+2);
+    reader.seekCur(+2);
         
     size_t pos1 = line.find_first_of(' ');
 
@@ -1254,7 +1254,7 @@ bool HttpRequest::deserializeMessage(IStringStream& iss)
         throw std::invalid_argument("Invalid protocol");
     }
 
-    if (!HttpMessage::deserializeMessage(iss))
+    if (!HttpMessage::deserializeMessage(reader))
     {
         return false;
     }
@@ -1328,22 +1328,22 @@ bool HttpResponse::isEmpty() const
     return (mStatusCode == 0);
 }
 
-void HttpResponse::serializeMessage(OStringStream& oss) const
+void HttpResponse::serializeMessage(StringWriter& writer) const
 {
     // protocol + status code + message
-    oss << mProtocol << " "
+    writer << mProtocol << " "
         << mStatusCode << " "
         << mMessage << "\r\n";
 
-    HttpMessage::serializeMessage(oss);
+    HttpMessage::serializeMessage(writer);
 }
 
-bool HttpResponse::deserializeMessage(IStringStream& iss)
+bool HttpResponse::deserializeMessage(StringReader& reader)
 {
     std::string line;
     bool readError = false;
 
-    if (!iss.readString(line, "\r\n", 10240, &readError))
+    if (!reader.readString(line, "\r\n", 10240, &readError))
     {
         if (readError)
         {
@@ -1352,7 +1352,7 @@ bool HttpResponse::deserializeMessage(IStringStream& iss)
 
         return false;
     }
-    iss.seekCur(+2);
+    reader.seekCur(+2);
 
     size_t pos1 = line.find_first_of(' ');
 
@@ -1391,7 +1391,7 @@ bool HttpResponse::deserializeMessage(IStringStream& iss)
     // message
     mMessage = line.substr(pos2 + 1);
 
-    if (!HttpMessage::deserializeMessage(iss))
+    if (!HttpMessage::deserializeMessage(reader))
     {
         return false;
     }
@@ -1436,16 +1436,16 @@ HttpContentReceiver::ChunkWork::~ChunkWork()
 {
 }
 
-bool HttpContentReceiver::ChunkWork::setChunkSize(IStringStream& iss)
+bool HttpContentReceiver::ChunkWork::setChunkSize(StringReader& reader)
 {
     std::string chunkSizeStr;
 
-    if (!iss.readString(chunkSizeStr, "\r\n"))
+    if (!reader.readString(chunkSizeStr, "\r\n"))
     {
         return false;
     }
 
-    iss.seekCur(+2);
+    reader.seekCur(+2);
 
     try
     {
@@ -1491,15 +1491,15 @@ void HttpContentReceiver::init(const HttpMessage& message)
     }
 }
 
-bool HttpContentReceiver::onReceive(IStringStream& iss)
+bool HttpContentReceiver::onReceive(StringReader& reader)
 {
-    while (!iss.isEnd())
+    while (!reader.isEnd())
     {
         if (mChunkWork.isRunning())
         {
             if (mChunkWork.getChunkSize() == 0)
             {
-                if (!mChunkWork.setChunkSize(iss))
+                if (!mChunkWork.setChunkSize(reader))
                 {
                     return false;
                 }
@@ -1517,7 +1517,7 @@ bool HttpContentReceiver::onReceive(IStringStream& iss)
             break;
         }
 
-        if (!deserialize(iss))
+        if (!deserialize(reader))
         {
             return false;
         }
@@ -1526,9 +1526,9 @@ bool HttpContentReceiver::onReceive(IStringStream& iss)
     return true;
 }
 
-bool HttpContentReceiver::deserialize(IBufferStream& ibs)
+bool HttpContentReceiver::deserialize(ByteReader& reader)
 {
-    size_t size = ibs.getReadableSize();
+    size_t size = reader.getReadableSize();
 
     if (mChunkWork.isRunning())
     {
@@ -1573,7 +1573,7 @@ bool HttpContentReceiver::deserialize(IBufferStream& ibs)
 
         if (ofs.is_open())
         {
-            ofs.write(ibs.getPtr(), size);
+            ofs.write(reader.getPtr(), size);
 
             result = !ofs.bad();
             ofs.close();
@@ -1586,7 +1586,7 @@ bool HttpContentReceiver::deserialize(IBufferStream& ibs)
         }
         else
         {
-            ibs.seekCur(static_cast<int32_t>(size));
+            reader.seekCur(static_cast<int32_t>(size));
         }
     }
     else
@@ -1598,7 +1598,7 @@ bool HttpContentReceiver::deserialize(IBufferStream& ibs)
             size_t index = mData.size();
 
             mData.resize(mData.size() + size);
-            ibs.readBytes(&mData[index], size);
+            reader.readBytes(&mData[index], size);
         }
         catch (...)
         {
@@ -1606,10 +1606,10 @@ bool HttpContentReceiver::deserialize(IBufferStream& ibs)
         }
     }
 
-    if (!ibs.isEnd() && mChunkWork.isRunning())
+    if (!reader.isEnd() && mChunkWork.isRunning())
     {
         // skip CRLF
-        ibs.seekCur(+2);
+        reader.seekCur(+2);
     }
 
     return true;

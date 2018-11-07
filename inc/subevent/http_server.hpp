@@ -148,6 +148,7 @@ public:
 public:
     SEV_DECL bool open(
         const IpEndPoint& localEndPoint,
+        const SslContextPtr& sslCtx = nullptr,
         const TcpAcceptHandler& acceptHandler = nullptr,
         int32_t listenBacklog = SOMAXCONN);
 

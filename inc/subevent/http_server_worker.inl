@@ -13,6 +13,8 @@ SEV_NS_BEGIN
 HttpChannelWorker::HttpChannelWorker(Thread* thread)
     : TcpChannelWorker(thread)
 {
+    mHandlerMap.setDefaultHandler(
+        SEV_BIND_1(this, HttpChannelWorker::onHttpRequest));
 }
 
 HttpChannelWorker::~HttpChannelWorker()

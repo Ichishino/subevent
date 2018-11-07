@@ -327,9 +327,15 @@ TcpChannelPtr HttpServer::createChannel(Socket* socket)
 
 bool HttpServer::open(
     const IpEndPoint& localEndPoint,
+    const SslContextPtr& sslCtx,
     const TcpAcceptHandler& acceptHandler,
     int32_t listenBacklog)
 {
+    if (sslCtx != nullptr)
+    {
+        mSslContext = sslCtx;
+    }
+
     mAcceptHandler = acceptHandler;
 
     bool result = TcpServer::open(

@@ -23,6 +23,19 @@ int main(int, char**)
     // start
     server->open(IpEndPoint(port));
 
+    // ex.
+    //
+    // 1. "/"
+    // 2. "/bbb1"
+    // 3. "/ccc1/"
+    //
+    // http://127.0.0.1:9000/ -> 1
+    // http://127.0.0.1:9000/aaa1 -> 1
+    // http://127.0.0.1:9000/bbb1 -> 2
+    // http://127.0.0.1:9000/ccc1/ccc2 -> 3
+    // http://127.0.0.1:9000/ccc1/ccc2/ -> default handler
+    // http://127.0.0.1:9000/ccc1/ccc2/ccc3 -> default handler
+
     // handler
     server->setRequestHandler(
         "/", [](const HttpChannelPtr& channel) {

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -22,32 +22,32 @@
     <ProjectGuid>{38F76661-0866-48F7-9021-20432C52CE9C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>http_client_async</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -160,6 +160,9 @@
     <ClInclude Include="..\..\inc\subevent\event_controller.hpp" />
     <ClInclude Include="..\..\inc\subevent\event_loop.hpp" />
     <ClInclude Include="..\..\inc\subevent\http.hpp" />
+    <ClInclude Include="..\..\inc\subevent\http_client.hpp" />
+    <ClInclude Include="..\..\inc\subevent\http_server.hpp" />
+    <ClInclude Include="..\..\inc\subevent\http_server_worker.hpp" />
     <ClInclude Include="..\..\inc\subevent\network.hpp" />
     <ClInclude Include="..\..\inc\subevent\semaphore.hpp" />
     <ClInclude Include="..\..\inc\subevent\socket.hpp" />
@@ -178,6 +181,7 @@
     <ClInclude Include="..\..\inc\subevent\timer_manager.hpp" />
     <ClInclude Include="..\..\inc\subevent\udp.hpp" />
     <ClInclude Include="..\..\inc\subevent\utility.hpp" />
+    <ClInclude Include="..\..\inc\subevent\variadic.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\inc\subevent\application.inl" />
@@ -185,6 +189,9 @@
     <None Include="..\..\inc\subevent\event_controller.inl" />
     <None Include="..\..\inc\subevent\event_loop.inl" />
     <None Include="..\..\inc\subevent\http.inl" />
+    <None Include="..\..\inc\subevent\http_client.inl" />
+    <None Include="..\..\inc\subevent\http_server.inl" />
+    <None Include="..\..\inc\subevent\http_server_worker.inl" />
     <None Include="..\..\inc\subevent\network.inl" />
     <None Include="..\..\inc\subevent\semaphore.inl" />
     <None Include="..\..\inc\subevent\socket.inl" />

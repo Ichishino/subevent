@@ -1,11 +1,12 @@
 #ifndef SUBEVENT_NETWORK_HPP
 #define SUBEVENT_NETWORK_HPP
 
+#include <string>
+
 #include <subevent/std.hpp>
 #include <subevent/thread.hpp>
 #include <subevent/application.hpp>
 #include <subevent/socket_controller.hpp>
-#include <subevent/tcp.hpp>
 
 SEV_NS_BEGIN
 
@@ -32,12 +33,6 @@ private:
 class NetWorker
 {
 public:
-    SEV_DECL SocketController* getSocketController() const
-    {
-        return dynamic_cast<SocketController*>(
-            mThread->getEventController());
-    }
-
     SEV_DECL uint32_t getSocketCount() const
     {
         return getSocketController()->getSocketCount();
@@ -60,10 +55,21 @@ public:
     }
 
 public:
-    static NetWorker* getCurrent()
+    SEV_DECL static NetWorker* getCurrent()
     {
         return dynamic_cast<NetWorker*>(
             Thread::getCurrent());
+    }
+
+    SEV_DECL SocketController* getSocketController() const
+    {
+        return dynamic_cast<SocketController*>(
+            mThread->getEventController());
+    }
+
+    SEV_DECL Thread* getThread() const
+    {
+        return mThread;
     }
 
 protected:
@@ -76,34 +82,22 @@ private:
     NetWorker() = delete;
 };
 
-template<typename NetWorkerType>
-class NetWorkerApp : public Application, public NetWorkerType
+//---------------------------------------------------------------------------//
+// NetTask
+//---------------------------------------------------------------------------//
+
+template<typename ThreadType, typename NetWorkerType>
+class NetTask : public ThreadType, public NetWorkerType
 {
 public:
-    SEV_DECL explicit NetWorkerApp(const std::string& name = "")
-        : Application(name), NetWorkerType(this)
+    SEV_DECL explicit NetTask(Thread* parent = nullptr)
+        : ThreadType(parent), NetWorkerType(this)
     {
     }
 
-    SEV_DECL NetWorkerApp(
-        int32_t argc, char* argv[], const std::string& name = "")
-        : Application(argc, argv, name), NetWorkerType(this)
-    {
-    }
-};
-
-template<typename NetWorkerType>
-class NetWorkerThread : public Thread, public NetWorkerType
-{
-public:
-    SEV_DECL explicit NetWorkerThread(Thread* parent = nullptr)
-        : Thread(parent), NetWorkerType(this)
-    {
-    }
-
-    SEV_DECL explicit NetWorkerThread(
+    SEV_DECL explicit NetTask(
         const std::string& name, Thread* parent = nullptr)
-        : Thread(name, parent), NetWorkerType(this)
+        : ThreadType(name, parent), NetWorkerType(this)
     {
     }
 };
@@ -112,13 +106,13 @@ public:
 // NetApplication
 //---------------------------------------------------------------------------//
 
-typedef NetWorkerApp<NetWorker> NetApplication;
+typedef NetTask<Application, NetWorker> NetApplication;
 
 //---------------------------------------------------------------------------//
 // NetThread
 //---------------------------------------------------------------------------//
 
-typedef NetWorkerThread<NetWorker> NetThread;
+typedef NetTask<Thread, NetWorker> NetThread;
 
 SEV_NS_END
 

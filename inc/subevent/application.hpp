@@ -16,9 +16,9 @@ SEV_NS_BEGIN
 class Application : public Thread
 {
 public:
-    SEV_DECL explicit Application(const std::string& name = "");
-    SEV_DECL Application(
-        int32_t argc, char* argv[], const std::string& name = "");
+    SEV_DECL explicit Application(Thread* unused = nullptr);
+    SEV_DECL explicit Application(
+        const std::string& name, Thread* unused = nullptr);
     SEV_DECL virtual ~Application() override;
 
 public:

@@ -1,12 +1,67 @@
 #ifndef SUBEVENT_SSL_SOCKET_HPP
 #define SUBEVENT_SSL_SOCKET_HPP
 
+#include <memory>
+
 #include <openssl/ssl.h>
 
 #include <subevent/std.hpp>
 #include <subevent/socket.hpp>
 
 SEV_NS_BEGIN
+
+class SslContext;
+
+typedef std::shared_ptr<SslContext> SslContextPtr;
+
+//---------------------------------------------------------------------------//
+// SslContext
+//---------------------------------------------------------------------------//
+
+class SslContext
+{
+public:
+    SEV_DECL static SslContextPtr newInstance(const SSL_METHOD* method)
+    {
+        return std::make_shared<SslContext>(method);
+    }
+
+    SEV_DECL ~SslContext();
+
+public:
+
+    // settings
+
+    SEV_DECL unsigned long setOptions(long options);
+    SEV_DECL unsigned long clearOptions(long options);
+    SEV_DECL unsigned long getOptions() const;
+
+    SEV_DECL bool setCertificateFile(
+        const std::string& fileName, int type = SSL_FILETYPE_PEM);
+
+    SEV_DECL bool setPrivateKeyFile(
+        const std::string& path, int type = SSL_FILETYPE_PEM);
+
+    SEV_DECL bool loadVerifyLocations(
+        const std::string& fileName, const std::string& caPath = "");
+
+    SEV_DECL void setVerify(
+        int mode, int(*verify_callback)(int, X509_STORE_CTX*));
+    SEV_DECL void setVerifyDepth(int depth);
+
+public:
+    SEV_DECL SSL_CTX* getHandle() const
+    {
+        return mHandle;
+    }
+
+    SEV_DECL SslContext(const SSL_METHOD* method);
+
+private:
+    SslContext() = delete;
+
+    SSL_CTX* mHandle;
+};
 
 //---------------------------------------------------------------------------//
 // SecureSocket
@@ -15,7 +70,8 @@ SEV_NS_BEGIN
 class SecureSocket : public Socket
 {
 public:
-    SEV_DECL SecureSocket(Handle handle = InvalidHandle);
+    SEV_DECL SecureSocket(
+        const SslContextPtr& sslCtx, Handle handle = InvalidHandle);
     SEV_DECL ~SecureSocket() override;
 
 public:
@@ -33,8 +89,10 @@ public:
     SEV_DECL bool onConnect() override;
 
 private:
+    SecureSocket() = delete;
+
     SSL* mSsl;
-    SSL_CTX* mSslCtx;
+    SslContextPtr mSslCtx;
 };
 
 //---------------------------------------------------------------------------//

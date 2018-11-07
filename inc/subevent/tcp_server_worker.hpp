@@ -5,6 +5,7 @@
 
 #include <subevent/std.hpp>
 #include <subevent/thread.hpp>
+#include <subevent/application.hpp>
 #include <subevent/network.hpp>
 #include <subevent/tcp.hpp>
 
@@ -53,7 +54,7 @@ private:
 // TcpChannelThread
 //---------------------------------------------------------------------------//
 
-typedef NetWorkerThread<TcpChannelWorker> TcpChannelThread;
+typedef NetTask<Thread, TcpChannelWorker> TcpChannelThread;
 
 //----------------------------------------------------------------------------//
 // TcpServerWorker
@@ -65,40 +66,9 @@ public:
     SEV_DECL virtual ~TcpServerWorker() override;
 
 public:
-
-    template <typename TcpServerType = TcpServer>
     SEV_DECL bool open(
         const IpEndPoint& localEndPoint,
-        int32_t listenBacklog = SOMAXCONN)
-    {
-        mTcpServer = TcpServerType::newInstance(this);
-        mTcpServer->getSocketOption().setReuseAddress(true);
-
-        // listen
-        bool result = mTcpServer->open(localEndPoint,
-            [&](const TcpServerPtr&,
-                const TcpChannelPtr& channel) {
-
-            // accept
-
-            TcpChannelThread* thread = nextThread();
-
-            if (thread == nullptr)
-            {
-                channel->close();
-                return;
-            }
-
-            if (!mTcpServer->accept(thread, channel))
-            {
-                channel->close();
-                return;
-            }
-
-        }, listenBacklog);
-
-        return result;
-    }
+        int32_t listenBacklog = SOMAXCONN);
 
     SEV_DECL void close();
 
@@ -119,10 +89,10 @@ public:
                 break;
             }
 
-            mThreadPool.push_back(thread);
+            mWorkerPool.push_back(thread);
         }
 
-        if (mThreadPool.empty())
+        if (mWorkerPool.empty())
         {
             return false;
         }
@@ -132,37 +102,41 @@ public:
         return true;
     }
 
-    SEV_DECL const TcpServerPtr& getTcpServer() const
+    SEV_DECL virtual void createTcpServer()
     {
+        if (mTcpServer == nullptr)
+        {
+            mTcpServer = TcpServer::newInstance(this);
+        }
+    }
+
+    SEV_DECL const TcpServerPtr& getTcpServer()
+    {
+        createTcpServer();
         return mTcpServer;
     }
 
 protected:
     SEV_DECL TcpServerWorker(Thread* thread);
 
+    TcpServerPtr mTcpServer;
+
 private:
     TcpServerWorker() = delete;
 
     SEV_DECL void setCpuAffinity();
-    SEV_DECL TcpChannelThread* nextThread();
+    SEV_DECL TcpChannelWorker* nextWorker();
 
-    TcpServerPtr mTcpServer;
-
-    int32_t mThreadIndex;
-    std::vector<TcpChannelThread*> mThreadPool;
+    int32_t mWorkerIndex;
+    std::vector<TcpChannelWorker*> mWorkerPool;
 };
 
 //---------------------------------------------------------------------------//
-// TcpServerApp
+// TcpServerApp / TcpServerThread
 //---------------------------------------------------------------------------//
 
-typedef NetWorkerApp<TcpServerWorker> TcpServerApp;
-
-//---------------------------------------------------------------------------//
-// TcpServerThread
-//---------------------------------------------------------------------------//
-
-typedef NetWorkerThread<TcpServerWorker> TcpServerThread;
+typedef NetTask<Application, TcpServerWorker> TcpServerApp;
+typedef NetTask<Thread, TcpServerWorker> TcpServerThread;
 
 SEV_NS_END
 

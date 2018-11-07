@@ -9,35 +9,35 @@ template<typename ... ParamTypes>
 class Variadic
 {
 public:
-    explicit Variadic(const ParamTypes& ... params)
+    SEV_DECL explicit Variadic(const ParamTypes& ... params)
     {
         setParams(params ...);
     }
 
-    virtual ~Variadic()
+    SEV_DECL virtual ~Variadic()
     {
     }
 
 public:
-    void setParams(const ParamTypes& ... params)
+    SEV_DECL void setParams(const ParamTypes& ... params)
     {
         mParams = std::make_tuple(params ...);
     }
 
-    void getParams(ParamTypes& ... params) const
+    SEV_DECL void getParams(ParamTypes& ... params) const
     {
         std::tie(params ...) = mParams;
     }
 
     template<size_t index, typename ParamType>
-    void setParam(const ParamType& param)
+    SEV_DECL void setParam(const ParamType& param)
     {
         std::get<index>(mParams) = param;
     }
 
 #if (__cplusplus >= 201402L) || (defined(_MSC_VER) && _MSC_VER >= 1900)
     template<size_t index>
-    auto& getParam() const
+    SEV_DECL auto& getParam() const
     {
         return std::get<index>(mParams);
     }

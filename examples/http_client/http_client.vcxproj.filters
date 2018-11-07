@@ -90,6 +90,18 @@
     <ClInclude Include="..\..\inc\subevent\tcp_server_worker.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\http_server.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\http_server_worker.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\variadic.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\http_client.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\inc\subevent\application.inl">
@@ -147,6 +159,15 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent\tcp_server_worker.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\inc\subevent\http_client.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\inc\subevent\http_server.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\inc\subevent\http_server_worker.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

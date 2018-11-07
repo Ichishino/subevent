@@ -39,10 +39,10 @@
 #define SEV_IMPL_GLOBAL
 #endif
 
-#define SEV_MFN1(f) \
-    (std::bind(&f, this, std::placeholders::_1))
-#define SEV_MFN2(f) \
-    (std::bind(&f, this, std::placeholders::_1, std::placeholders::_2))
+#define SEV_BIND_1(p, f) \
+    (std::bind(&f, p, std::placeholders::_1))
+#define SEV_BIND_2(p, f) \
+    (std::bind(&f, p, std::placeholders::_1, std::placeholders::_2))
 
 //----------------------------------------------------------------------------//
 // Type

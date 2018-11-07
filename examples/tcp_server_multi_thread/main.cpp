@@ -46,9 +46,10 @@ protected:
 
 SEV_IMPL_GLOBAL
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
-    TcpServerApp app(argc, argv);
+    TcpServerApp app;
+    app.getTcpServer()->getSocketOption().setReuseAddress(true);
 
     size_t numberOfThreads = 10;
 

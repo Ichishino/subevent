@@ -119,7 +119,7 @@ public:
     SEV_DECL int32_t send(const void* data, size_t size,
         const TcpSendHandler& sendHandler = nullptr);
     SEV_DECL int32_t send(std::vector<char>&& data,
-        const TcpSendHandler& sendHandler);
+        const TcpSendHandler& sendHandler = nullptr);
     SEV_DECL int32_t sendString(const std::string& data,
         const TcpSendHandler& sendHandler = nullptr);
 
@@ -152,8 +152,10 @@ public:
         return mPeerEndPoint;
     }
 
-protected:
+public:
     SEV_DECL TcpChannel(Socket* socket);
+
+protected:
     SEV_DECL TcpChannel(NetWorker* netWorker);
 
     NetWorker* mNetWorker;

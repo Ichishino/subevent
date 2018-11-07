@@ -7,22 +7,112 @@
 
 SEV_NS_BEGIN
 
+//---------------------------------------------------------------------------//
+// SslContext
+//---------------------------------------------------------------------------//
+
+SslContext::SslContext(const SSL_METHOD* method)
+{
+    OpenSsl::init();
+
+    mHandle = SSL_CTX_new(method);
+}
+
+SslContext::~SslContext()
+{
+    SSL_CTX_free(mHandle);
+}
+
+unsigned long SslContext::setOptions(long options)
+{
+    return SSL_CTX_set_options(mHandle, options);
+}
+
+unsigned long SslContext::clearOptions(long options)
+{
+    return SSL_CTX_clear_options(mHandle, options);
+}
+
+unsigned long SslContext::getOptions() const
+{
+    return SSL_CTX_get_options(mHandle);
+}
+
+bool SslContext::setCertificateFile(
+    const std::string& fileName, int type)
+{
+    int result = SSL_CTX_use_certificate_file(
+        mHandle, fileName.c_str(), type);
+
+    if (result != 1)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool SslContext::setPrivateKeyFile(
+    const std::string& fileName, int type)
+{
+    int result = SSL_CTX_use_PrivateKey_file(
+        mHandle, fileName.c_str(), type);
+
+    if (result != 1)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool SslContext::loadVerifyLocations(
+    const std::string& fileName, const std::string& path)
+{
+    const char* caPathAddr = nullptr;
+
+    if (!path.empty())
+    {
+        caPathAddr = path.c_str();
+    }
+
+    int result = SSL_CTX_load_verify_locations(
+        mHandle, fileName.c_str(), caPathAddr);
+
+    if (result != 1)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void SslContext::setVerify(
+    int mode, int(*verify_callback)(int, X509_STORE_CTX*))
+{
+    SSL_CTX_set_verify(mHandle, mode, verify_callback);
+}
+
+void SslContext::setVerifyDepth(int depth)
+{
+    SSL_CTX_set_verify_depth(mHandle, depth);
+}
+
 //----------------------------------------------------------------------------//
 // SecureSocket
 //----------------------------------------------------------------------------//
 
-SecureSocket::SecureSocket(Handle handle)
+SecureSocket::SecureSocket(const SslContextPtr& sslCtx, Handle handle)
     : Socket(handle)
 {
     OpenSsl::init();
 
-    mSslCtx = nullptr;
+    mSslCtx = sslCtx;
     mSsl = nullptr;
 }
 
 SecureSocket::~SecureSocket()
 {
-    SSL_CTX_free(mSslCtx);
 }
 
 Socket* SecureSocket::accept()
@@ -33,7 +123,7 @@ Socket* SecureSocket::accept()
         getHandle(), nullptr, nullptr);
     if (handle != InvalidHandle)
     {
-        socket = new SecureSocket(handle);
+        socket = new SecureSocket(mSslCtx, handle);
     }
 
     mErrorCode = Socket::getLastError();
@@ -44,7 +134,7 @@ Socket* SecureSocket::accept()
 int32_t SecureSocket::send(
     const void* data, uint32_t size, int32_t /* flags */)
 {
-    int32_t result = SSL_write(mSsl, data, size);
+    int result = SSL_write(mSsl, data, size);
 
     mErrorCode = SSL_get_error(mSsl, result);
 
@@ -54,7 +144,7 @@ int32_t SecureSocket::send(
 int32_t SecureSocket::receive(
     void* buff, uint32_t size, int32_t flags)
 {
-    int32_t result;
+    int result;
     
     if (flags & MSG_PEEK)
     {
@@ -95,8 +185,7 @@ void SecureSocket::close()
 
 bool SecureSocket::onAccept()
 {
-    mSslCtx = SSL_CTX_new(SSLv23_server_method());
-    mSsl = SSL_new(mSslCtx);
+    mSsl = SSL_new(mSslCtx->getHandle());
 
     if (SSL_set_fd(mSsl,
         static_cast<int>(getHandle())) != 1)
@@ -104,7 +193,7 @@ bool SecureSocket::onAccept()
         return false;
     }
 
-    int32_t result = SSL_accept(mSsl);
+    int result = SSL_accept(mSsl);
 
     mErrorCode = SSL_get_error(mSsl, result);
 
@@ -118,8 +207,7 @@ bool SecureSocket::onAccept()
 
 bool SecureSocket::onConnect()
 {
-    mSslCtx = SSL_CTX_new(SSLv23_client_method());
-    mSsl = SSL_new(mSslCtx);
+    mSsl = SSL_new(mSslCtx->getHandle());
     
     if (SSL_set_fd(mSsl,
         static_cast<int>(getHandle())) != 1)
@@ -127,7 +215,7 @@ bool SecureSocket::onConnect()
         return false;
     }
     
-    int32_t result = SSL_connect(mSsl);
+    int result = SSL_connect(mSsl);
 
     mErrorCode = SSL_get_error(mSsl, result);
 

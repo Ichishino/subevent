@@ -2,7 +2,6 @@
 #define SUBEVENT_HTTP_CLIENT_INL
 
 #include <cstdio>
-#include <fstream>
 #include <cassert>
 #include <iterator>
 
@@ -14,47 +13,6 @@
 SEV_NS_BEGIN
 
 //----------------------------------------------------------------------------//
-// HttpClient::ChunkedResponse
-//----------------------------------------------------------------------------//
-
-HttpClient::ChunkedResponse::ChunkedResponse()
-{
-    clear();
-}
-
-void HttpClient::ChunkedResponse::clear()
-{
-    mRunning = false;
-    mChunkSize = 0;
-    mReceivedSize = 0;
-}
-
-bool HttpClient::ChunkedResponse::setChunkSize(IStringStream& iss)
-{
-    std::string chunkSizeStr;
-
-    if (!iss.readString(chunkSizeStr, "\r\n"))
-    {
-        return false;
-    }
-
-    iss.seekCur(+2);
-
-    try
-    {
-        mChunkSize = std::stoul(chunkSizeStr, nullptr, 16);
-    }
-    catch (...)
-    {
-        return false;
-    }
-
-    mReceivedSize = 0;
-
-    return true;
-}
-
-//----------------------------------------------------------------------------//
 // HttpClient
 //----------------------------------------------------------------------------//
 
@@ -62,7 +20,6 @@ HttpClient::HttpClient(NetWorker* netWorker)
     : TcpClient(netWorker)
 {
     mRunning = false;
-    mReceivedResponseBodySize = 0;
 }
 
 HttpClient::~HttpClient()
@@ -81,11 +38,11 @@ bool HttpClient::request(
 
     mUrl.clear();
     mResponse.clear();
-    mReceivedResponseBodySize = 0;
-    mChunkedResponse.clear();
+    mContentReceiver.clear();
     mResponseTempBuffer.clear();
     mOption.clear();
     mRedirectHashes.clear();
+    mSslContext.reset();
 
     if (mRequest.getMethod().empty())
     {
@@ -109,6 +66,7 @@ bool HttpClient::request(
     mUrl = std::move(httpUrl);
     mResponseHandler = responseHandler;
     mOption = option;
+    mContentReceiver.setFileName(mOption.outputFileName);
 
     start();
 
@@ -147,6 +105,7 @@ int32_t HttpClient::request(
 
     http->mRequest = req;
     http->mOption = option;
+    http->mContentReceiver.setFileName(option.outputFileName);
     http->mResponseHandler =
         [&, http](const HttpClientPtr&, int32_t errorCode) {
 
@@ -186,12 +145,12 @@ void HttpClient::start()
     {
         // connect
         connect(mUrl.getHost(), mUrl.getPort(),
-            SEV_MFN2(HttpClient::onTcpConnect));
+            SEV_BIND_2(this, HttpClient::onTcpConnect));
 
         setReceiveHandler(
-            SEV_MFN1(HttpClient::onTcpReceive));
+            SEV_BIND_1(this, HttpClient::onTcpReceive));
         setCloseHandler(
-            SEV_MFN1(HttpClient::onTcpClose));
+            SEV_BIND_1(this, HttpClient::onTcpClose));
     }
     else
     {
@@ -207,18 +166,14 @@ bool HttpClient::isResponseCompleted() const
         return false;
     }
 
-    if (mChunkedResponse.isRunning())
+    if (mRequest.getMethod() == HttpMethod::Head)
     {
-        return false;
+        return true;
     }
 
-    if (mReceivedResponseBodySize <
-        mResponse.getHeader().getContentLength())
+    if (!mContentReceiver.isCompleted())
     {
-        if (mRequest.getMethod() != HttpMethod::Head)
-        {
-            return false;
-        }
+        return false;
     }
 
     return true;
@@ -230,7 +185,7 @@ void HttpClient::sendHttpRequest()
     mRequest.setPath(mUrl.composePath());
 
     // Host
-    if (!mRequest.getHeader().isExists(HttpHeaderField::Host))
+    if (!mRequest.getHeader().has(HttpHeaderField::Host))
     {
         mRequest.getHeader().add(
             HttpHeaderField::Host, mUrl.getHost());
@@ -262,110 +217,12 @@ void HttpClient::sendHttpRequest()
     // send
     int32_t result = send(
         std::move(requestData),
-        SEV_MFN2(HttpClient::onTcpSend));
+        SEV_BIND_2(this, HttpClient::onTcpSend));
     if (result < 0)
     {
         // internal error
         onResponse(result);
     }
-}
-
-bool HttpClient::deserializeResponseBody(IBufferStream& ibs)
-{
-    size_t size = ibs.getReadableSize();
-
-    if (mChunkedResponse.isRunning())
-    {
-        size_t chunkSize =
-            mChunkedResponse.getRemaining();
-
-        if (size > chunkSize)
-        {
-            size = chunkSize;
-        }
-
-        mChunkedResponse.received(size);
-    }
-    else
-    {
-        size_t contentLength =
-            mResponse.getHeader().getContentLength();
-
-        if (contentLength != 0)
-        {
-            size_t remaining =
-                contentLength - mReceivedResponseBodySize;
-
-            if (size > remaining)
-            {
-                size = remaining;
-            }
-        }
-
-        mReceivedResponseBodySize += size;
-    }
-
-    if (size == 0)
-    {
-        return true;
-    }
-
-    if (!mOption.outputFileName.empty())
-    {
-        // output to file
-
-        bool result = false;
-
-        std::ofstream ofs(
-            mOption.outputFileName,
-            (std::ios::out | std::ios::app | std::ios::binary));
-
-        if (ofs.is_open())
-        {
-            ofs.write(ibs.getPtr(), size);
-
-            result = !ofs.bad();
-            ofs.close();
-        }
-
-        if (!result)
-        {
-            std::remove(mOption.outputFileName.c_str());
-            onResponse(-8011);
-            return false;
-        }
-        else
-        {
-            ibs.seekCur(static_cast<int32_t>(size));
-        }
-    }
-    else
-    {
-        // output to memory buffer
-
-        try
-        {
-            auto& body = mResponse.getBody();
-
-            size_t index = body.size();
-
-            body.resize(body.size() + size);
-            ibs.readBytes(&body[index], size);
-        }
-        catch (...)
-        {
-            onResponse(-8012);
-            return false;
-        }
-    }
-
-    if (!ibs.isEnd() && mChunkedResponse.isRunning())
-    {
-        // skip CRLF
-        ibs.seekCur(+2);
-    }
-
-    return true;
 }
 
 Socket* HttpClient::createSocket(
@@ -375,7 +232,15 @@ Socket* HttpClient::createSocket(
 
     if (mUrl.getScheme() == "https")
     {
-        socket = new SecureSocket();
+        mSslContext = mOption.sslCtx;
+
+        if (mSslContext == nullptr)
+        {
+            mSslContext =
+                SslContext::newInstance(SSLv23_client_method());
+        }
+
+        socket = new SecureSocket(mSslContext);
     }
     else
     {
@@ -440,9 +305,14 @@ int32_t HttpClient::redirect()
     mRequest.getHeader().remove(HttpHeaderField::Host);
 
     mResponse.clear();
-    mReceivedResponseBodySize = 0;
-    mChunkedResponse.clear();
+    mContentReceiver.clear();
     mResponseTempBuffer.clear();
+
+    if (!mOption.outputFileName.empty())
+    {
+        std::remove(mOption.outputFileName.c_str());
+        mContentReceiver.setFileName(mOption.outputFileName);
+    }
 
     close();
     start();
@@ -481,7 +351,7 @@ void HttpClient::onResponse(int32_t errorCode)
     if (mResponseHandler != nullptr)
     {
         HttpClientPtr self(
-            std::static_pointer_cast<HttpClient>(shared_from_this()));
+            std::dynamic_pointer_cast<HttpClient>(shared_from_this()));
         HttpResponseHandler handler = mResponseHandler;
 
         mNetWorker->postTask([self, handler, errorCode]() {
@@ -515,7 +385,7 @@ void HttpClient::onTcpSend(
 
 void HttpClient::onTcpReceive(const TcpChannelPtr& channel)
 {
-    auto response = channel->receiveAll(10240);
+    auto response = channel->receiveAll();
 
     if (isResponseCompleted() || response.empty())
     {
@@ -550,6 +420,7 @@ void HttpClient::onTcpClose(const TcpChannelPtr& /* channel */)
 
 bool HttpClient::onHttpResponse(IStringStream& iss)
 {
+    // header
     if (mResponse.isEmpty())
     {
         try
@@ -568,50 +439,20 @@ bool HttpClient::onHttpResponse(IStringStream& iss)
             return true;
         }
 
-        std::string transferEncoding =
-            mResponse.getHeader().get(
-                HttpHeaderField::TransferEncoding);
-        if (icompString(transferEncoding, "chunked"))
-        {
-            mChunkedResponse.start();
-        }
+        mContentReceiver.init(mResponse);
     }
 
     // body
-    while (!iss.isEnd())
+    if (!mContentReceiver.onReceive(iss))
     {
-        if (mChunkedResponse.isRunning())
-        {
-            if (mChunkedResponse.getChunkSize() == 0)
-            {
-                if (!mChunkedResponse.setChunkSize(iss))
-                {
-                    onResponse(-8502);
-                    return true;
-                }
-
-                if (mChunkedResponse.getChunkSize() == 0)
-                {
-                    // done!!!
-                    mChunkedResponse.clear();
-                    break;
-                }
-            }
-        }
-        else if (mReceivedResponseBodySize >=
-            mResponse.getHeader().getContentLength())
-        {
-            break;
-        }
-
-        if (!deserializeResponseBody(iss))
-        {
-            return true;
-        }
+        onResponse(-8502);
+        return true;
     }
 
     if (isResponseCompleted())
     {
+        mResponse.setBody(mContentReceiver.getData());
+
         // success
         onResponse(0);
     }

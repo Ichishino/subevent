@@ -52,12 +52,43 @@ TcpChannelWorker::~TcpChannelWorker()
 
 TcpServerWorker::TcpServerWorker(Thread* thread)
     : NetWorker(thread)
-    , mThreadIndex(-1)
+    , mWorkerIndex(-1)
 {
 }
 
 TcpServerWorker::~TcpServerWorker()
 {
+}
+
+bool TcpServerWorker::open(
+    const IpEndPoint& localEndPoint, int32_t listenBacklog)
+{
+    createTcpServer();
+
+    // listen
+    bool result = mTcpServer->open(localEndPoint,
+        [&](const TcpServerPtr&,
+            const TcpChannelPtr& channel) {
+
+        // accept
+
+        TcpChannelWorker* worker = nextWorker();
+
+        if (worker == nullptr)
+        {
+            channel->close();
+            return;
+        }
+
+        if (!mTcpServer->accept(worker, channel))
+        {
+            channel->close();
+            return;
+        }
+
+    }, listenBacklog);
+
+    return result;
 }
 
 void TcpServerWorker::close()
@@ -77,51 +108,51 @@ void TcpServerWorker::setCpuAffinity()
     if (cpuCount > 1)
     {
         uint16_t cpu = 1;
-        for (auto thread : mThreadPool)
+        for (auto worker : mWorkerPool)
         {
             if (cpu >= cpuCount)
             {
                 cpu = 1;
             }
 
-            Processor::bind(thread, cpu);
+            Processor::bind(worker->getThread(), cpu);
             ++cpu;
         }
     }
 }
 
-TcpChannelThread* TcpServerWorker::nextThread()
+TcpChannelWorker* TcpServerWorker::nextWorker()
 {
-    if (mThreadPool.empty())
+    if (mWorkerPool.empty())
     {
         return nullptr;
     }
 
-    int32_t startIndex = mThreadIndex;
+    int32_t startIndex = mWorkerIndex;
 
     // round robin
     for (;;)
     {
-        ++mThreadIndex;
+        ++mWorkerIndex;
 
-        if (mThreadIndex >=
-            static_cast<int32_t>(mThreadPool.size()))
+        if (mWorkerIndex >=
+            static_cast<int32_t>(mWorkerPool.size()))
         {
-            mThreadIndex = 0;
+            mWorkerIndex = 0;
         }
 
-        if (startIndex == mThreadIndex)
+        if (startIndex == mWorkerIndex)
         {
             break;
         }
 
-        auto thread = mThreadPool[mThreadIndex];
+        auto worker = mWorkerPool[mWorkerIndex];
 
-        if (!thread->isChannelFull() &&
-            !thread->isSocketFull())
+        if (!worker->isChannelFull() &&
+            !worker->isSocketFull())
         {
             // found
-            return thread;
+            return worker;
         }
     }
 

@@ -78,16 +78,13 @@ bool TcpServer::open(
     if (socket == nullptr)
     {
         assert(false);
-
         return false;
     }
 
     // bind
     if (!socket->bind(localEndPoint))
     {
-        assert(false);
         delete socket;
-
         return false;
     }
 
@@ -95,7 +92,6 @@ bool TcpServer::open(
     if (!socket->listen(listenBacklog))
     {
         delete mSocket;
-
         return false;
     }
 
@@ -208,7 +204,7 @@ SocketOption& TcpServer::getSocketOption()
 
 TcpChannelPtr TcpServer::createChannel(Socket* socket)
 {
-    return TcpChannelPtr(new TcpChannel(socket));
+    return std::make_shared<TcpChannel>(socket);
 }
 
 void TcpServer::onAccept()
@@ -232,6 +228,7 @@ void TcpServer::onAccept()
 
         if (!socket->onAccept())
         {
+            socket->close();
             delete socket;
             break;
         }
@@ -412,7 +409,16 @@ int32_t TcpChannel::send(
         return -5250;
     }
 
-    mSendHandlers.push_back(sendHandler);
+    if (sendHandler == nullptr)
+    {
+        return mSocket->send(
+            &data[0], static_cast<int32_t>(data.size()),
+            Socket::SendFlags);
+    }
+    else
+    {
+        mSendHandlers.push_back(sendHandler);
+    }
 
     if (!mNetWorker->getSocketController()->
         requestTcpSend(
@@ -655,7 +661,7 @@ void TcpClient::connect(
     }
 
     TcpClientPtr self(
-        std::static_pointer_cast<TcpClient>(shared_from_this()));
+        std::dynamic_pointer_cast<TcpClient>(shared_from_this()));
 
     std::list<IpEndPoint> endPointList;
     endPointList.push_back(peerEndPoint);
@@ -708,7 +714,7 @@ void TcpClient::connect(
     }
 
     TcpClientPtr self(
-        std::static_pointer_cast<TcpClient>(shared_from_this()));
+        std::dynamic_pointer_cast<TcpClient>(shared_from_this()));
 
     mNetWorker->getSocketController()->
         requestTcpConnect(self, endPointList, msecTimeout);
@@ -727,7 +733,7 @@ bool TcpClient::cancelConnect()
     mConnectHandler = nullptr;
 
     TcpClientPtr self(
-        std::static_pointer_cast<TcpClient>(shared_from_this()));
+        std::dynamic_pointer_cast<TcpClient>(shared_from_this()));
 
     return mNetWorker->getSocketController()->
         cancelTcpConnect(self);
@@ -760,7 +766,7 @@ Socket* TcpClient::createSocket(
 void TcpClient::onConnect(Socket* socket, int32_t errorCode)
 {
     TcpClientPtr self(
-        std::static_pointer_cast<TcpClient>(shared_from_this()));
+        std::dynamic_pointer_cast<TcpClient>(shared_from_this()));
 
     if (socket != nullptr)
     {

@@ -40,7 +40,7 @@ int main(int, char**)
 
     // app end timer
     Timer timer;
-    timer.start(10 * 1000, false, [&](Timer*) {
+    timer.start(60 * 1000, false, [&](Timer*) {
         app.stop();
     });
 

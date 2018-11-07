@@ -19,12 +19,12 @@ SEV_NS_BEGIN
 Application* Application::gApp = nullptr;
 #endif
 
-Application::Application(const std::string& name)
-    : Application(0, nullptr, name)
+Application::Application(Thread* /* unused */)
+    : Application("")
 {
 }
 
-Application::Application(int32_t argc, char* argv[], const std::string& name)
+Application::Application(const std::string& name, Thread* /* unused */)
     : Thread(name)
 {
     assert(gApp == nullptr);
@@ -39,8 +39,6 @@ Application::Application(int32_t argc, char* argv[], const std::string& name)
 #else
     mHandle = pthread_self();
 #endif
-
-    setArgs(argc, argv);
 }
 
 Application::~Application()

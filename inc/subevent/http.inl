@@ -1,11 +1,226 @@
 #ifndef SUBEVENT_HTTP_INL
 #define SUBEVENT_HTTP_INL
 
+#include <fstream>
+
 #include <subevent/network.hpp>
 #include <subevent/http.hpp>
 #include <subevent/ssl_socket.hpp>
 
 SEV_NS_BEGIN
+
+//----------------------------------------------------------------------------//
+// HttpParams
+//----------------------------------------------------------------------------//
+
+HttpParams::HttpParams()
+{
+    clear();
+}
+
+HttpParams::HttpParams(const std::string& params)
+{
+    if (!parse(params))
+    {
+        throw std::invalid_argument("HttpParams parse error");
+    }
+}
+
+HttpParams::HttpParams(const HttpParams& other)
+{
+    operator=(other);
+}
+
+HttpParams::HttpParams(HttpParams&& other)
+{
+    operator=(std::move(other));
+}
+
+HttpParams::~HttpParams()
+{
+}
+
+void HttpParams::add(
+    const std::string& name, const std::string& value)
+{
+    if (!value.empty())
+    {
+        mParams.push_back({ name, value });
+    }
+}
+
+void HttpParams::remove(const std::string& name)
+{
+    auto it = std::remove_if(
+        mParams.begin(), mParams.end(),
+        [&](const Param& param) {
+        return icompString(param.name, name);
+    });
+
+    if (it == mParams.end())
+    {
+        return;
+    }
+
+    mParams.erase(it, mParams.end());
+}
+
+void HttpParams::set(
+    const std::string& name, const std::string& value)
+{
+    remove(name);
+    add(name, value);
+}
+
+const std::string& HttpParams::get(
+    const std::string& name) const
+{
+    for (const auto& param : mParams)
+    {
+        if (icompString(param.name, name))
+        {
+            return param.value;
+        }
+    }
+
+    static const std::string emptyString;
+
+    return emptyString;
+}
+
+std::list<std::string> HttpParams::find(
+    const std::string& name) const
+{
+    std::list<std::string> results;
+
+    for (const auto& param : mParams)
+    {
+        if (icompString(param.name, name))
+        {
+            results.push_back(param.name);
+        }
+    }
+
+    return results;
+}
+
+bool HttpParams::has(
+    const std::string& name) const
+{
+    for (const auto& param : mParams)
+    {
+        if (icompString(param.name, name))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool HttpParams::isEmpty() const
+{
+    return mParams.empty();
+}
+
+bool HttpParams::parse(const std::string& params)
+{
+    clear();
+
+    if (params.empty())
+    {
+        return true;
+    }
+
+    size_t head = params.find_first_of('?');
+
+    if (head == std::string::npos)
+    {
+        head = 0;
+    }
+    else
+    {
+        ++head;
+    }
+
+    for (;;)
+    {
+        size_t pos = params.find_first_of('=', head);
+
+        if (pos == std::string::npos)
+        {
+            return false;
+        }
+
+        size_t tail = params.find_first_of('&', head);
+
+        Param param;
+        param.name = params.substr(head, pos - head);
+
+        if (param.name.empty())
+        {
+            return false;
+        }
+
+        ++pos;
+
+        if (tail == std::string::npos)
+        {
+            param.value = params.substr(pos);
+        }
+        else
+        {
+            param.value = params.substr(pos, tail - pos);
+        }
+
+        mParams.push_back(std::move(param));
+
+        if (tail == std::string::npos)
+        {
+            break;
+        }
+
+        head = tail + 1;
+    }
+
+    return true;
+}
+
+std::string HttpParams::compose() const
+{
+    std::string params;
+
+    if (!mParams.empty())
+    {
+        for (const auto& param : mParams)
+        {
+            params += "&" + param.compose();
+        }
+
+        params[0] = '?';
+    }
+
+    return params;
+}
+
+void HttpParams::clear()
+{
+    mParams.clear();
+}
+
+HttpParams& HttpParams::operator=(const HttpParams& other)
+{
+    mParams = other.mParams;
+
+    return *this;
+}
+
+HttpParams& HttpParams::operator=(HttpParams&& other)
+{
+    mParams = std::move(other.mParams);
+
+    return *this;
+}
 
 //----------------------------------------------------------------------------//
 // HttpUrl
@@ -14,6 +229,14 @@ SEV_NS_BEGIN
 HttpUrl::HttpUrl()
 {
     clear();
+}
+
+HttpUrl::HttpUrl(const std::string& url)
+{
+    if (!parse(url))
+    {
+        throw std::invalid_argument("HttpUrl parse error");
+    }
 }
 
 HttpUrl::HttpUrl(const HttpUrl& other)
@@ -136,11 +359,6 @@ bool HttpUrl::parse(const std::string& url)
         {
             mPort = 80;
         }
-    }
-
-    if (src.empty())
-    {
-        return false;
     }
 
     // host
@@ -398,7 +616,7 @@ std::list<std::string> HttpHeader::find(
     return values;
 }
 
-bool HttpHeader::isExists(
+bool HttpHeader::has(
     const std::string& name) const
 {
     for (const auto& field : mFields)
@@ -615,7 +833,7 @@ std::list<std::string> HttpCookie::find(
     return results;
 }
 
-bool HttpCookie::isExists(
+bool HttpCookie::has(
     const std::string& name) const
 {
     for (const auto& attr : mAttributes)
@@ -1203,6 +1421,198 @@ HttpResponse& HttpResponse::operator=(HttpResponse&& other)
     other.clear();
 
     return *this;
+}
+
+//----------------------------------------------------------------------------//
+// HttpContentReceiver::ChunkWork
+//----------------------------------------------------------------------------//
+
+HttpContentReceiver::ChunkWork::ChunkWork()
+{
+    clear();
+}
+
+HttpContentReceiver::ChunkWork::~ChunkWork()
+{
+}
+
+bool HttpContentReceiver::ChunkWork::setChunkSize(IStringStream& iss)
+{
+    std::string chunkSizeStr;
+
+    if (!iss.readString(chunkSizeStr, "\r\n"))
+    {
+        return false;
+    }
+
+    iss.seekCur(+2);
+
+    try
+    {
+        mChunkSize = std::stoul(chunkSizeStr, nullptr, 16);
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    mReceiveSize = 0;
+
+    return true;
+}
+
+//----------------------------------------------------------------------------//
+// HttpContentReceiver
+//----------------------------------------------------------------------------//
+
+HttpContentReceiver::HttpContentReceiver()
+{
+    clear();
+}
+
+HttpContentReceiver::~HttpContentReceiver()
+{
+}
+
+void HttpContentReceiver::init(const HttpMessage& message)
+{
+    std::string transferEncoding =
+        message.getHeader().get(
+            HttpHeaderField::TransferEncoding);
+
+    if (icompString(transferEncoding, "chunked"))
+    {
+        startChunk();
+    }
+    else
+    {
+        setContentLength(
+            message.getHeader().getContentLength());
+    }
+}
+
+bool HttpContentReceiver::onReceive(IStringStream& iss)
+{
+    while (!iss.isEnd())
+    {
+        if (mChunkWork.isRunning())
+        {
+            if (mChunkWork.getChunkSize() == 0)
+            {
+                if (!mChunkWork.setChunkSize(iss))
+                {
+                    return false;
+                }
+
+                if (mChunkWork.getChunkSize() == 0)
+                {
+                    // done!!!
+                    mChunkWork.clear();
+                    break;
+                }
+            }
+        }
+        else if (mReceiveSize >= mSize)
+        {
+            break;
+        }
+
+        if (!deserialize(iss))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool HttpContentReceiver::deserialize(IBufferStream& ibs)
+{
+    size_t size = ibs.getReadableSize();
+
+    if (mChunkWork.isRunning())
+    {
+        size_t chunkSize =
+            mChunkWork.getRemaining();
+
+        if (size > chunkSize)
+        {
+            size = chunkSize;
+        }
+
+        mChunkWork.updateSize(size);
+    }
+    else
+    {
+        if (mSize != 0)
+        {
+            size_t remaining = mSize - mReceiveSize;
+
+            if (size > remaining)
+            {
+                size = remaining;
+            }
+        }
+
+        mReceiveSize += size;
+    }
+
+    if (size == 0)
+    {
+        return true;
+    }
+
+    if (!mFileName.empty())
+    {
+        // output to file
+
+        bool result = false;
+
+        std::ofstream ofs(mFileName,
+            (std::ios::out | std::ios::app | std::ios::binary));
+
+        if (ofs.is_open())
+        {
+            ofs.write(ibs.getPtr(), size);
+
+            result = !ofs.bad();
+            ofs.close();
+        }
+
+        if (!result)
+        {
+            std::remove(mFileName.c_str());
+            return false;
+        }
+        else
+        {
+            ibs.seekCur(static_cast<int32_t>(size));
+        }
+    }
+    else
+    {
+        // output to memory buffer
+
+        try
+        {
+            size_t index = mData.size();
+
+            mData.resize(mData.size() + size);
+            ibs.readBytes(&mData[index], size);
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
+    if (!ibs.isEnd() && mChunkWork.isRunning())
+    {
+        // skip CRLF
+        ibs.seekCur(+2);
+    }
+
+    return true;
 }
 
 SEV_NS_END

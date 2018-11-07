@@ -86,6 +86,65 @@ inline bool icompString(const std::string& left, const std::string& right)
 }
 
 //----------------------------------------------------------------------------//
+// HttpParams
+//----------------------------------------------------------------------------//
+
+class HttpParams
+{
+public:
+    SEV_DECL HttpParams();
+    SEV_DECL HttpParams(const std::string& params);
+    SEV_DECL HttpParams(const HttpParams& other);
+    SEV_DECL HttpParams(HttpParams&& other);
+    SEV_DECL ~HttpParams();
+
+    struct Param
+    {
+        std::string name;
+        std::string value;
+
+        SEV_DECL std::string compose() const
+        {
+            return (name + "=" + value);
+        }
+    };
+
+public:
+    SEV_DECL void set(
+        const std::string& name,
+        const std::string& value);
+    SEV_DECL const std::string& get(
+        const std::string& name) const;
+
+    SEV_DECL const std::list<Param>& getAll() const
+    {
+        return mParams;
+    }
+
+    SEV_DECL void add(
+        const std::string& name, const std::string& value);
+    SEV_DECL void remove(
+        const std::string& name);
+    SEV_DECL std::list<std::string> find(
+        const std::string& name) const;
+
+    SEV_DECL bool has(
+        const std::string& name) const;
+    SEV_DECL bool isEmpty() const;
+    SEV_DECL void clear();
+
+public:
+    SEV_DECL bool parse(const std::string& params);
+    SEV_DECL std::string compose() const;
+
+    SEV_DECL HttpParams& operator=(const HttpParams& other);
+    SEV_DECL HttpParams& operator=(HttpParams&& other);
+
+private:
+    std::list<Param> mParams;
+};
+
+//----------------------------------------------------------------------------//
 // HttpUrl
 //----------------------------------------------------------------------------//
 
@@ -93,6 +152,7 @@ class HttpUrl
 {
 public:
     SEV_DECL HttpUrl();
+    SEV_DECL HttpUrl(const std::string& url);
     SEV_DECL HttpUrl(const HttpUrl& other);
     SEV_DECL HttpUrl(HttpUrl&& other);
     SEV_DECL ~HttpUrl();
@@ -221,7 +281,7 @@ public:
         std::string name;
         std::string value;
 
-        std::string compose() const
+        SEV_DECL std::string compose() const
         {
             return (name + "=" + value);
         }
@@ -246,7 +306,7 @@ public:
     SEV_DECL std::list<std::string> find(
         const std::string& name) const;
 
-    SEV_DECL bool isExists(
+    SEV_DECL bool has(
         const std::string& name) const;
     SEV_DECL bool isEmpty() const;
     SEV_DECL void clear();
@@ -366,7 +426,7 @@ public:
     SEV_DECL std::list<std::string> find(
         const std::string& name) const;
 
-    SEV_DECL bool isExists(
+    SEV_DECL bool has(
         const std::string& name) const;
     SEV_DECL bool isEmpty() const;
     SEV_DECL void clear();
@@ -407,6 +467,11 @@ public:
     }
 
 public:
+    SEV_DECL void setBody(const std::vector<char>& body)
+    {
+        mBody = body;
+    }
+
     SEV_DECL void setBody(std::vector<char>&& body)
     {
         mBody = std::move(body);
@@ -628,6 +693,125 @@ private:
     std::string mProtocol;
     uint16_t mStatusCode;
     std::string mMessage;
+};
+
+//----------------------------------------------------------------------------//
+// HttpContentReceiver
+//----------------------------------------------------------------------------//
+
+class HttpContentReceiver
+{
+public:
+    SEV_DECL HttpContentReceiver();
+    SEV_DECL ~HttpContentReceiver();
+
+private:
+    class ChunkWork
+    {
+    public:
+        SEV_DECL ChunkWork();
+        SEV_DECL ~ChunkWork();
+
+    public:
+        SEV_DECL void start()
+        {
+            mRunning = true;
+        }
+
+        SEV_DECL void clear()
+        {
+            mRunning = false;
+            mChunkSize = 0;
+            mReceiveSize = 0;
+        }
+
+        SEV_DECL bool setChunkSize(IStringStream& iss);
+
+        SEV_DECL size_t getChunkSize() const
+        {
+            return mChunkSize;
+        }
+
+        SEV_DECL bool isRunning() const
+        {
+            return mRunning;
+        }
+
+        SEV_DECL size_t getRemaining() const
+        {
+            return ((mChunkSize <= mReceiveSize) ?
+                0 : (mChunkSize - mReceiveSize));
+        }
+
+        SEV_DECL void updateSize(size_t size)
+        {
+            mReceiveSize += size;
+
+            if (getRemaining() == 0)
+            {
+                mChunkSize = 0;
+                mReceiveSize = 0;
+            }
+        }
+
+    private:
+        bool mRunning;
+        size_t mChunkSize;
+        size_t mReceiveSize;
+    };
+
+public:
+    SEV_DECL void init(const HttpMessage& message);
+
+    SEV_DECL void setFileName(const std::string& fileName)
+    {
+        mFileName = fileName;
+    }
+
+    SEV_DECL bool onReceive(IStringStream& iss);
+
+    SEV_DECL void startChunk()
+    {
+        mChunkWork.start();
+    }
+
+    SEV_DECL void setContentLength(size_t contentLength)
+    {
+        mSize = contentLength;
+    }
+
+    SEV_DECL bool isCompleted() const
+    {
+        if (mChunkWork.isRunning())
+        {
+           return false;
+        }
+
+        return (mSize <= mReceiveSize);
+    }
+
+    SEV_DECL void clear()
+    {
+        mSize = 0;
+        mReceiveSize = 0;
+        mChunkWork.clear();
+        mFileName.clear();
+        mData.clear();
+    }
+
+    SEV_DECL std::vector<char>&& getData()
+    {
+        return std::move(mData);
+    }
+
+private:
+    SEV_DECL bool deserialize(IBufferStream& ibs);
+
+    size_t mSize;
+    size_t mReceiveSize;
+    ChunkWork mChunkWork;
+    std::string mFileName;
+    std::vector<char> mData;
 };
 
 SEV_NS_END

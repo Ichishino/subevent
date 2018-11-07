@@ -37,23 +37,25 @@ public:
 
     struct RequestOption
     {
-        RequestOption()
+        SEV_DECL RequestOption()
         {
             clear();
         }
 
-        void clear()
+        SEV_DECL void clear()
         {
             allowRedirect = true;
             timeout = 60 * 1000;
             outputFileName.clear();
             sockOption.clear();
+            sslCtx.reset();
         }
 
         bool allowRedirect;
         std::string outputFileName;
         uint32_t timeout;
         SocketOption sockOption;
+        SslContextPtr sslCtx;
     };
 
 public:
@@ -89,7 +91,6 @@ private:
 
     SEV_DECL void start();
     SEV_DECL void sendHttpRequest();
-    SEV_DECL bool deserializeResponseBody(IBufferStream& ibs);
     SEV_DECL bool isResponseCompleted() const;
     SEV_DECL bool onHttpResponse(IStringStream& iss);
     SEV_DECL int32_t redirect();
@@ -108,66 +109,17 @@ private:
     HttpClient& operator=(const HttpClient&) = delete;
 
 private:
-
-    class ChunkedResponse
-    {
-    public:
-        SEV_DECL ChunkedResponse();
-
-    public:
-        SEV_DECL void start()
-        {
-            mRunning = true;
-        }
-
-        SEV_DECL void clear();
-
-        SEV_DECL bool setChunkSize(IStringStream& iss);
-
-        SEV_DECL size_t getChunkSize() const
-        {
-            return mChunkSize;
-        }
-
-        SEV_DECL bool isRunning() const
-        {
-            return mRunning;
-        }
-
-        SEV_DECL size_t getRemaining() const
-        {
-            return ((mChunkSize <= mReceivedSize) ?
-                0 : (mChunkSize - mReceivedSize));
-        }
-
-        SEV_DECL void received(size_t size)
-        {
-            mReceivedSize += size;
-
-            if (getRemaining() == 0)
-            {
-                mChunkSize = 0;
-                mReceivedSize = 0;
-            }
-        }
-
-    private:
-        bool mRunning;
-        size_t mChunkSize;
-        size_t mReceivedSize;
-    };
-
     bool mRunning;
 
     HttpUrl mUrl;
     HttpResponseHandler mResponseHandler;
     RequestOption mOption;
+    SslContextPtr mSslContext;
 
     HttpRequest mRequest;
     HttpResponse mResponse;
 
-    size_t mReceivedResponseBodySize;
-    ChunkedResponse mChunkedResponse;
+    HttpContentReceiver mContentReceiver;
     std::vector<char> mResponseTempBuffer;
     std::list<std::string> mRedirectHashes;
 };

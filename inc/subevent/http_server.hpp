@@ -55,6 +55,9 @@ public:
 
     SEV_DECL void clear();
 
+public:
+    SEV_DECL void onRequest(const HttpChannelPtr& httpChannel);
+
 private:
     SEV_DECL bool isDirectory(const std::string& path) const
     {
@@ -103,15 +106,9 @@ public:
         mRequestHandler = requestHandler;
     }
 
-    SEV_DECL void setErrorHandler(
-        const HttpErrorHandler& errorHandler)
-    {
-        mErrorHandler = errorHandler;
-    }
-
-    SEV_DECL void onTcpReceive(std::vector<char>&& message);
-
 protected:
+    SEV_DECL void onTcpReceive(
+        const TcpChannelPtr& channel);
     SEV_DECL void onTcpSend(
         const TcpChannelPtr& channel, int32_t errorCode);
 
@@ -121,7 +118,6 @@ private:
     SEV_DECL bool isRequestCompleted() const;
     SEV_DECL bool onHttpRequest(StringReader& reader);
     SEV_DECL void onRequestCompleted();
-    SEV_DECL void onError(int32_t errorCode);
 
     HttpChannel() = delete;
     HttpChannel(const HttpChannel&) = delete;
@@ -132,7 +128,6 @@ private:
     std::vector<char> mRequestTempBuffer;
 
     HttpRequestHandler mRequestHandler;
-    HttpErrorHandler mErrorHandler;
 
     friend class HttpServer;
 };
@@ -165,25 +160,13 @@ public:
     SEV_DECL void setDefaultRequestHandler(
         const HttpRequestHandler& handler);
 
-    SEV_DECL void setCloseHandler(
-        const TcpCloseHandler& handler);
-
 public:
-
-    // for SSL
-    SEV_DECL void setSslContext(const SslContextPtr& sslCtx)
-    {
-        mSslContext = sslCtx;
-    }
-
     SEV_DECL static void defaultHandler(
         const HttpChannelPtr& httpChannel);
 
 protected:
     SEV_DECL void onRequest(
         const HttpChannelPtr& httpChannel);
-    SEV_DECL void onError(
-        const HttpChannelPtr& httpChannel, int32_t errorCode);
 
 private:
     SEV_DECL HttpServer(NetWorker* netWorker);
@@ -191,14 +174,6 @@ private:
     SEV_DECL virtual Socket* createSocket(
         const IpEndPoint& localEndPoint, int32_t& errorCode) override;
     SEV_DECL TcpChannelPtr createChannel(Socket* socket) override;
-
-    SEV_DECL void onTcpAccept(
-        const TcpServerPtr& server,
-        const TcpChannelPtr& channel);
-    SEV_DECL void onTcpReceive(
-        const TcpChannelPtr& channel);
-    SEV_DECL void onTcpClose(
-        const TcpChannelPtr& channel);
 
     HttpServer() = delete;
     HttpServer(const HttpServer&) = delete;

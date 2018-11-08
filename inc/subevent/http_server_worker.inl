@@ -15,6 +15,29 @@ HttpChannelWorker::HttpChannelWorker(Thread* thread)
 {
     mHandlerMap.setDefaultHandler(
         SEV_BIND_1(this, HttpChannelWorker::onHttpRequest));
+
+    mThread->setEventHandler(
+        TcpEventId::Accept, [&](const Event* event) {
+
+        TcpChannelPtr newChannel = TcpServer::accept(event);
+
+        if (newChannel != nullptr)
+        {
+            newChannel->setCloseHandler(
+                [&](const TcpChannelPtr& channel) {
+
+                onClose(channel);
+            });
+
+            HttpChannelPtr httpChannel =
+                std::dynamic_pointer_cast<HttpChannel>(newChannel);
+
+            httpChannel->setRequestHandler(
+                SEV_BIND_1(this, HttpChannelWorker::onRequest));
+
+            onAccept(newChannel);
+        }
+    });
 }
 
 HttpChannelWorker::~HttpChannelWorker()
@@ -44,63 +67,7 @@ void HttpChannelWorker::onHttpRequest(const HttpChannelPtr& httpChannel)
 
 void HttpChannelWorker::onRequest(const HttpChannelPtr& httpChannel)
 {
-    try
-    {
-        HttpUrl url(httpChannel->getRequest().getPath());
-
-        const HttpRequestHandler& handler =
-            mHandlerMap.getHandler(url.getPath());
-
-        if (handler != nullptr)
-        {
-            handler(httpChannel);
-        }
-        else
-        {
-            httpChannel->close();
-        }
-    }
-    catch (...)
-    {
-        onError(httpChannel, -1);
-    }
-}
-
-void HttpChannelWorker::onError(
-    const HttpChannelPtr& httpChannel, int32_t /* errorCode */)
-{
-    httpChannel->close();
-    onHttpClose(httpChannel);
-}
-
-void HttpChannelWorker::onAccept(const TcpChannelPtr& channel)
-{
-    HttpChannelPtr httpChannel =
-        std::dynamic_pointer_cast<HttpChannel>(channel);
-
-    httpChannel->setRequestHandler(
-        SEV_BIND_1(this, HttpChannelWorker::onRequest));
-    httpChannel->setErrorHandler(
-        SEV_BIND_2(this, HttpChannelWorker::onError));
-
-    onHttpAccept(httpChannel);
-}
-
-void HttpChannelWorker::onReceive(
-    const TcpChannelPtr& channel, std::vector<char>&& message)
-{
-    HttpChannelPtr httpChannel =
-        std::dynamic_pointer_cast<HttpChannel>(channel);
-
-    httpChannel->onTcpReceive(std::move(message));
-}
-
-void HttpChannelWorker::onClose(const TcpChannelPtr& channel)
-{
-    HttpChannelPtr httpChannel =
-        std::dynamic_pointer_cast<HttpChannel>(channel);
-
-    onHttpClose(httpChannel);
+    mHandlerMap.onRequest(httpChannel);
 }
 
 //----------------------------------------------------------------------------//
@@ -123,9 +90,14 @@ bool HttpServerWorker::open(
 {
     HttpServerPtr httpServer =
         std::dynamic_pointer_cast<HttpServer>(getTcpServer());
-    httpServer->setSslContext(sslCtx);
 
-    return TcpServerWorker::open(localEndPoint, listenBacklog);
+    bool result = httpServer->open(
+        localEndPoint,
+        sslCtx,
+        SEV_BIND_2(this, HttpServerWorker::onTcpAccept),
+        listenBacklog);
+
+    return result;
 }
 
 SEV_NS_END

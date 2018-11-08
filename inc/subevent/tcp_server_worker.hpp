@@ -118,6 +118,8 @@ public:
 
 protected:
     SEV_DECL TcpServerWorker(Thread* thread);
+    SEV_DECL void onTcpAccept(
+        const TcpServerPtr& server, const TcpChannelPtr& channel);
 
     TcpServerPtr mTcpServer;
 

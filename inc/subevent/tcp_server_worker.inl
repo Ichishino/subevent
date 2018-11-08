@@ -66,27 +66,10 @@ bool TcpServerWorker::open(
     createTcpServer();
 
     // listen
-    bool result = mTcpServer->open(localEndPoint,
-        [&](const TcpServerPtr&,
-            const TcpChannelPtr& channel) {
-
-        // accept
-
-        TcpChannelWorker* worker = nextWorker();
-
-        if (worker == nullptr)
-        {
-            channel->close();
-            return;
-        }
-
-        if (!mTcpServer->accept(worker, channel))
-        {
-            channel->close();
-            return;
-        }
-
-    }, listenBacklog);
+    bool result = mTcpServer->open(
+        localEndPoint,
+        SEV_BIND_2(this, TcpServerWorker::onTcpAccept),
+        listenBacklog);
 
     return result;
 }
@@ -96,6 +79,24 @@ void TcpServerWorker::close()
     if (mTcpServer != nullptr)
     {
         mTcpServer->close();
+    }
+}
+
+void TcpServerWorker::onTcpAccept(
+    const TcpServerPtr& server, const TcpChannelPtr& channel)
+{
+    TcpChannelWorker* worker = nextWorker();
+
+    if (worker == nullptr)
+    {
+        channel->close();
+        return;
+    }
+
+    if (!server->accept(worker, channel))
+    {
+        channel->close();
+        return;
     }
 }
 

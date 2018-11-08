@@ -29,29 +29,13 @@ protected:
     SEV_DECL virtual void onHttpRequest(
         const HttpChannelPtr& httpChannel);
 
-    SEV_DECL virtual void onHttpAccept(
-        const HttpChannelPtr& /* httpChannel */) {}
-    SEV_DECL virtual void onHttpClose(
-        const HttpChannelPtr& /* httpChannel */) {}
-
 protected:
     SEV_DECL HttpChannelWorker(Thread* thread);
 
     SEV_DECL void onRequest(
         const HttpChannelPtr& httpChannel);
-    SEV_DECL void onError(
-        const HttpChannelPtr& httpChannel,
-        int32_t errorCode);
 
 private:
-    SEV_DECL void onAccept(
-        const TcpChannelPtr& channel) override;
-    SEV_DECL void onReceive(
-        const TcpChannelPtr& channel,
-        std::vector<char>&& message) override;
-    SEV_DECL void onClose(
-        const TcpChannelPtr& channel) override;
-
     HttpChannelWorker() = delete;
 
     HttpHandlerMap mHandlerMap;

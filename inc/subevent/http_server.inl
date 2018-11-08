@@ -106,6 +106,33 @@ const HttpRequestHandler& HttpHandlerMap::findHandler(
     }
 }
 
+void HttpHandlerMap::onRequest(const HttpChannelPtr& httpChannel)
+{
+    try
+    {
+        HttpUrl url(httpChannel->getRequest().getPath());
+
+        const HttpRequestHandler& handler =
+            getHandler(url.getPath());
+
+        if (handler != nullptr)
+        {
+            // call
+            handler(httpChannel);
+
+            httpChannel->getRequest().clear();
+        }
+        else
+        {
+            httpChannel->close();
+        }
+    }
+    catch (...)
+    {
+        httpChannel->close();
+    }
+}
+
 //----------------------------------------------------------------------------//
 // HttpChannel
 //----------------------------------------------------------------------------//
@@ -113,15 +140,16 @@ const HttpRequestHandler& HttpHandlerMap::findHandler(
 HttpChannel::HttpChannel(Socket* socket)
     : TcpChannel(socket)
 {
+    setReceiveHandler(SEV_BIND_1(this, HttpChannel::onTcpReceive));
 }
 
 HttpChannel::~HttpChannel()
 {
 }
 
-void HttpChannel::onTcpReceive(std::vector<char>&& message)
+void HttpChannel::onTcpReceive(const TcpChannelPtr& channel)
 {
-    auto request = std::move(message);
+    auto request = channel->receiveAll();
 
     if (request.empty())
     {
@@ -164,7 +192,7 @@ bool HttpChannel::onHttpRequest(StringReader& reader)
         catch (...)
         {
             // invalid data
-            onError(-9001);
+            close();
             return true;
         }
 
@@ -174,7 +202,7 @@ bool HttpChannel::onHttpRequest(StringReader& reader)
     // body
     if (!mContentReceiver.onReceive(reader))
     {
-        onError(-9002);
+        close();
         return true;
     }
 
@@ -266,17 +294,6 @@ void HttpChannel::onRequestCompleted()
     }
 }
 
-void HttpChannel::onError(int32_t errorCode)
-{
-    if (mErrorHandler != nullptr)
-    {
-        HttpChannelPtr self(
-            std::dynamic_pointer_cast<HttpChannel>(shared_from_this()));
-
-        mErrorHandler(self, errorCode);
-    }
-}
-
 //----------------------------------------------------------------------------//
 // HttpServer
 //----------------------------------------------------------------------------//
@@ -345,101 +362,38 @@ bool HttpServer::open(
     const TcpAcceptHandler& acceptHandler,
     int32_t listenBacklog)
 {
-    if (sslCtx != nullptr)
+    mSslContext = sslCtx;
+
+    TcpAcceptHandler handler = acceptHandler;
+
+    if (handler == nullptr)
     {
-        mSslContext = sslCtx;
+        handler = [this](
+            const TcpServerPtr&,
+            const TcpChannelPtr& channel) {
+
+            if (!accept(mNetWorker, channel))
+            {
+                return;
+            }
+
+            HttpChannelPtr httpChannel =
+                std::dynamic_pointer_cast<HttpChannel>(channel);
+
+            httpChannel->setRequestHandler(
+                SEV_BIND_1(this, HttpServer::onRequest));
+        };
     }
 
-    mAcceptHandler = acceptHandler;
-
     bool result = TcpServer::open(
-        localEndPoint,
-        SEV_BIND_2(this, HttpServer::onTcpAccept),
-        listenBacklog);
+        localEndPoint, handler, listenBacklog);
 
     return result;
 }
 
-void HttpServer::onTcpAccept(
-    const TcpServerPtr& server, const TcpChannelPtr& channel)
-{
-    HttpChannelPtr httpChannel =
-        std::dynamic_pointer_cast<HttpChannel>(channel);
-
-    if (!accept(mNetWorker, channel))
-    {
-        return;
-    }
-
-    channel->setReceiveHandler(
-        SEV_BIND_1(this, HttpServer::onTcpReceive));
-    channel->setCloseHandler(
-        SEV_BIND_1(this, HttpServer::onTcpClose));
-
-    httpChannel->setRequestHandler(
-        SEV_BIND_1(this, HttpServer::onRequest));
-    httpChannel->setErrorHandler(
-        SEV_BIND_2(this, HttpServer::onError));
-
-    if (mAcceptHandler != nullptr)
-    {
-        mAcceptHandler(server, channel);
-    }
-}
-
-void HttpServer::onTcpReceive(const TcpChannelPtr& channel)
-{
-    auto request = channel->receiveAll();
-
-    if (request.empty())
-    {
-        return;
-    }
-
-    HttpChannelPtr httpChannel =
-        std::dynamic_pointer_cast<HttpChannel>(channel);
-
-    httpChannel->onTcpReceive(std::move(request));
-}
-
-void HttpServer::onTcpClose(const TcpChannelPtr& channel)
-{
-    if (mCloseHandler != nullptr)
-    {
-        mCloseHandler(channel);
-    }
-}
-
 void HttpServer::onRequest(const HttpChannelPtr& httpChannel)
 {
-    try
-    {
-        HttpUrl url(httpChannel->getRequest().getPath());
-
-        const HttpRequestHandler& handler =
-            mHandlerMap.getHandler(url.getPath());
-
-        if (handler != nullptr)
-        {
-            handler(httpChannel);
-        }
-        else
-        {
-            httpChannel->close();
-        }
-    }
-    catch (...)
-    {
-        httpChannel->close();
-        onTcpClose(httpChannel);
-    }
-}
-
-void HttpServer::onError(
-    const HttpChannelPtr& httpChannel, int32_t /* errorCode */)
-{
-    httpChannel->close();
-    onTcpClose(httpChannel);
+    mHandlerMap.onRequest(httpChannel);
 }
 
 void HttpServer::setRequestHandler(
@@ -460,12 +414,6 @@ void HttpServer::setDefaultRequestHandler(
     const HttpRequestHandler& handler)
 {
     mHandlerMap.setDefaultHandler(handler);
-}
-
-void HttpServer::setCloseHandler(
-    const TcpCloseHandler& handler)
-{
-    mCloseHandler = handler;
 }
 
 SEV_NS_END

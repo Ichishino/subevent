@@ -16,7 +16,14 @@ SEV_NS_BEGIN
 class StringReader : public ByteReader
 {
 public:
-    using ByteReader::ByteReader;
+    SEV_DECL StringReader(const std::vector<char>& buff)
+        : ByteReader(buff)
+    {
+    }
+
+    SEV_DECL ~StringReader()
+    {
+    }
 
 public:
     SEV_DECL bool readString(
@@ -54,7 +61,14 @@ public:
 class StringWriter : public ByteWriter
 {
 public:
-    using ByteWriter::ByteWriter;
+    SEV_DECL StringWriter(std::vector<char>& buff)
+        : ByteWriter(buff)
+    {
+    }
+
+    SEV_DECL ~StringWriter()
+    {
+    }
 
 public:
     SEV_DECL void writeString(const std::string& str)

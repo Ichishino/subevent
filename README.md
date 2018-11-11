@@ -7,6 +7,7 @@ C++ Event Driven and Network Application Library
 * Event driven App/Thread.
 * Async TCP/UDP client and server.
 * Async HTTP/HTTPS client and server.
+* Async WebSocket client and server.
 * Multiple TCP connections in single thread.
 * Header only.
 * Easy to use.
@@ -171,6 +172,6 @@ $ make
 ```
 
 ### TODO
+* MacOS
 * HTTP/2
-* WebSocket
 * etc

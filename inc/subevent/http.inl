@@ -2,6 +2,7 @@
 #define SUBEVENT_HTTP_INL
 
 #include <fstream>
+#include <algorithm>
 
 #include <subevent/network.hpp>
 #include <subevent/http.hpp>
@@ -54,7 +55,7 @@ void HttpParams::remove(const std::string& name)
     auto it = std::remove_if(
         mParams.begin(), mParams.end(),
         [&](const Param& param) {
-        return icompString(param.name, name);
+        return String::iequals(param.name, name);
     });
 
     if (it == mParams.end())
@@ -77,7 +78,7 @@ const std::string& HttpParams::get(
 {
     for (const auto& param : mParams)
     {
-        if (icompString(param.name, name))
+        if (String::iequals(param.name, name))
         {
             return param.value;
         }
@@ -95,7 +96,7 @@ std::list<std::string> HttpParams::find(
 
     for (const auto& param : mParams)
     {
-        if (icompString(param.name, name))
+        if (String::iequals(param.name, name))
         {
             results.push_back(param.name);
         }
@@ -109,7 +110,7 @@ bool HttpParams::has(
 {
     for (const auto& param : mParams)
     {
-        if (icompString(param.name, name))
+        if (String::iequals(param.name, name))
         {
             return true;
         }
@@ -351,7 +352,7 @@ bool HttpUrl::parse(const std::string& url)
     }
     else
     {
-        if (mScheme == "https")
+        if (isSecureScheme())
         {
             mPort = 443;
         }
@@ -407,6 +408,27 @@ std::string HttpUrl::composePath() const
     }
 
     return path;
+}
+
+std::string HttpUrl::composeOrigin() const
+{
+    std::string origin;
+
+    if (isSecureScheme())
+    {
+        origin = "https://" + mHost;
+    }
+    else
+    {
+        origin = "http://" + mHost;
+    }
+
+    if ((mPort != 80) && (mPort != 443))
+    {
+        origin += ":" + std::to_string(mPort);
+    }
+
+    return origin;
 }
 
 void HttpUrl::clear()
@@ -566,7 +588,7 @@ void HttpHeader::remove(const std::string& name)
     auto it = std::remove_if(
         mFields.begin(), mFields.end(),
         [&](const Field& field) {
-            return icompString(field.name, name);
+            return String::iequals(field.name, name);
         });
 
     if (it == mFields.end())
@@ -589,7 +611,7 @@ const std::string& HttpHeader::get(
 {
     for (const auto& field : mFields)
     {
-        if (icompString(field.name, name))
+        if (String::iequals(field.name, name))
         {
             return field.value;
         }
@@ -607,7 +629,7 @@ std::list<std::string> HttpHeader::find(
 
     for (const auto& field : mFields)
     {
-        if (icompString(field.name, name))
+        if (String::iequals(field.name, name))
         {
             values.push_back(field.value);
         }
@@ -621,7 +643,7 @@ bool HttpHeader::has(
 {
     for (const auto& field : mFields)
     {
-        if (icompString(field.name, name))
+        if (String::iequals(field.name, name))
         {
             return true;
         }
@@ -686,7 +708,7 @@ bool HttpHeader::deserialize(StringReader& reader)
         // name
         std::string name = line.substr(0, pos);
 
-        trimString(name);
+        String::trim(name);
 
         if (name.empty())
         {
@@ -696,7 +718,7 @@ bool HttpHeader::deserialize(StringReader& reader)
         // value
         std::string value = line.substr(pos + 1);
 
-        trimString(value);
+        String::trim(value);
 
         if (value.empty())
         {
@@ -783,7 +805,7 @@ void HttpCookie::remove(const std::string& name)
     auto it = std::remove_if(
         mAttributes.begin(), mAttributes.end(),
         [&](const Attribute& attr) {
-            return icompString(attr.name, name);
+            return String::iequals(attr.name, name);
         });
 
     if (it == mAttributes.end())
@@ -806,7 +828,7 @@ const std::string& HttpCookie::get(
 {
     for (const auto& attr : mAttributes)
     {
-        if (icompString(attr.name, name))
+        if (String::iequals(attr.name, name))
         {
             return attr.value;
         }
@@ -824,7 +846,7 @@ std::list<std::string> HttpCookie::find(
 
     for (const auto& attr : mAttributes)
     {
-        if (icompString(attr.name, name))
+        if (String::iequals(attr.name, name))
         {
             results.push_back(attr.name);
         }
@@ -838,7 +860,7 @@ bool HttpCookie::has(
 {
     for (const auto& attr : mAttributes)
     {
-        if (icompString(attr.name, name))
+        if (String::iequals(attr.name, name))
         {
             return true;
         }
@@ -894,17 +916,17 @@ bool HttpCookie::parse(const std::string& cookie)
         if (pos != std::string::npos)
         {
             name = nameAndValue.substr(0, pos);
-            trimString(name);
+            String::trim(name);
 
             // value
             value = nameAndValue.substr(pos + 1);
-            trimString(value);
+            String::trim(value);
         }
         else
         {
             // name only
             name = nameAndValue;
-            trimString(name);
+            String::trim(name);
         }
 
         if (name.empty())
@@ -912,27 +934,27 @@ bool HttpCookie::parse(const std::string& cookie)
             return false;
         }
 
-        if (icompString(name, HttpCookieAttr::Expires))
+        if (String::iequals(name, HttpCookieAttr::Expires))
         {
             mExpires = value;
         }
-        else if (icompString(name, HttpCookieAttr::MaxAge))
+        else if (String::iequals(name, HttpCookieAttr::MaxAge))
         {
             mMaxAge = value;
         }
-        else if (icompString(name, HttpCookieAttr::Domain))
+        else if (String::iequals(name, HttpCookieAttr::Domain))
         {
             mDomain = value;
         }
-        else if (icompString(name, HttpCookieAttr::Path))
+        else if (String::iequals(name, HttpCookieAttr::Path))
         {
             mPath = value;
         }
-        else if (icompString(name, HttpCookieAttr::Secure))
+        else if (String::iequals(name, HttpCookieAttr::Secure))
         {
             mSecure = true;
         }
-        else if (icompString(name, HttpCookieAttr::HttpOnly))
+        else if (String::iequals(name, HttpCookieAttr::HttpOnly))
         {
             mHttpOnly = true;
         }
@@ -1286,6 +1308,59 @@ HttpRequest& HttpRequest::operator=(HttpRequest&& other)
     return *this;
 }
 
+bool HttpRequest::isWsHandshakeRequest() const
+{
+    // Host
+    const std::string& host =
+        getHeader().get(HttpHeaderField::Host);
+
+    if (host.empty())
+    {
+        return false;
+    }
+
+    // Upgrade
+    const std::string& upgrade =
+        getHeader().get(HttpHeaderField::Upgrade);
+
+    if (upgrade.empty() || !String::iequals(upgrade, "websocket"))
+    {
+        return false;
+    }
+
+    // Connection
+    const std::string& connection =
+        getHeader().get(HttpHeaderField::Connection);
+
+    auto values = String::split(connection, " ,");
+    auto it = std::find_if(
+        values.begin(), values.end(), [](const std::string& s) {
+        return String::iequals(s, "Upgrade");
+    });
+
+    if (it == values.end())
+    {
+        return false;
+    }
+
+    // Sec-WebSocket-Key
+    if (!getHeader().has(HttpHeaderField::SecWebSocketKey))
+    {
+        return false;
+    }
+
+    // Sec-WebSocket-Version
+    const std::string& wsVersion =
+        getHeader().get(HttpHeaderField::SecWebSocketVersion);
+
+    if (wsVersion != "13")
+    {
+        return false;
+    }
+
+    return true;
+}
+
 //----------------------------------------------------------------------------//
 // HttpResponse
 //----------------------------------------------------------------------------//
@@ -1480,7 +1555,7 @@ void HttpContentReceiver::init(const HttpMessage& message)
         message.getHeader().get(
             HttpHeaderField::TransferEncoding);
 
-    if (icompString(transferEncoding, "chunked"))
+    if (String::iequals(transferEncoding, "chunked"))
     {
         startChunk();
     }

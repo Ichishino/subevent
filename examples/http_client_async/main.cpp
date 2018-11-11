@@ -25,7 +25,7 @@ int main(int, char**)
 
         if (errorCode == 0)
         {
-            if (http->getResponse().getStatusCode() == 200)
+            if (http->getResponse().getStatusCode() == HttpStatusCode::Ok)
             {
                 std::string response =
                     http->getResponse().getBodyAsString();

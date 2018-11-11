@@ -9,6 +9,7 @@
 #include <subevent/std.hpp>
 #include <subevent/tcp.hpp>
 #include <subevent/http.hpp>
+#include <subevent/ssl_socket.hpp>
 
 SEV_NS_BEGIN
 
@@ -23,8 +24,6 @@ typedef std::shared_ptr<HttpServer> HttpServerPtr;
 
 typedef std::function<
     void(const HttpChannelPtr&)> HttpRequestHandler;
-typedef std::function<
-    void(const HttpChannelPtr&, int32_t)> HttpErrorHandler;
 
 //----------------------------------------------------------------------------//
 // HttpHandlerMap
@@ -99,6 +98,18 @@ public:
         return mRequest;
     }
 
+    SEV_DECL void close();
+
+public:
+
+    // WebSocket
+
+    SEV_DECL int32_t sendWsHandshakeResponse(
+        const std::string& protocol = "",
+        const TcpSendHandler& handler = nullptr);
+
+    SEV_DECL WsChannelPtr upgradeToWebSocket();
+
 public:
     SEV_DECL void setRequestHandler(
         const HttpRequestHandler& requestHandler)
@@ -126,8 +137,8 @@ private:
     HttpRequest mRequest;
     HttpContentReceiver mContentReceiver;
     std::vector<char> mRequestTempBuffer;
-
     HttpRequestHandler mRequestHandler;
+    WsChannelPtr mWsChannel;
 
     friend class HttpServer;
 };

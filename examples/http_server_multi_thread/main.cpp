@@ -68,7 +68,7 @@ protected:
         std::string body = channel->getRequest().getBodyAsString();
 
         HttpResponse res;
-        res.setStatusCode(200);
+        res.setStatusCode(HttpStatusCode::Ok);
         res.setMessage("OK");
         res.setBody(
             "<html><body>"
@@ -85,7 +85,9 @@ protected:
     void onMyServerStop(const HttpChannelPtr& channel)
     {
         channel->sendHttpResponse(
-            200, "OK", "<html><body>OK</body></html>");
+            HttpStatusCode::Ok, "OK",
+            "<html><body>OK</body></html>");
+        channel->close();
 
         // stop server
         Application::getCurrent()->stop();

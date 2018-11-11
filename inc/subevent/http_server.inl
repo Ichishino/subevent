@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <subevent/http_server.hpp>
+#include <subevent/ws.hpp>
 
 SEV_NS_BEGIN
 
@@ -147,6 +148,17 @@ HttpChannel::~HttpChannel()
 {
 }
 
+void HttpChannel::close()
+{
+    if (mWsChannel != nullptr)
+    {
+        mWsChannel->close();
+        mWsChannel = nullptr;
+    }
+
+    TcpChannel::close();
+}
+
 void HttpChannel::onTcpReceive(const TcpChannelPtr& channel)
 {
     auto request = channel->receiveAll();
@@ -257,9 +269,6 @@ int32_t HttpChannel::sendHttpResponse(
     // send
     int32_t result = send(
         std::move(responseData), sendHandler);
-    if (result < 0)
-    {
-    }
 
     return result;
 }
@@ -294,6 +303,48 @@ void HttpChannel::onRequestCompleted()
     }
 }
 
+int32_t HttpChannel::sendWsHandshakeResponse(
+    const std::string& protocol,
+    const TcpSendHandler& handler)
+{
+    const std::string data =
+        getRequest().getHeader().get(
+            HttpHeaderField::SecWebSocketKey) + SEV_WS_KEY_SUFFIX;
+
+    auto hash = Hash::sha1(data.c_str(), data.length());
+    const std::string b64 = Base64::encode(&hash[0], hash.size());
+
+    HttpResponse httpResponse;
+    httpResponse.setStatusCode(
+        HttpStatusCode::SwitchingProtocols);
+    httpResponse.setMessage("Switching Protocols");
+    httpResponse.getHeader().set(
+        HttpHeaderField::Upgrade, "websocket");
+    httpResponse.getHeader().set(
+        HttpHeaderField::Connection, "Upgrade");
+    httpResponse.getHeader().set(
+        HttpHeaderField::SecWebSocketAccept, b64);
+    httpResponse.getHeader().set(
+        HttpHeaderField::SecWebSocketProtocol, protocol);
+
+    int32_t result =
+        sendHttpResponse(httpResponse, handler);
+
+    return result;
+}
+
+WsChannelPtr HttpChannel::upgradeToWebSocket()
+{
+    if (mWsChannel != nullptr)
+    {
+        return nullptr;
+    }
+
+    mWsChannel = WsChannel::newInstance(shared_from_this(), false);
+
+    return mWsChannel;
+}
+
 //----------------------------------------------------------------------------//
 // HttpServer
 //----------------------------------------------------------------------------//
@@ -310,11 +361,8 @@ HttpServer::~HttpServer()
 
 void HttpServer::defaultHandler(const HttpChannelPtr& httpChannel)
 {
-    HttpResponse res;
-    res.setStatusCode(404);
-    res.setMessage("Not Found");
-
-    httpChannel->sendHttpResponse(res);
+    httpChannel->sendHttpResponse(
+        HttpStatusCode::NotFound, "Not Found");
     httpChannel->close();
 }
 

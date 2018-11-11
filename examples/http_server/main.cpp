@@ -55,7 +55,7 @@ int main(int, char**)
         std::string body = channel->getRequest().getBodyAsString();
 
         HttpResponse res;
-        res.setStatusCode(200);
+        res.setStatusCode(HttpStatusCode::Ok);
         res.setMessage("OK");
         res.setBody(
             "<html><body>"
@@ -73,8 +73,12 @@ int main(int, char**)
     server->setRequestHandler(
         "/stop", [&](const HttpChannelPtr& channel) {
 
+        // http://127.0.0.1:9000/stop
+
         channel->sendHttpResponse(
-            200, "OK", "<html><body>OK</body></html>");
+            HttpStatusCode::Ok, "OK",
+            "<html><body>OK</body></html>");
+        channel->close();
 
         // stop server
         app.stop();

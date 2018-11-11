@@ -230,7 +230,7 @@ Socket* HttpClient::createSocket(
 {
     Socket* socket;
 
-    if (mUrl.getScheme() == "https")
+    if (mUrl.isSecureScheme())
     {
         mSslContext = mOption.sslCtx;
 
@@ -295,7 +295,7 @@ int32_t HttpClient::redirect()
 
     uint16_t statusCode = mResponse.getStatusCode();
 
-    if (statusCode == 303)
+    if (statusCode == HttpStatusCode::SeeOther)
     {
         mRequest.setMethod(HttpMethod::Get);
         mRequest.getBody().clear();
@@ -330,11 +330,11 @@ void HttpClient::onResponse(int32_t errorCode)
     {
         uint16_t statusCode = mResponse.getStatusCode();
 
-        if ((statusCode == 301) ||
-            (statusCode == 302) ||
-            (statusCode == 303) ||
-            (statusCode == 307) ||
-            (statusCode == 308))
+        if ((statusCode == HttpStatusCode::MovedPermanently) ||
+            (statusCode == HttpStatusCode::Found) ||
+            (statusCode == HttpStatusCode::SeeOther) ||
+            (statusCode == HttpStatusCode::TemporaryRedirect) ||
+            (statusCode == HttpStatusCode::PermanentRedirect))
         {
             // redirect
             errorCode = redirect();
@@ -458,6 +458,80 @@ bool HttpClient::onHttpResponse(StringReader& reader)
     }
 
     return true;
+}
+
+bool HttpClient::requestWsHandshake(
+    const std::string& url,
+    const std::string& protocols,
+    const HttpResponseHandler& responseHandler,
+    const RequestOption& option)
+{
+    HttpRequest& httpRequest = getRequest();
+
+    httpRequest.setMethod(HttpMethod::Get);
+    httpRequest.getHeader().set(
+        HttpHeaderField::Upgrade, "websocket");
+    httpRequest.getHeader().set(
+        HttpHeaderField::Connection, "Upgrade");
+    httpRequest.getHeader().set(
+        HttpHeaderField::SecWebSocketVersion, "13");
+    httpRequest.getHeader().set(
+        HttpHeaderField::SecWebSocketProtocol, protocols);
+
+    HttpUrl httpUrl;
+
+    if (!httpUrl.parse(url))
+    {
+        return false;
+    }
+
+    httpRequest.getHeader().set(
+        HttpHeaderField::Origin, httpUrl.composeOrigin());
+
+    auto bytes = Random::generateBytes(16);
+    const std::string b64 = Base64::encode(&bytes[0], bytes.size());
+
+    httpRequest.getHeader().set(
+        HttpHeaderField::SecWebSocketKey, b64);
+
+    return request(url, responseHandler, option);
+}
+
+bool HttpClient::verifyWsHandshakeResponse() const
+{
+    std::string res = getResponse().getHeader().get(
+        HttpHeaderField::SecWebSocketAccept);
+
+    if (res.empty())
+    {
+        // invalid response
+        return false;
+    }
+
+    std::string data = getRequest().getHeader().get(
+        HttpHeaderField::SecWebSocketKey) + SEV_WS_KEY_SUFFIX;
+    auto hash = Hash::sha1(data.c_str(), data.length());
+    std::string req = Base64::encode(&hash[0], hash.size());
+
+    if (req != res)
+    {
+        // not match
+        return false;
+    }
+
+    return true;
+}
+
+WsChannelPtr HttpClient::upgradeToWebSocket()
+{
+    if (mWsChannel != nullptr)
+    {
+        return nullptr;
+    }
+
+    mWsChannel = WsChannel::newInstance(shared_from_this(), true);
+
+    return mWsChannel;
 }
 
 SEV_NS_END

@@ -1,6 +1,8 @@
 #ifndef SUBEVENT_UTILITY_INL
 #define SUBEVENT_UTILITY_INL
 
+#include <random>
+
 #include <subevent/utility.hpp>
 #include <subevent/thread.hpp>
 
@@ -44,6 +46,33 @@ namespace Processor
         return (pthread_setaffinity_np(
             thread->getHandle(), sizeof(cpu_set_t), &cpuset) == 0);
 #endif
+    }
+}
+
+//----------------------------------------------------------------------------//
+// Random
+//----------------------------------------------------------------------------//
+
+namespace Random
+{
+    uint32_t generate32()
+    {
+        std::random_device seed;
+        std::mt19937 mt(seed());
+
+        return mt();
+    }
+
+    std::vector<unsigned char> generateBytes(size_t length)
+    {
+        std::vector<unsigned char> result(length);
+
+        for (size_t index = 0; index < length; ++index)
+        {
+            result[index] = (unsigned char)(generate32() % 256);
+        }
+
+        return result;
     }
 }
 

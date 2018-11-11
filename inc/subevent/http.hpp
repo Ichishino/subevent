@@ -8,6 +8,7 @@
 #include <string>
 #include <iterator>
 #include <algorithm>
+#include <memory>
 
 #include <subevent/std.hpp>
 #include <subevent/byte_io.hpp>
@@ -17,6 +18,15 @@ SEV_NS_BEGIN
 
 class NetWorker;
 class HttpClient;
+
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+class WsFrame;
+class WsChannel;
+
+typedef std::shared_ptr<WsFrame> WsFramePtr;
+typedef std::shared_ptr<WsChannel> WsChannelPtr;
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
@@ -51,6 +61,7 @@ namespace HttpHeaderField
     static const std::string Location = "Location";
     static const std::string UserAgent = "User-Agent";
     static const std::string Upgrade = "Upgrade";
+    static const std::string Origin = "Origin";
 
     static const std::string SecWebSocketKey = "Sec-Websocket-Key";
     static const std::string SecWebSocketAccept = "Sec-WebSocket-Accept";
@@ -68,22 +79,20 @@ namespace HttpCookieAttr
     static const std::string HttpOnly = "HttpOnly";
 }
 
-//----------------------------------------------------------------------------//
-//----------------------------------------------------------------------------//
-
-inline void trimString(std::string& str)
+namespace HttpStatusCode
 {
-    str.erase(0, str.find_first_not_of(" "));
-    str.erase(str.find_last_not_of(" ") + 1);
-}
+    static const uint16_t SwitchingProtocols = 101;
 
-inline bool icompString(const std::string& left, const std::string& right)
-{
-    return ((left.size() == right.size()) &&
-        std::equal(left.begin(), left.end(), right.begin(),
-            [](char l, char r) ->bool {
-        return (std::tolower(l) == std::tolower(r));
-    }));
+    static const uint16_t Ok = 200;
+
+    static const uint16_t MovedPermanently = 301;
+    static const uint16_t Found = 302;
+    static const uint16_t SeeOther = 303;
+    static const uint16_t TemporaryRedirect = 307;
+    static const uint16_t PermanentRedirect = 308;
+
+    static const uint16_t BadRequest = 400;
+    static const uint16_t NotFound = 404;
 }
 
 //----------------------------------------------------------------------------//
@@ -243,10 +252,16 @@ public:
     SEV_DECL bool parse(const std::string& url);
     SEV_DECL std::string compose() const;
     SEV_DECL std::string composePath() const;
+    SEV_DECL std::string composeOrigin() const;
     SEV_DECL void clear();
 
     SEV_DECL HttpUrl& operator=(const HttpUrl& other);
     SEV_DECL HttpUrl& operator=(HttpUrl&& other);
+
+    SEV_DECL bool isSecureScheme() const
+    {
+        return (getScheme() == "https") || (getScheme() == "wss");
+    }
 
 public:
     SEV_DECL static std::string encode(
@@ -604,6 +619,9 @@ public:
         return HttpMessage::removeCookies(
             HttpHeaderField::Cookie);
     }
+
+public:
+    bool isWsHandshakeRequest() const;
 
 public:
     SEV_DECL void serializeMessage(StringWriter& writer) const override;

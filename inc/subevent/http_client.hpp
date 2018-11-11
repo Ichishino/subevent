@@ -72,6 +72,20 @@ public:
         const RequestOption& option = RequestOption());
 
 public:
+
+    // WebSocket
+
+    SEV_DECL bool requestWsHandshake(
+        const std::string& url,
+        const std::string& protocols,
+        const HttpResponseHandler& responseHandler,
+        const RequestOption& option = RequestOption());
+
+    SEV_DECL bool verifyWsHandshakeResponse() const;
+
+    SEV_DECL WsChannelPtr upgradeToWebSocket();
+
+public:
     SEV_DECL const HttpUrl& getUrl() const
     {
         return mUrl;
@@ -82,7 +96,17 @@ public:
         return mRequest;
     }
 
+    SEV_DECL const HttpRequest& getRequest() const
+    {
+        return mRequest;
+    }
+
     SEV_DECL HttpResponse& getResponse()
+    {
+        return mResponse;
+    }
+
+    SEV_DECL const HttpResponse& getResponse() const
     {
         return mResponse;
     }
@@ -123,6 +147,8 @@ private:
     HttpContentReceiver mContentReceiver;
     std::vector<char> mResponseTempBuffer;
     std::list<std::string> mRedirectHashes;
+
+    WsChannelPtr mWsChannel;
 };
 
 SEV_NS_END

@@ -152,6 +152,7 @@
     <ClInclude Include="..\..\inc\subevent\application.hpp" />
     <ClInclude Include="..\..\inc\subevent\byte_io.hpp" />
     <ClInclude Include="..\..\inc\subevent\common.hpp" />
+    <ClInclude Include="..\..\inc\subevent\crypto.hpp" />
     <ClInclude Include="..\..\inc\subevent\event.hpp" />
     <ClInclude Include="..\..\inc\subevent\event_controller.hpp" />
     <ClInclude Include="..\..\inc\subevent\event_loop.hpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="..\..\inc\subevent\http_server.hpp" />
     <ClInclude Include="..\..\inc\subevent\http_server_worker.hpp" />
     <ClInclude Include="..\..\inc\subevent\network.hpp" />
+    <ClInclude Include="..\..\inc\subevent\net_byte_io.hpp" />
     <ClInclude Include="..\..\inc\subevent\semaphore.hpp" />
     <ClInclude Include="..\..\inc\subevent\socket.hpp" />
     <ClInclude Include="..\..\inc\subevent\socket_controller.hpp" />
@@ -179,9 +181,11 @@
     <ClInclude Include="..\..\inc\subevent\udp.hpp" />
     <ClInclude Include="..\..\inc\subevent\utility.hpp" />
     <ClInclude Include="..\..\inc\subevent\variadic.hpp" />
+    <ClInclude Include="..\..\inc\subevent\ws.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\inc\subevent\application.inl" />
+    <None Include="..\..\inc\subevent\crypto.inl" />
     <None Include="..\..\inc\subevent\event.inl" />
     <None Include="..\..\inc\subevent\event_controller.inl" />
     <None Include="..\..\inc\subevent\event_loop.inl" />
@@ -203,6 +207,7 @@
     <None Include="..\..\inc\subevent\timer_manager.inl" />
     <None Include="..\..\inc\subevent\udp.inl" />
     <None Include="..\..\inc\subevent\utility.inl" />
+    <None Include="..\..\inc\subevent\ws.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

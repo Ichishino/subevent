@@ -124,7 +124,7 @@ public:
         const TcpSendHandler& sendHandler = nullptr);
 
     SEV_DECL int32_t receive(void* buff, size_t size);
-    SEV_DECL std::vector<char> receiveAll(size_t reserveSize = 256);
+    SEV_DECL std::vector<char> receiveAll(size_t reserveSize = 8192);
 
     SEV_DECL void close();
 
@@ -154,6 +154,16 @@ public:
 
 public:
     SEV_DECL TcpChannel(Socket* socket);
+
+    SEV_DECL const TcpReceiveHandler& getReceiveHandler() const
+    {
+        return mReceiveHandler;
+    }
+
+    SEV_DECL const TcpCloseHandler& getCloseHandler() const
+    {
+        return mCloseHandler;
+    }
 
 protected:
     SEV_DECL TcpChannel(NetWorker* netWorker);

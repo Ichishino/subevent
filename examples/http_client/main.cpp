@@ -25,7 +25,7 @@ int main(int, char**)
 
     if (result == 0)
     {
-        if (res.getStatusCode() == 200)
+        if (res.getStatusCode() == HttpStatusCode::Ok)
         {
             std::cout << res.getBodyAsString() << std::endl;
         }

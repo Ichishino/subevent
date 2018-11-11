@@ -119,73 +119,73 @@ public:
     }
 
 public:
-    virtual SEV_DECL ByteReader& operator>>(bool& data)
+    SEV_DECL virtual ByteReader& operator>>(bool& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(int8_t& data)
+    SEV_DECL virtual ByteReader& operator>>(int8_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(int16_t& data)
+    SEV_DECL virtual ByteReader& operator>>(int16_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(int32_t& data)
+    SEV_DECL virtual ByteReader& operator>>(int32_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(int64_t& data)
+    SEV_DECL virtual ByteReader& operator>>(int64_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(uint8_t& data)
+    SEV_DECL virtual ByteReader& operator>>(uint8_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(uint16_t& data)
+    SEV_DECL virtual ByteReader& operator>>(uint16_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(uint32_t& data)
+    SEV_DECL virtual ByteReader& operator>>(uint32_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(uint64_t& data)
+    SEV_DECL virtual ByteReader& operator>>(uint64_t& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(double& data)
+    SEV_DECL virtual ByteReader& operator>>(double& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(float& data)
+    SEV_DECL virtual ByteReader& operator>>(float& data)
     {
         readBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteReader& operator>>(std::string& data)
+    SEV_DECL virtual ByteReader& operator>>(std::string& data)
     {
         if (readBytes(data, "\0", 1))
         {
@@ -272,80 +272,80 @@ public:
     }
 
 public:
-    virtual SEV_DECL ByteWriter& operator<<(bool data)
+    SEV_DECL virtual ByteWriter& operator<<(bool data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(int8_t data)
+    SEV_DECL virtual ByteWriter& operator<<(int8_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(int16_t data)
+    SEV_DECL virtual ByteWriter& operator<<(int16_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(int32_t data)
+    SEV_DECL virtual ByteWriter& operator<<(int32_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(int64_t data)
+    SEV_DECL virtual ByteWriter& operator<<(int64_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(uint8_t data)
+    SEV_DECL virtual ByteWriter& operator<<(uint8_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(uint16_t data)
+    SEV_DECL virtual ByteWriter& operator<<(uint16_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(uint32_t data)
+    SEV_DECL virtual ByteWriter& operator<<(uint32_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(uint64_t data)
+    SEV_DECL virtual ByteWriter& operator<<(uint64_t data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(double data)
+    SEV_DECL virtual ByteWriter& operator<<(double data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(float data)
+    SEV_DECL virtual ByteWriter& operator<<(float data)
     {
         writeBytes(&data, sizeof(data));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(const std::string& data)
+    SEV_DECL virtual ByteWriter& operator<<(const std::string& data)
     {
         writeBytes(data.c_str(),
             (data.size() + 1) * sizeof(std::string::value_type));
         return *this;
     }
 
-    virtual SEV_DECL ByteWriter& operator<<(const char* data)
+    SEV_DECL virtual ByteWriter& operator<<(const char* data)
     {
         writeBytes(data, (strlen(data) + 1) * sizeof(char));
         return *this;

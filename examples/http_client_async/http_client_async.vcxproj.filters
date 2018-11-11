@@ -106,6 +106,15 @@
     <ClInclude Include="..\..\inc\subevent\byte_io.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\crypto.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\net_byte_io.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\subevent\ws.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\inc\subevent\application.inl">
@@ -172,6 +181,12 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="..\..\inc\subevent\http_server_worker.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\inc\subevent\crypto.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\inc\subevent\ws.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

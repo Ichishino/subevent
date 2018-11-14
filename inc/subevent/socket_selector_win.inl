@@ -1,7 +1,7 @@
 #ifndef SUBEVENT_SOCKET_SELECTOR_WIN_INL
 #define SUBEVENT_SOCKET_SELECTOR_WIN_INL
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 
 #include <cassert>
 
@@ -170,6 +170,6 @@ void SocketSelector::cancel()
 
 SEV_NS_END
 
-#endif // _WIN32
+#endif // SEV_OS_WIN
 
 #endif // SUBEVENT_SOCKET_SELECTOR_WIN_INL

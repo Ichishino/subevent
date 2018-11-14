@@ -6,7 +6,6 @@
 
 #include <subevent/network.hpp>
 #include <subevent/http.hpp>
-#include <subevent/ssl_socket.hpp>
 
 SEV_NS_BEGIN
 
@@ -497,7 +496,7 @@ std::string HttpUrl::encode(
         }
 
         char encoded[4];
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
         sprintf_s(encoded, "%%%02X", (unsigned char)src[pos]);
 #else
         std::sprintf(encoded, "%%%02X", (unsigned char)src[pos]);
@@ -533,7 +532,7 @@ std::string HttpUrl::decode(const std::string& src)
         }
 
         int ch;
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
         int result = sscanf_s(&src[pos + 1], "%02X", &ch);
 #else
         int result = std::sscanf(&src[pos + 1], "%02X", &ch);

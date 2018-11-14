@@ -85,7 +85,9 @@ HttpServerWorker::~HttpServerWorker()
 
 bool HttpServerWorker::open(
     const IpEndPoint& localEndPoint,
+#ifdef SEV_SUPPORTS_SSL
     const SslContextPtr& sslCtx,
+#endif
     int32_t listenBacklog)
 {
     HttpServerPtr httpServer =
@@ -93,7 +95,9 @@ bool HttpServerWorker::open(
 
     bool result = httpServer->open(
         localEndPoint,
+#ifdef SEV_SUPPORTS_SSL
         sslCtx,
+#endif
         SEV_BIND_2(this, HttpServerWorker::onTcpAccept),
         listenBacklog);
 

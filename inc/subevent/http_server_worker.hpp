@@ -56,10 +56,16 @@ class HttpServerWorker : public TcpServerWorker
 public:
     SEV_DECL virtual ~HttpServerWorker() override;
 
+#ifdef SEV_SUPPORTS_SSL
     SEV_DECL bool open(
         const IpEndPoint& localEndPoint,
         const SslContextPtr& sslCtx = nullptr,
         int32_t listenBacklog = SOMAXCONN);
+#else
+    SEV_DECL bool open(
+        const IpEndPoint& localEndPoint,
+        int32_t listenBacklog = SOMAXCONN);
+#endif
 
 protected:
     SEV_DECL HttpServerWorker(Thread* thread);

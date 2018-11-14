@@ -5,7 +5,7 @@
 
 #include <subevent/network.hpp>
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -19,13 +19,13 @@ SEV_NS_BEGIN
 // Network
 //---------------------------------------------------------------------------//
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #pragma comment(lib, "ws2_32.lib")
 #endif
 
 Network::Network()
 {
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
     WORD sockVer = MAKEWORD(2, 2);
     WSADATA wsaData;
     mErrorCode = WSAStartup(sockVer, &wsaData);
@@ -39,7 +39,7 @@ Network::~Network()
 {
     if (mErrorCode == 0)
     {
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
         WSACleanup();
 #endif
     }

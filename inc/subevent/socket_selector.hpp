@@ -10,7 +10,7 @@
 #include <subevent/socket.hpp>
 #include <subevent/semaphore.hpp>
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #else
 #include <sys/epoll.h>
 #endif
@@ -47,7 +47,7 @@ public:
         std::list<EventItem> close;
     };
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
     static const uint16_t MaxSockets = WSA_MAXIMUM_WAIT_EVENTS - 1;
     static const uint32_t Receive = FD_READ;
     static const uint32_t Send = FD_WRITE;
@@ -66,7 +66,7 @@ public:
     struct RegKey
     {
         Socket::Handle sockHandle;
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
         Win::Handle eventHandle;
 #endif
     };
@@ -91,7 +91,7 @@ public:
 
 private:
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
     std::map<Win::Handle, Socket::Handle> mSockHandleMap;
     Win::Handle mEventHandles[MaxSockets + 1];
     Semaphore mCancelSem;

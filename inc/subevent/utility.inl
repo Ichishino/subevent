@@ -6,7 +6,7 @@
 #include <subevent/utility.hpp>
 #include <subevent/thread.hpp>
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #include <windows.h>
 #else
 #include <unistd.h>
@@ -23,7 +23,7 @@ namespace Processor
 {
     uint16_t getCount()
     {
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
         SYSTEM_INFO si;
         GetSystemInfo(&si);
 
@@ -35,7 +35,7 @@ namespace Processor
 
     bool bind(Thread* thread, uint16_t cpu)
     {
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
         return (SetThreadIdealProcessor(
             thread->getHandle(), cpu) != -1);
 #else

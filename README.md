@@ -15,7 +15,7 @@ C++ Event Driven and Network Application Library
 ### Requirements
 * C++11 or later
 * Linux or Windows
-* OpenSSL (if use HTTP function)
+* OpenSSL (if use secure protocol(https, wss))
 
 ### Compile Options
 * `-std=c++11` (or later option)

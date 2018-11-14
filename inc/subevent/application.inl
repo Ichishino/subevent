@@ -5,7 +5,7 @@
 
 #include <subevent/application.hpp>
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #include <windows.h>
 #endif
 
@@ -34,7 +34,7 @@ Application::Application(const std::string& name, Thread* /* unused */)
     gThread = this;
 
     mId = std::this_thread::get_id();
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
     mHandle = GetCurrentThread();
 #else
     mHandle = pthread_self();

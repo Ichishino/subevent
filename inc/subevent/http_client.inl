@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cassert>
+#include <iostream>
 #include <iterator>
 
 #include <subevent/http_client.hpp>
@@ -42,7 +43,10 @@ bool HttpClient::request(
     mResponseTempBuffer.clear();
     mOption.clear();
     mRedirectHashes.clear();
+
+#ifdef SEV_SUPPORTS_SSL
     mSslContext.reset();
+#endif
 
     if (mRequest.getMethod().empty())
     {
@@ -55,6 +59,15 @@ bool HttpClient::request(
     {
         return false;
     }
+
+#ifndef SEV_SUPPORTS_SSL
+    if (httpUrl.isSecureScheme())
+    {
+        std::cerr <<
+            "[Subevent Error] OpenSSL is not installed." << std::endl;
+        return false;
+    }
+#endif
 
     if ((httpUrl.getScheme() != mUrl.getScheme()) ||
         (httpUrl.getHost() != mUrl.getHost()) ||
@@ -94,9 +107,18 @@ int32_t HttpClient::request(
         return -8602;
     }
 
+#ifndef SEV_SUPPORTS_SSL
+    if (http->mUrl.isSecureScheme())
+    {
+        std::cerr <<
+            "[Suvevent Error] OpenSSL is not installed." << std::endl;
+        return -8603;
+    }
+#endif
+
     if (!thread.start())
     {
-        return -8603;
+        return -8604;
     }
 
     res.clear();
@@ -230,6 +252,7 @@ Socket* HttpClient::createSocket(
 {
     Socket* socket;
 
+#ifdef SEV_SUPPORTS_SSL
     if (mUrl.isSecureScheme())
     {
         mSslContext = mOption.sslCtx;
@@ -246,6 +269,9 @@ Socket* HttpClient::createSocket(
     {
         socket = new Socket();
     }
+#else
+    socket = new Socket();
+#endif
 
     // create
     if (!socket->create(
@@ -292,6 +318,15 @@ int32_t HttpClient::redirect()
     {
         return -8802;
     }
+
+#ifndef SEV_SUPPORTS_SSL
+    if (mUrl.isSecureScheme())
+    {
+        std::cerr <<
+            "[Suvevent Error] OpenSSL is not installed." << std::endl;
+        return -8803;
+    }
+#endif
 
     uint16_t statusCode = mResponse.getStatusCode();
 
@@ -510,7 +545,8 @@ bool HttpClient::verifyWsHandshakeResponse() const
 
     std::string data = getRequest().getHeader().get(
         HttpHeaderField::SecWebSocketKey) + SEV_WS_KEY_SUFFIX;
-    auto hash = Hash::sha1(data.c_str(), data.length());
+    auto hash = Sha1::digest(
+        data.c_str(), static_cast<uint32_t>(data.length()));
     std::string req = Base64::encode(&hash[0], hash.size());
 
     if (req != res)

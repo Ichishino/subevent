@@ -158,11 +158,20 @@ public:
     SEV_DECL ~HttpServer() override;
 
 public:
+
+#ifdef SEV_SUPPORTS_SSL
     SEV_DECL bool open(
         const IpEndPoint& localEndPoint,
         const SslContextPtr& sslCtx = nullptr,
         const TcpAcceptHandler& acceptHandler = nullptr,
         int32_t listenBacklog = SOMAXCONN);
+#else
+    SEV_DECL bool open(
+        const IpEndPoint& localEndPoint,
+        const TcpAcceptHandler& acceptHandler = nullptr,
+        int32_t listenBacklog = SOMAXCONN);
+
+#endif
 
     SEV_DECL void setRequestHandler(
         const std::string& path,
@@ -190,11 +199,13 @@ private:
     HttpServer(const HttpServer&) = delete;
     HttpServer& operator=(const HttpServer&) = delete;
 
-    SslContextPtr mSslContext;
-
     TcpAcceptHandler mAcceptHandler;
     TcpCloseHandler mCloseHandler;
     HttpHandlerMap mHandlerMap;
+
+#ifdef SEV_SUPPORTS_SSL
+    SslContextPtr mSslContext;
+#endif
 };
 
 SEV_NS_END

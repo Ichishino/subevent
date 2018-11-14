@@ -9,7 +9,7 @@
 
 #include <subevent/std.hpp>
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -98,7 +98,7 @@ class Socket
 {
 public:
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
     typedef SOCKET Handle;
     static const Handle InvalidHandle = INVALID_SOCKET;
     static const int32_t ShutdownSend = SD_SEND;

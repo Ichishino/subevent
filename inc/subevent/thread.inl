@@ -10,7 +10,7 @@
 #include <subevent/event_controller.hpp>
 #include <subevent/semaphore.hpp>
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #include <windows.h>
 #endif
 
@@ -122,7 +122,7 @@ int32_t SEV_THREAD Thread::main(void* param)
 
     gThread = threadParam->thread;
     gThread->mId = std::this_thread::get_id();
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
     gThread->mHandle = GetCurrentThread();
 #else
     gThread->mHandle = pthread_self();

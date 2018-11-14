@@ -1,6 +1,8 @@
 #ifndef SUBEVENT_SSL_SOCKET_INL
 #define SUBEVENT_SSL_SOCKET_INL
 
+#ifdef SEV_SUPPORTS_SSL
+
 #include <openssl/err.h>
 
 #include <subevent/ssl_socket.hpp>
@@ -231,7 +233,7 @@ bool SecureSocket::onConnect()
 // OpenSsl
 //---------------------------------------------------------------------------//
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #pragma comment(lib, "libssl.lib")
 #endif
 
@@ -252,5 +254,7 @@ void OpenSsl::init()
 }
 
 SEV_NS_END
+
+#endif // SEV_SUPPORTS_SSL
 
 #endif // SUBEVENT_SSL_SOCKET_INL

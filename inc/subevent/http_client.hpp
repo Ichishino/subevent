@@ -49,14 +49,18 @@ public:
             timeout = 60 * 1000;
             outputFileName.clear();
             sockOption.clear();
+#ifdef SEV_SUPPORTS_SSL
             sslCtx.reset();
+#endif
         }
 
         bool allowRedirect;
         std::string outputFileName;
         uint32_t timeout;
         SocketOption sockOption;
+#ifdef SEV_SUPPORTS_SSL
         SslContextPtr sslCtx;
+#endif
     };
 
 public:
@@ -139,7 +143,6 @@ private:
     HttpUrl mUrl;
     HttpResponseHandler mResponseHandler;
     RequestOption mOption;
-    SslContextPtr mSslContext;
 
     HttpRequest mRequest;
     HttpResponse mResponse;
@@ -149,6 +152,10 @@ private:
     std::list<std::string> mRedirectHashes;
 
     WsChannelPtr mWsChannel;
+
+#ifdef SEV_SUPPORTS_SSL
+    SslContextPtr mSslContext;
+#endif
 };
 
 SEV_NS_END

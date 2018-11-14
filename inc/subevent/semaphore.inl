@@ -3,7 +3,7 @@
 
 #include <subevent/semaphore.hpp>
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #include <windows.h>
 #else
 #include <errno.h>
@@ -18,9 +18,9 @@ SEV_NS_BEGIN
 
 Semaphore::Semaphore(uint32_t count)
 {
-#if defined __APPLE__
+#ifdef SEV_OS_MAC
     mSem = dispatch_semaphore_create(count);
-#elif defined _WIN32
+#elif defined(SEV_OS_WIN)
     mSem = CreateSemaphore(NULL, count, LONG_MAX, NULL);
 #else
     sem_init(&mSem, 0, count);
@@ -29,9 +29,9 @@ Semaphore::Semaphore(uint32_t count)
 
 Semaphore::~Semaphore()
 {
-#if defined __APPLE__
+#ifdef SEV_OS_MAC
     dispatch_release(mSem);
-#elif defined _WIN32
+#elif defined(SEV_OS_WIN)
     CloseHandle(mSem);
 #else
     sem_destroy(&mSem);
@@ -40,7 +40,7 @@ Semaphore::~Semaphore()
 
 WaitResult Semaphore::wait(uint32_t msec)
 {
-#if defined __APPLE__
+#ifdef SEV_OS_MAC
 
     dispatch_time_t timeout =
         dispatch_time(DISPATCH_TIME_NOW, msec * NSEC_PER_MSEC);
@@ -48,7 +48,7 @@ WaitResult Semaphore::wait(uint32_t msec)
     return (dispatch_semaphore_wait(mSem, timeout) == 0) ?
         WaitResult::Success : WaitResult::Timeout;
 
-#elif defined _WIN32
+#elif defined(SEV_OS_WIN)
 
     DWORD result = WaitForSingleObject(mSem, msec);
 
@@ -97,9 +97,9 @@ WaitResult Semaphore::wait(uint32_t msec)
 
 void Semaphore::post()
 {
-#if defined __APPLE__
+#ifdef SEV_OS_MAC
     dispatch_semaphore_signal(mSem);
-#elif defined _WIN32
+#elif defined(SEV_OS_WIN)
     ReleaseSemaphore(mSem, 1, NULL);
 #else
     sem_post(&mSem);

@@ -14,6 +14,7 @@
 #include <subevent/string_io.hpp>
 #include <subevent/utility.hpp>
 #include <subevent/variadic.hpp>
+#include <subevent/crypto.hpp>
 
 #ifdef SEV_HEADER_ONLY
 #include <subevent/application.inl>
@@ -25,6 +26,7 @@
 #include <subevent/event_loop.inl>
 #include <subevent/timer_manager.inl>
 #include <subevent/utility.inl>
+#include <subevent/crypto.inl>
 #endif
 
 #endif // SUBEVENT_CORE_HEADERS_HPP

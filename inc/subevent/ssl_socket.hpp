@@ -1,6 +1,8 @@
 #ifndef SUBEVENT_SSL_SOCKET_HPP
 #define SUBEVENT_SSL_SOCKET_HPP
 
+#ifdef SEV_SUPPORTS_SSL
+
 #include <memory>
 
 #include <openssl/ssl.h>
@@ -110,5 +112,7 @@ private:
 };
 
 SEV_NS_END
+
+#endif // SEV_SUPPORTS_SSL
 
 #endif // SUBEVENT_SSL_SOCKET_HPP

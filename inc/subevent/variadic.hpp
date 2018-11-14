@@ -35,7 +35,7 @@ public:
         std::get<index>(mParams) = param;
     }
 
-#if (__cplusplus >= 201402L) || (defined(_MSC_VER) && _MSC_VER >= 1900)
+#if (SEV_CPP_VER >= 14)
     template<size_t index>
     SEV_DECL auto& getParam() const
     {

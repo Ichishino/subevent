@@ -311,7 +311,8 @@ int32_t HttpChannel::sendWsHandshakeResponse(
         getRequest().getHeader().get(
             HttpHeaderField::SecWebSocketKey) + SEV_WS_KEY_SUFFIX;
 
-    auto hash = Hash::sha1(data.c_str(), data.length());
+    auto hash = Sha1::digest(
+        data.c_str(), static_cast<uint32_t>(data.length()));
     const std::string b64 = Base64::encode(&hash[0], hash.size());
 
     HttpResponse httpResponse;
@@ -371,6 +372,7 @@ Socket* HttpServer::createSocket(
 {
     Socket* socket;
 
+#ifdef SEV_SUPPORTS_SSL
     if (mSslContext == nullptr)
     {
         socket = new Socket();
@@ -379,6 +381,9 @@ Socket* HttpServer::createSocket(
     {
         socket = new SecureSocket(mSslContext);
     }
+#else
+    socket = new Socket();
+#endif
 
     // create
     if (!socket->create(
@@ -406,11 +411,15 @@ TcpChannelPtr HttpServer::createChannel(Socket* socket)
 
 bool HttpServer::open(
     const IpEndPoint& localEndPoint,
+#ifdef SEV_SUPPORTS_SSL
     const SslContextPtr& sslCtx,
+#endif
     const TcpAcceptHandler& acceptHandler,
     int32_t listenBacklog)
 {
+#ifdef SEV_SUPPORTS_SSL
     mSslContext = sslCtx;
+#endif
 
     TcpAcceptHandler handler = acceptHandler;
 

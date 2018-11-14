@@ -5,7 +5,7 @@
 
 #include <subevent/socket.hpp>
 
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
 #else
 #include <unistd.h>
 #include <netdb.h>
@@ -577,7 +577,7 @@ void Socket::close()
 {
     if (mHandle != InvalidHandle)
     {
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
         ::closesocket(mHandle);
 #else
         ::close(mHandle);
@@ -741,7 +741,7 @@ bool Socket::getOption(int32_t level, int32_t name,
 
 bool Socket::isBlockingError() const
 {
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
     return (getErrorCode() == WSAEWOULDBLOCK);
 #else
     return ((getErrorCode() == EAGAIN) ||
@@ -762,7 +762,7 @@ bool Socket::onConnect()
 
 int Socket::getLastError()
 {
-#ifdef _WIN32
+#ifdef SEV_OS_WIN
     return WSAGetLastError();
 #else
     return errno;

@@ -29,11 +29,6 @@ namespace Processor
 // Endian
 //---------------------------------------------------------------------------//
 
-// TODO
-#ifdef _WIN32
-#define SEV_LITTLE_ENDIAN
-#endif
-
 namespace Endian
 {
     template <typename ValueType>

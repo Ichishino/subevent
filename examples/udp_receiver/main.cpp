@@ -20,21 +20,24 @@ int main(int, char**)
     IpEndPoint local(9001);
 
     // open
-    receiver->open(local, [&](const UdpReceiverPtr&) {
+    receiver->open(local,
+        [](const UdpReceiverPtr& receiver) {
 
         for (;;)
         {
-            char message[256];
+            char message[8192];
             IpEndPoint sender;
 
             // receive
-            int32_t res = receiver->receive(message, sizeof(message), sender);
+            int32_t res = receiver->receive(
+                message, sizeof(message), sender);
             if (res <= 0)
             {
                 break;
             }
 
-            std::cout << message << std::endl;
+            std::cout << sender.toString()
+                << " receive " << res << "bytes" << std::endl;
         }
     });
 

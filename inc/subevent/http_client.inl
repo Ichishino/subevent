@@ -111,7 +111,7 @@ int32_t HttpClient::request(
     if (http->mUrl.isSecureScheme())
     {
         std::cerr <<
-            "[Suvevent Error] OpenSSL is not installed." << std::endl;
+            "[Subevent Error] OpenSSL is not installed." << std::endl;
         return -8603;
     }
 #endif

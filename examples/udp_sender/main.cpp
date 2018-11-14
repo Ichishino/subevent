@@ -19,12 +19,28 @@ int main(int, char**)
 
     sender->create(receiver);
 
-    std::string message = "hello";
+    // test send timer
+    int count = 10;
+    Timer timer;
+    timer.start(1000, true,
+        [&app, &sender, &count](const Timer*) {
 
-    // send
-    sender->send(message.c_str(), message.size() + 1);
+        if (count == 0)
+        {
+            // stop app
+            app.stop();
+            return;
+        }
 
-    app.stop();
+        std::string message = "hello";
+
+        std::cout << "send " << message.size() + 1
+            << "bytes" << std::endl;
+
+        sender->send(message.c_str(), message.size() + 1);
+
+        --count;
+    });
 
     return app.run();
 }

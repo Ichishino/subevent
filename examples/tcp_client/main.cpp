@@ -19,7 +19,7 @@ int main(int, char**)
 
     // connect
     client->connect(server,
-        [&](const TcpClientPtr&, int errorCode) {
+        [&app](const TcpClientPtr& channel, int errorCode) {
 
         if (errorCode != 0)
         {
@@ -27,20 +27,25 @@ int main(int, char**)
             return;
         }
 
-        client->sendString("hello");
+        channel->sendString("hello");
     });
 
     // receive handler
     client->setReceiveHandler(
-        [&](const TcpChannelPtr&) {
+        [](const TcpChannelPtr& channel) {
 
-        auto message = client->receiveAll();
-        std::cout << &message[0] << std::endl;
+        auto message = channel->receiveAll();
+
+        std::cout << channel->getPeerEndPoint().toString()
+            << " receive " << message.size() << "bytes" << std::endl;
     });
 
     // close handler
     client->setCloseHandler(
-        [&](const TcpChannelPtr&) {
+        [&app](const TcpChannelPtr& channel) {
+
+        std::cout << channel->getPeerEndPoint().toString()
+            << " server close" << std::endl;
 
         app.stop();
     });

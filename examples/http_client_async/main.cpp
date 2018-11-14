@@ -21,7 +21,8 @@ int main(int, char**)
     http->getRequest().setMethod("GET");
 
     // GET request
-    http->request(url, [&](const HttpClientPtr&, int errorCode) {
+    bool result = http->request(
+        url, [&](const HttpClientPtr&, int errorCode) {
 
         if (errorCode == 0)
         {
@@ -36,6 +37,12 @@ int main(int, char**)
 
         app.stop();
     });
+
+    if (!result)
+    {
+        // internal error
+        app.stop();
+    }
 
     return app.run();
 }

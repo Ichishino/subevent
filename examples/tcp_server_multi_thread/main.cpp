@@ -1,3 +1,4 @@
+#include <iostream>
 #include <subevent/subevent.hpp>
 
 SEV_USING_NS
@@ -23,21 +24,50 @@ protected:
     }
 
     void onAccept(
-        const TcpChannelPtr& /* channel */) override
+        const TcpChannelPtr& channel) override
     {
+        std::cout << channel->getPeerEndPoint().toString()
+            << " accept" << std::endl;
+
+        mChannelList.push_back(channel);
     }
 
     void onReceive(
         const TcpChannelPtr& channel,
         std::vector<char>&& message) override
     {
-        channel->send(&message[0], message.size());
+        std::cout << channel->getPeerEndPoint().toString()
+            << " receive " << message.size() << "bytes" << std::endl;
+
+        // echo
+        channel->send(std::move(message));
     }
 
     void onClose(
-        const TcpChannelPtr& /* channel */) override
+        const TcpChannelPtr& channel) override
     {
+        std::cout << channel->getPeerEndPoint().toString()
+            << " close" << std::endl;
+
+        mChannelList.remove(channel);
     }
+
+protected:
+    void onExit() override
+    {
+        // thread end
+
+        for (TcpChannelPtr& channel : mChannelList)
+        {
+            channel->close();
+        }
+        mChannelList.clear();
+
+        TcpChannelThread::onExit();
+    }
+
+private:
+    std::list<TcpChannelPtr> mChannelList;
 };
 
 //---------------------------------------------------------------------------//

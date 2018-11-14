@@ -19,33 +19,63 @@ int main(int, char**)
 
     IpEndPoint local(9000);
 
+    std::list<TcpChannelPtr> channelList;
+
     // listen
-    server->open(local, [&](const TcpServerPtr&,
-        const TcpChannelPtr& newChannel) {
+    bool result = server->open(local,
+        [&app, &channelList](
+            const TcpServerPtr& server,
+            const TcpChannelPtr& newChannel) {
 
         if (server->accept(&app, newChannel))
         {
+            channelList.push_back(newChannel);
+
+            std::cout << newChannel->getPeerEndPoint().toString()
+                << " accept" << std::endl;
+
             // receive handler
             newChannel->setReceiveHandler(
                 [&](const TcpChannelPtr& channel) {
 
                 auto message = channel->receiveAll();
 
-                std::cout << &message[0] << std::endl;
+                std::cout << channel->getPeerEndPoint().toString()
+                    << " receive " << message.size() << "bytes" << std::endl;
 
-                channel->send(&message[0], message.size());
+                // echo
+                channel->send(std::move(message));
             });
 
             // close handler
             newChannel->setCloseHandler(
-                [&](const TcpChannelPtr& /*channel*/) {
+                [&channelList](const TcpChannelPtr& channel) {
+
+                std::cout << channel->getPeerEndPoint().toString()
+                    << " close" << std::endl;
+
+                channelList.remove(channel);
             });
         }
     });
 
+    if (!result)
+    {
+        // listen error
+        app.stop();
+    }
+
     // app end timer
     Timer timer;
-    timer.start(60 * 1000, false, [&](Timer*) {
+    timer.start(60 * 1000, false,
+        [&app, &channelList](Timer*) {
+
+        for (TcpChannelPtr& channel : channelList)
+        {
+            channel->close();
+        }
+        channelList.clear();
+
         app.stop();
     });
 

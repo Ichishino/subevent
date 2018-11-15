@@ -101,12 +101,12 @@ void WsFrame::serializeHeader(ByteWriter& writer) const
         b |= 0x80;
     }
 
-    if (mPayloadLength >= 127)
+    if (mPayloadLength > UINT16_MAX)
     {
         b |= 127;
-        writer << b << mPayloadLength;
+        writer << b << (uint64_t)mPayloadLength;
     }
-    else if (mPayloadLength >= 126)
+    else if (mPayloadLength > 125)
     {
         b |= 126;
         writer << b << (uint16_t)mPayloadLength;

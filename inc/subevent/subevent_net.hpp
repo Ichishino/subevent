@@ -17,6 +17,7 @@
 #include <subevent/socket_controller.inl>
 #include <subevent/socket_selector_linux.inl>
 #include <subevent/socket_selector_win.inl>
+#include <subevent/socket_selector_mac.inl>
 #include <subevent/tcp.inl>
 #include <subevent/udp.inl>
 #include <subevent/tcp_server_worker.inl>

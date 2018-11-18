@@ -11,7 +11,10 @@
 #include <subevent/semaphore.hpp>
 
 #ifdef SEV_OS_WIN
-#else
+#elif defined(SEV_OS_MAC)
+#include <sys/event.h>
+#include <sys/time.h>
+#elif defined(SEV_OS_LINUX)
 #include <sys/epoll.h>
 #endif
 
@@ -54,8 +57,15 @@ public:
     static const uint32_t Accept = FD_ACCEPT;
     static const uint32_t Connect = FD_CONNECT;
     static const uint32_t Close = FD_CLOSE;
-#else
-    static const uint16_t MaxSockets = 1024;
+#elif defined(SEV_OS_MAC)
+    static const uint16_t MaxSockets = UINT16_MAX;
+    static const uint32_t Receive = 0x01;
+    static const uint32_t Send = 0x02;
+    static const uint32_t Accept = 0x04;
+    static const uint32_t Connect = 0x08;
+    static const uint32_t Close = 0;
+#elif defined(SEV_OS_LINUX)
+    static const uint16_t MaxSockets = UINT16_MAX;
     static const uint32_t Receive = EPOLLIN;
     static const uint32_t Send = EPOLLOUT;
     static const uint32_t Accept = EPOLLIN;
@@ -81,7 +91,11 @@ public:
 
     SEV_DECL uint32_t getSocketCount() const
     {
+#ifdef SEV_OS_MAC
+        return mSocketCount.load() - 1;
+#else
         return mSocketCount.load();
+#endif
     }
 
     SEV_DECL int32_t getErrorCode() const
@@ -95,7 +109,11 @@ private:
     std::map<Win::Handle, Socket::Handle> mSockHandleMap;
     Win::Handle mEventHandles[MaxSockets + 1];
     Semaphore mCancelSem;
-#else
+#elif defined(SEV_OS_MAC)
+    std::map<Socket::Handle, uint32_t> mSockHandleMap;
+    int mKqueueFd;
+    int mCancelFds[2];
+#elif defined(SEV_OS_LINUX)
     int32_t mEpollFd;
     int32_t mCancelFd;
 #endif

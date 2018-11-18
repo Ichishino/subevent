@@ -8,7 +8,8 @@
 
 #ifdef SEV_OS_WIN
 #include <windows.h>
-#else
+#elif defined(SEV_OS_MAC)
+#elif defined(SEV_OS_LINUX)
 #include <unistd.h>
 #include <pthread.h>
 #endif
@@ -26,9 +27,11 @@ namespace Processor
 #ifdef SEV_OS_WIN
         SYSTEM_INFO si;
         GetSystemInfo(&si);
-
         return static_cast<uint16_t>(si.dwNumberOfProcessors);
-#else
+#elif defined(SEV_OS_MAC)
+        // TODO
+        return 1;
+#elif defined(SEV_OS_LINUX)
         return sysconf(_SC_NPROCESSORS_CONF);
 #endif
     }
@@ -38,7 +41,10 @@ namespace Processor
 #ifdef SEV_OS_WIN
         return (SetThreadIdealProcessor(
             thread->getHandle(), cpu) != -1);
-#else
+#elif defined(SEV_OS_MAC)
+        // TODO
+        return true;
+#elif defined(SEV_OS_LINUX)
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
         CPU_SET(cpu, &cpuset);

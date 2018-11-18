@@ -1,7 +1,7 @@
 #ifndef SUBEVENT_SOCKET_SELECTOR_LINUX_INL
 #define SUBEVENT_SOCKET_SELECTOR_LINUX_INL
 
-#ifndef SEV_OS_WIN
+#ifdef SEV_OS_LINUX
 
 #include <cassert>
 #include <cstring>
@@ -80,11 +80,6 @@ SocketSelector::~SocketSelector()
 bool SocketSelector::registerSocket(
     Socket::Handle sockHandle, uint32_t eventFlags, RegKey& key)
 {
-    if (mSocketCount >= MaxSockets)
-    {
-        return false;
-    }
-
     struct epoll_event e;
     memset(&e, 0x00, sizeof(e));
 
@@ -98,11 +93,10 @@ bool SocketSelector::registerSocket(
         return false;
     }
 
-    int32_t flag = fcntl(sockHandle, F_GETFL, 0);
+    int flag = fcntl(sockHandle, F_GETFL, 0);
     fcntl(sockHandle, F_SETFL, (flag | O_NONBLOCK));
 
     key.sockHandle = sockHandle;
-
     ++mSocketCount;
 
     return true;
@@ -119,7 +113,7 @@ void SocketSelector::unregisterSocket(const RegKey& key)
         assert(false);
     }
 
-    int32_t flag = fcntl(key.sockHandle, F_GETFL, 0);
+    int flag = fcntl(key.sockHandle, F_GETFL, 0);
     fcntl(key.sockHandle, F_SETFL, (flag & ~O_NONBLOCK));
 
     --mSocketCount;
@@ -130,10 +124,10 @@ WaitResult SocketSelector::wait(uint32_t msec, SocketEvents& sockEvents)
     WaitResult result = WaitResult::Success;
 
     bool canceled = false;
-    struct epoll_event e[MaxSockets];
+    struct epoll_event e[10240];
 
-    int32_t count = epoll_wait(
-        mEpollFd, e, MaxSockets, static_cast<int32_t>(msec));
+    int count = epoll_wait(
+        mEpollFd, e, 10240, static_cast<int>(msec));
 
     if (count > 0)
     {

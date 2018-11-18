@@ -5,7 +5,8 @@
 
 #ifdef SEV_OS_WIN
 #include <windows.h>
-#else
+#elif defined(SEV_OS_MAC)
+#elif defined(SEV_OS_LINUX)
 #include <errno.h>
 #include <time.h>
 #endif
@@ -18,37 +19,29 @@ SEV_NS_BEGIN
 
 Semaphore::Semaphore(uint32_t count)
 {
-#ifdef SEV_OS_MAC
-    mSem = dispatch_semaphore_create(count);
-#elif defined(SEV_OS_WIN)
+#ifdef SEV_OS_WIN
     mSem = CreateSemaphore(NULL, count, LONG_MAX, NULL);
-#else
+#elif defined(SEV_OS_MAC)
+    mSem = dispatch_semaphore_create(count);
+#elif defined(SEV_OS_LINUX)
     sem_init(&mSem, 0, count);
 #endif
 }
 
 Semaphore::~Semaphore()
 {
-#ifdef SEV_OS_MAC
-    dispatch_release(mSem);
-#elif defined(SEV_OS_WIN)
+#ifdef SEV_OS_WIN
     CloseHandle(mSem);
-#else
+#elif defined(SEV_OS_MAC)
+    dispatch_release(mSem);
+#elif defined(SEV_OS_LINUX)
     sem_destroy(&mSem);
 #endif
 }
 
 WaitResult Semaphore::wait(uint32_t msec)
 {
-#ifdef SEV_OS_MAC
-
-    dispatch_time_t timeout =
-        dispatch_time(DISPATCH_TIME_NOW, msec * NSEC_PER_MSEC);
-
-    return (dispatch_semaphore_wait(mSem, timeout) == 0) ?
-        WaitResult::Success : WaitResult::Timeout;
-
-#elif defined(SEV_OS_WIN)
+#ifdef SEV_OS_WIN
 
     DWORD result = WaitForSingleObject(mSem, msec);
 
@@ -63,7 +56,15 @@ WaitResult Semaphore::wait(uint32_t msec)
 
     return WaitResult::Error;
 
-#else
+#elif defined(SEV_OS_MAC)
+
+    dispatch_time_t timeout =
+        dispatch_time(DISPATCH_TIME_NOW, msec * NSEC_PER_MSEC);
+
+    return (dispatch_semaphore_wait(mSem, timeout) == 0) ?
+        WaitResult::Success : WaitResult::Timeout;
+
+#elif defined(SEV_OS_LINUX)
 
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
@@ -97,11 +98,11 @@ WaitResult Semaphore::wait(uint32_t msec)
 
 void Semaphore::post()
 {
-#ifdef SEV_OS_MAC
-    dispatch_semaphore_signal(mSem);
-#elif defined(SEV_OS_WIN)
+#ifdef SEV_OS_WIN
     ReleaseSemaphore(mSem, 1, NULL);
-#else
+#elif defined(SEV_OS_MAC)
+    dispatch_semaphore_signal(mSem);
+#elif defined(SEV_OS_LINUX)
     sem_post(&mSem);
 #endif
 }

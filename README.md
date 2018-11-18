@@ -8,14 +8,14 @@ C++ Event Driven and Network Application Library
 * Async TCP/UDP client and server.
 * Async HTTP/HTTPS client and server.
 * Async WebSocket client and server.
-* Multiple TCP connections in single thread.
+* Multiple connections in single thread.
 * Header only.
 * Easy to use.
 
 ### Requirements
 * C++11 or later
-* Linux or Windows
-* OpenSSL (if use secure protocol(https, wss))
+* Linux, Windows, macOS
+* OpenSSL ( if use secure protocol (https, wss) )
 
 ### Compile Options
 * `-std=c++11` (or later option)
@@ -172,6 +172,5 @@ $ make
 ```
 
 ### TODO
-* MacOS
 * HTTP/2
 * etc

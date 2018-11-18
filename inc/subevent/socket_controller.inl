@@ -205,9 +205,11 @@ bool SocketController::tryTcpConnect(TcpClientItem& item)
         if (result)
         {
             // success
-            item.tcpClient->onConnect(item.socket, 0);
+            item.socket = socket;
+            mTcpClients[sockHandle] = item;
+            onSelectTcpConnect(sockHandle, 0);
 
-            return true;
+            return false;
         }
         else if (socket->isBlockingError())
         {
@@ -220,6 +222,8 @@ bool SocketController::tryTcpConnect(TcpClientItem& item)
         else
         {
             // error
+            item.lastErrorCode = socket->getErrorCode();
+
             mSelector.unregisterSocket(item.key);
             delete socket;
         }
@@ -391,6 +395,7 @@ bool SocketController::onSelectTcpConnect(
         // success
 
         delete item.cancelTimer;
+        item.cancelTimer = nullptr;
 
         item.tcpClient->onConnect(item.socket, 0);
     }
@@ -406,6 +411,7 @@ bool SocketController::onSelectTcpConnect(
         if (tryTcpConnect(item))
         {
             delete item.cancelTimer;
+            item.cancelTimer = nullptr;
         }
     }
 

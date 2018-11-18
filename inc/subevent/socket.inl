@@ -560,6 +560,14 @@ bool Socket::create(
 
     mErrorCode = Socket::getLastError();
 
+#ifdef SEV_OS_MAC
+    if (mHandle != InvalidHandle)
+    {
+        int32_t value = 1;
+        setOption(SOL_SOCKET, SO_NOSIGPIPE, &value, sizeof(value));
+    }
+#endif
+
     return (mHandle != InvalidHandle);
 }
 

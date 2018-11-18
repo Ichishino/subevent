@@ -104,7 +104,13 @@ public:
     static const int32_t ShutdownSend = SD_SEND;
     static const int32_t ShutdownBoth = SD_BOTH;
     static const int32_t SendFlags = 0;
-#else
+#elif defined(SEV_OS_MAC)
+    typedef int32_t Handle;
+    static const Handle InvalidHandle = -1;
+    static const int32_t ShutdownSend = SHUT_WR;
+    static const int32_t ShutdownBoth = SHUT_RDWR;
+    static const int32_t SendFlags = 0;
+#elif defined(SEV_OS_LINUX)
     typedef int32_t Handle;
     static const Handle InvalidHandle = -1;
     static const int32_t ShutdownSend = SHUT_WR;

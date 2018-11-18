@@ -3,10 +3,10 @@
 
 #include <subevent/std.hpp>
 
-#ifdef SEV_OS_MAC
+#ifdef SEV_OS_WIN
+#elif defined(SEV_OS_MAC)
 #include <dispatch/dispatch.h>
-#elif defined(SEV_OS_WIN)
-#else
+#elif defined(SEV_OS_LINUX)
 #include <semaphore.h>
 #endif
 
@@ -22,11 +22,11 @@ public:
     SEV_DECL explicit Semaphore(uint32_t count = 0);
     SEV_DECL ~Semaphore();
 
-#ifdef SEV_OS_MAC
-    typedef dispatch_semaphore_t Handle;
-#elif defined(SEV_OS_WIN)
+#ifdef SEV_OS_WIN
     typedef Win::Handle Handle;
-#else
+#elif defined(SEV_OS_MAC)
+    typedef dispatch_semaphore_t Handle;
+#elif defined(SEV_OS_LINUX)
     typedef sem_t Handle;
 #endif
 

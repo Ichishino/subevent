@@ -23,7 +23,6 @@
 // TODO
 #if defined(_WIN32) && defined(_MSC_VER)
 #   define SEV_OS_WIN
-#   define SEV_LITTLE_ENDIAN
 #elif defined(linux) || defined(__linux__)
 #   define SEV_OS_LINUX
 #elif defined(__APPLE__)
@@ -32,21 +31,34 @@
 #endif
 
 // TODO
-#if defined(__GNUC__)
+#ifdef SEV_OS_MAC
+#   include <machine/endian.h>
+#elif defined(__GNUC__)
 #   include <endian.h>
 #endif
-#if defined(__BYTE_ORDER)
-#   if defined(__BIG_ENDIAN) && (__BYTE_ORDER == __BIG_ENDIAN)
-#   endif
+#ifdef __BYTE_ORDER
 #   if defined(__LITTLE_ENDIAN) && (__BYTE_ORDER == __LITTLE_ENDIAN)
 #       define SEV_LITTLE_ENDIAN
 #   endif
 #elif defined(_BYTE_ORDER)
-#   if defined(_BIG_ENDIAN) && (_BYTE_ORDER == _BIG_ENDIAN)
-#   endif
 #   if defined(_LITTLE_ENDIAN) && (_BYTE_ORDER == _LITTLE_ENDIAN)
 #       define SEV_LITTLE_ENDIAN
 #   endif
+#elif defined(__BYTE_ORDER__)
+#   if defined(__ORDER_LITTLE_ENDIAN__) && \
+              (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#       define SEV_LITTLE_ENDIAN
+#   endif
+#elif defined(__LITTLE_ENDIAN__) || \
+      defined(__ARMEL__) ||  \
+      defined(__THUMBEL__) ||  \
+      defined(__AARCH64EL__) ||  \
+      defined(_MIPSEL) ||  \
+      defined(__MIPSEL) ||  \
+      defined(__MIPSEL__)
+#   define SEV_LITTLE_ENDIAN
+#elif defined(SEV_OS_WIN)
+#   define SEV_LITTLE_ENDIAN
 #endif
 
 #ifdef SEV_OS_WIN

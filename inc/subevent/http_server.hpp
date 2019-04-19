@@ -32,8 +32,8 @@ typedef std::function<
 class HttpHandlerMap
 {
 public:
-    HttpHandlerMap();
-    ~HttpHandlerMap();
+    SEV_DECL HttpHandlerMap();
+    SEV_DECL ~HttpHandlerMap();
 
 public:
     SEV_DECL void setDefaultHandler(

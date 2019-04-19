@@ -621,7 +621,7 @@ public:
     }
 
 public:
-    bool isWsHandshakeRequest() const;
+    SEV_DECL bool isWsHandshakeRequest() const;
 
 public:
     SEV_DECL void serializeMessage(StringWriter& writer) const override;

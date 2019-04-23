@@ -448,8 +448,8 @@ public:
     SEV_DECL void clear();
 
 public:
-    SEV_DECL void setContentLength(size_t contentLength);
-    SEV_DECL size_t getContentLength() const;
+    SEV_DECL void setContentLength(uintmax_t contentLength);
+    SEV_DECL uintmax_t getContentLength() const;
 
 public:
     SEV_DECL void serialize(StringWriter& writer) const;
@@ -780,7 +780,7 @@ private:
     };
 
 public:
-    SEV_DECL void init(const HttpMessage& message);
+    SEV_DECL bool init(const HttpMessage& message);
 
     SEV_DECL void setFileName(const std::string& fileName)
     {

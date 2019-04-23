@@ -125,6 +125,11 @@ protected:
     SEV_DECL virtual bool onInit();
     SEV_DECL virtual void onExit();
 
+    SEV_DECL void setExitCode(int32_t exitCode)
+    {
+        mExitCode = exitCode;
+    }
+
 private:
     static SEV_TLS Thread* gThread;
     SEV_DECL static int32_t SEV_THREAD main(void* param);

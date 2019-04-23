@@ -466,6 +466,12 @@ bool HttpClient::onHttpResponse(StringReader& reader)
                 mResponse.clear();
                 return false;
             }
+
+            if (!mContentReceiver.init(mResponse))
+            {
+                onResponse(-8500);
+                return true;
+            }
         }
         catch (...)
         {
@@ -473,8 +479,6 @@ bool HttpClient::onHttpResponse(StringReader& reader)
             onResponse(-8501);
             return true;
         }
-
-        mContentReceiver.init(mResponse);
     }
 
     // body

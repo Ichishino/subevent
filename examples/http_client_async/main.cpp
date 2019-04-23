@@ -22,7 +22,7 @@ int main(int, char**)
 
     // GET request
     bool result = http->request(
-        url, [&](const HttpClientPtr&, int errorCode) {
+        url, [&app](const HttpClientPtr& http, int errorCode) {
 
         if (errorCode == 0)
         {

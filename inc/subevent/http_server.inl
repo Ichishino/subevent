@@ -200,6 +200,13 @@ bool HttpChannel::onHttpRequest(StringReader& reader)
                 mRequest.clear();
                 return false;
             }
+
+            if (!mContentReceiver.init(mRequest))
+            {
+                // too much data
+                close();
+                return true;
+            }
         }
         catch (...)
         {
@@ -207,8 +214,6 @@ bool HttpChannel::onHttpRequest(StringReader& reader)
             close();
             return true;
         }
-
-        mContentReceiver.init(mRequest);
     }
 
     // body

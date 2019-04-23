@@ -730,22 +730,22 @@ bool HttpHeader::deserialize(StringReader& reader)
     return true;
 }
 
-void HttpHeader::setContentLength(size_t contentLength)
+void HttpHeader::setContentLength(uintmax_t contentLength)
 {
     set(HttpHeaderField::ContentLength,
         std::to_string(contentLength));
 }
 
-size_t HttpHeader::getContentLength() const
+uintmax_t HttpHeader::getContentLength() const
 {
-    size_t contentLength = 0;
+    uintmax_t contentLength = 0;
 
     std::string contentLengthStr =
         get(HttpHeaderField::ContentLength);
 
     if (!contentLengthStr.empty())
     {
-        contentLength = std::stol(contentLengthStr);
+        contentLength = std::stoll(contentLengthStr);
     }
 
     return contentLength;
@@ -1548,7 +1548,7 @@ HttpContentReceiver::~HttpContentReceiver()
 {
 }
 
-void HttpContentReceiver::init(const HttpMessage& message)
+bool HttpContentReceiver::init(const HttpMessage& message)
 {
     std::string transferEncoding =
         message.getHeader().get(
@@ -1560,9 +1560,19 @@ void HttpContentReceiver::init(const HttpMessage& message)
     }
     else
     {
-        setContentLength(
-            message.getHeader().getContentLength());
+        uintmax_t contentLength =
+            message.getHeader().getContentLength();
+
+        if (contentLength > SIZE_MAX)
+        {
+            // too much
+            return false;
+        }
+
+        setContentLength((size_t)contentLength);
     }
+
+    return true;
 }
 
 bool HttpContentReceiver::onReceive(StringReader& reader)
